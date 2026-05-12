@@ -71,7 +71,9 @@ const materials = {
   paper: blockMaterial(palette.paper, "#fff0ce"),
   paperDim: blockMaterial(palette.paperDim, "#e6c99b"),
   floor: blockMaterial("#734229", "#9b5e37"),
+  woodLight: blockMaterial("#9f653c", "#c98752"),
   tatami: blockMaterial("#b9a86d", "#d3c38a"),
+  rug: blockMaterial("#d6b99a", "#f0d9b6"),
   stone: blockMaterial(palette.stone, "#969085"),
   grass: blockMaterial(palette.grass, "#4d5f3f"),
   shore: blockMaterial(palette.shore, "#826650"),
@@ -82,7 +84,10 @@ const materials = {
   leaf: blockMaterial(palette.leaf, "#6f8457"),
   trunk: blockMaterial("#6a3928", "#8a5137"),
   hedge: blockMaterial("#49663c", "#6b8454"),
+  leafBright: blockMaterial("#7fa15b", "#a6c377"),
   flower: blockMaterial("#ef9fb9", "#ffd0dc"),
+  ceramic: blockMaterial("#e4d7bf", "#fff1cf"),
+  paperWarm: blockMaterial("#ffe2bc", "#fff3ce"),
   lily: new THREE.MeshBasicMaterial({ color: "#6f965c", side: THREE.DoubleSide }),
   lotus: new THREE.MeshBasicMaterial({ color: "#ff96bd", side: THREE.DoubleSide }),
   lanternGlow: new THREE.MeshBasicMaterial({ color: palette.lantern }),
@@ -157,6 +162,7 @@ const spots = {
   Hall: { position: new THREE.Vector3(0, EYE_HEIGHT, -2.4), yaw: 0, label: "Main Hall" },
   "West Room": { position: new THREE.Vector3(-5.2, EYE_HEIGHT, -3.1), yaw: -Math.PI / 2, label: "West Room" },
   "East Room": { position: new THREE.Vector3(5.2, EYE_HEIGHT, -3.1), yaw: Math.PI / 2, label: "East Room" },
+  "Rear Room": { position: new THREE.Vector3(0, EYE_HEIGHT, -8.8), yaw: Math.PI, label: "Rear Room" },
 };
 
 const state = {
@@ -388,12 +394,16 @@ function addHouse() {
 
   block(16.5, 0.8, 15.5, materials.stone, 0, 0, 0);
   block(15.2, 0.28, 14.2, materials.floor, 0, 0.54, 0);
+  block(11.1, 0.72, 5.6, materials.stone, 0, 0, -8.55);
+  block(9.9, 0.24, 4.9, materials.floor, 0, 0.56, -8.55);
 
   addInteriorFloor(0, 0, 14.2, 13.2);
+  addInteriorFloor(0, -8.55, 9.2, 4.2);
   addHouseWalls();
   addRoofs();
   addRoomPartitions();
   addInteriorPosts();
+  addInteriorDetails();
 }
 
 function addHouseWalls() {
@@ -406,33 +416,63 @@ function addHouseWalls() {
 
   wallSegment(-5.1, zFront, 3.7, h, "x", wallY);
   wallSegment(5.1, zFront, 3.7, h, "x", wallY);
-  wallSegment(0, zBack, 15.2, h, "x", wallY);
   wallSegment(xLeft, 0, 13.6, h, "z", wallY);
   wallSegment(xRight, 0, 13.6, h, "z", wallY);
+  partitionWithDoor(0, zBack, 10.6, "x", 0, 2.1);
+  wallSegment(-5.25, -8.9, 4.5, h, "z", wallY);
+  wallSegment(5.25, -8.9, 4.5, h, "z", wallY);
+  wallSegment(0, -11.15, 10.5, h, "x", wallY);
 
   addCollider(-5.1, zFront, 3.7, 0.5);
   addCollider(5.1, zFront, 3.7, 0.5);
-  addCollider(0, zBack, 15.2, 0.5);
   addCollider(xLeft, 0, 0.5, 13.6);
   addCollider(xRight, 0, 0.5, 13.6);
+  addCollider(-5.25, -8.9, 0.5, 4.5);
+  addCollider(5.25, -8.9, 0.5, 4.5);
+  addCollider(0, -11.15, 10.5, 0.5);
 
   addWindow(-5.1, zFront + 0.03, 2.2, "x");
   addWindow(5.1, zFront + 0.03, 2.2, "x");
   addWindow(-7.63, -2.6, 2.2, "z");
   addWindow(7.63, -2.6, 2.2, "z");
+  addWindow(-5.28, -9.0, 1.7, "z");
+  addWindow(5.28, -9.0, 1.7, "z");
+  addWindow(0, -11.18, 2.0, "x");
 }
 
 function addRoomPartitions() {
-  wallSegment(-3.0, -1.5, 5.7, 1.9, "z", 1.64);
-  wallSegment(3.0, -1.5, 5.7, 1.9, "z", 1.64);
-  wallSegment(0, -5.5, 4.8, 1.9, "x", 1.64);
-  addCollider(-3.0, -1.5, 0.42, 5.7);
-  addCollider(3.0, -1.5, 0.42, 5.7);
-  addCollider(0, -5.5, 4.8, 0.42);
+  partitionWithDoor(-3.0, -1.5, 5.7, "z", -1.15, 1.65);
+  partitionWithDoor(3.0, -1.5, 5.7, "z", -1.15, 1.65);
+  partitionWithDoor(0, -5.5, 4.8, "x", 0, 1.9);
 
   addRoomMarker(-5.2, -3.1, "Room A");
   addRoomMarker(5.2, -3.1, "Room B");
   addRoomMarker(0, -8.2, "Rear Room");
+}
+
+function partitionWithDoor(x, z, length, axis, gapCenter, gapSize) {
+  const start = -length / 2;
+  const end = length / 2;
+  const gapStart = gapCenter - gapSize / 2;
+  const gapEnd = gapCenter + gapSize / 2;
+  const segments = [
+    [start, gapStart],
+    [gapEnd, end],
+  ];
+
+  segments.forEach(([a, b]) => {
+    const segmentLength = b - a;
+    if (segmentLength <= 0.24) return;
+    const centerOffset = (a + b) / 2;
+    const sx = axis === "x" ? x + centerOffset : x;
+    const sz = axis === "z" ? z + centerOffset : z;
+    wallSegment(sx, sz, segmentLength, 1.9, axis, 1.64);
+    addCollider(sx, sz, axis === "x" ? segmentLength : 0.42, axis === "z" ? segmentLength : 0.42);
+  });
+
+  const headerX = axis === "x" ? x + gapCenter : x;
+  const headerZ = axis === "z" ? z + gapCenter : z;
+  block(axis === "x" ? gapSize : 0.42, 0.18, axis === "z" ? gapSize : 0.42, materials.bridgeDark, headerX, 2.48, headerZ);
 }
 
 function addInteriorPosts() {
@@ -444,9 +484,156 @@ function addInteriorPosts() {
   });
 }
 
+function addInteriorDetails() {
+  addCeilingBeams();
+
+  [
+    [0, 4.2, 2.74, 0.42],
+    [0, -1.6, 2.68, 0.38],
+    [0, -8.8, 2.56, 0.34],
+    [-5.5, -3.0, 2.55, 0.34],
+    [5.5, -3.0, 2.55, 0.34],
+  ].forEach(([x, z, y, size]) => addLantern(x, z, y, size));
+
+  addInteriorLight(0, 2.2, 2.25, 1.1, 13);
+  addInteriorLight(0, -5.8, 2.15, 0.9, 11);
+  addInteriorLight(-5.4, -3.2, 2.05, 0.7, 8);
+  addInteriorLight(5.4, -3.2, 2.05, 0.7, 8);
+
+  addLowTable(0, 2.2, 2.85, 1.45);
+  addFloorCushion(-1.85, 2.2, 0);
+  addFloorCushion(1.85, 2.2, 0);
+  addFloorCushion(0, 3.55, Math.PI / 2);
+
+  addCabinetWall(-6.95, 2.6, 0.55, 4.2, "z");
+  addCabinetWall(6.95, 2.1, 0.55, 4.8, "z");
+  addShelf(-4.7, 5.85, 3.2, "x");
+  addShelf(4.7, 5.85, 3.2, "x");
+
+  addPlanter(-6.8, -2.9, 1.0, 3.2, "z");
+  addPlanter(6.8, -3.2, 1.0, 3.0, "z");
+  addIvyPanel(-6.88, -3.1, 2.3, 1.7, "z");
+  addIvyPanel(6.88, -3.2, 2.3, 1.7, "z");
+
+  addLowTable(-5.45, -3.25, 2.1, 1.25);
+  addLowTable(5.45, -3.25, 2.1, 1.25);
+  addVase(-5.45, -3.25, 1.0);
+  addVase(5.45, -3.25, 0.92);
+  addBookStack(-4.25, -4.75);
+  addBookStack(4.25, -4.75);
+
+  addShojiPanel(-6.85, -5.1, "z");
+  addShojiPanel(6.85, -5.1, "z");
+  addShojiPanel(-1.9, -6.65, "x");
+  addShojiPanel(1.9, -6.65, "x");
+  addLowTable(0, -9.1, 2.2, 1.25);
+  addVase(0, -9.1, 0.88);
+  addShelf(-2.7, -10.95, 2.4, "x");
+  addShelf(2.7, -10.95, 2.4, "x");
+  addPlanter(-4.55, -9.2, 0.9, 2.2, "z");
+  addPlanter(4.55, -9.2, 0.9, 2.2, "z");
+}
+
+function addInteriorLight(x, z, y, intensity, distance) {
+  const light = new THREE.PointLight("#ffd2a0", intensity, distance, 2.2);
+  light.position.set(x, y, z);
+  scene.add(light);
+}
+
+function addCeilingBeams() {
+  [-4.8, 0, 4.8].forEach((x) => {
+    block(0.28, 0.32, 13.2, materials.bridgeDark, x, 3.04, 0);
+  });
+  [-4.8, -1.6, 1.6, 4.8].forEach((z) => {
+    block(14.5, 0.28, 0.28, materials.bridgeDark, 0, 2.92, z);
+  });
+}
+
+function addLowTable(x, z, w, d) {
+  block(w, 0.22, d, materials.woodLight, x, 0.96, z);
+  block(w * 0.84, 0.1, d * 0.74, materials.rug, x, 0.78, z);
+  [
+    [-w * 0.38, -d * 0.32],
+    [w * 0.38, -d * 0.32],
+    [-w * 0.38, d * 0.32],
+    [w * 0.38, d * 0.32],
+  ].forEach(([ox, oz]) => block(0.18, 0.42, 0.18, materials.bridgeDark, x + ox, 0.73, z + oz));
+  addCollider(x, z, w + 0.2, d + 0.2);
+}
+
+function addFloorCushion(x, z, rotationY) {
+  const cushion = block(0.82, 0.16, 0.72, materials.paperWarm, x, 0.86, z);
+  cushion.rotation.y = rotationY;
+}
+
+function addCabinetWall(x, z, w, d, axis) {
+  block(axis === "z" ? w : d, 1.0, axis === "z" ? d : w, materials.woodLight, x, 1.18, z);
+  addCollider(x, z, axis === "z" ? w + 0.12 : d + 0.12, axis === "z" ? d + 0.12 : w + 0.12);
+  const drawerCount = 5;
+  for (let i = 0; i < drawerCount; i += 1) {
+    const offset = (i - (drawerCount - 1) / 2) * (d / drawerCount);
+    const px = axis === "z" ? x - 0.29 : x + offset;
+    const pz = axis === "z" ? z + offset : z - 0.29;
+    block(axis === "z" ? 0.08 : 0.46, 0.08, axis === "z" ? 0.46 : 0.08, materials.gold, px, 1.32, pz);
+  }
+}
+
+function addShelf(x, z, width, axis) {
+  block(axis === "x" ? width : 0.2, 0.16, axis === "z" ? width : 0.2, materials.bridgeDark, x, 1.95, z);
+  block(axis === "x" ? width : 0.2, 0.16, axis === "z" ? width : 0.2, materials.bridgeDark, x, 2.55, z);
+  for (let i = 0; i < 5; i += 1) {
+    const offset = (i - 2) * 0.52;
+    block(0.18, 0.34, 0.28, i % 2 ? materials.paperWarm : materials.flower, x + offset, 2.18, z - 0.12);
+  }
+}
+
+function addPlanter(x, z, w, d, axis) {
+  block(axis === "z" ? w : d, 0.46, axis === "z" ? d : w, materials.woodLight, x, 1.0, z);
+  addCollider(x, z, axis === "z" ? w + 0.12 : d + 0.12, axis === "z" ? d + 0.12 : w + 0.12);
+  const count = Math.floor(d * 2.8);
+  for (let i = 0; i < count; i += 1) {
+    const offset = (i - (count - 1) / 2) * 0.34;
+    const leafX = axis === "z" ? x : x + offset;
+    const leafZ = axis === "z" ? z + offset : z;
+    block(0.36, 0.36, 0.36, i % 2 ? materials.leafBright : materials.hedge, leafX, 1.38 + (i % 3) * 0.12, leafZ);
+  }
+}
+
+function addIvyPanel(x, z, width, height, axis) {
+  block(axis === "z" ? 0.08 : width, height, axis === "z" ? width : 0.08, materials.leafBright, x, 1.88, z);
+  for (let i = 0; i < 12; i += 1) {
+    const ox = axis === "z" ? 0 : random(-width * 0.43, width * 0.43);
+    const oz = axis === "z" ? random(-width * 0.43, width * 0.43) : 0;
+    block(0.22, 0.22, 0.22, i % 3 ? materials.hedge : materials.flower, x + ox, random(1.2, 2.55), z + oz);
+  }
+}
+
+function addVase(x, z, scale) {
+  block(0.38 * scale, 0.52 * scale, 0.38 * scale, materials.ceramic, x, 1.34, z);
+  block(0.18 * scale, 0.32 * scale, 0.18 * scale, materials.leafBright, x, 1.78, z);
+  [
+    [-0.22, 0.08],
+    [0.24, -0.05],
+    [0.04, 0.24],
+  ].forEach(([ox, oz]) => block(0.28 * scale, 0.28 * scale, 0.28 * scale, materials.flower, x + ox * scale, 1.98, z + oz * scale));
+}
+
+function addBookStack(x, z) {
+  block(0.8, 0.12, 0.46, materials.paperWarm, x, 0.86, z);
+  block(0.72, 0.1, 0.42, materials.flower, x + 0.04, 0.98, z + 0.02);
+  block(0.62, 0.1, 0.38, materials.roof, x - 0.04, 1.09, z - 0.02);
+}
+
+function addShojiPanel(x, z, axis) {
+  block(axis === "x" ? 1.4 : 0.08, 1.45, axis === "z" ? 1.4 : 0.08, materials.paperWarm, x, 1.7, z);
+  block(axis === "x" ? 1.56 : 0.12, 0.12, axis === "z" ? 1.56 : 0.12, materials.bridgeDark, x, 2.42, z);
+  block(axis === "x" ? 1.56 : 0.12, 0.12, axis === "z" ? 1.56 : 0.12, materials.bridgeDark, x, 0.98, z);
+}
+
 function addRoofs() {
   addLayeredRoof(0, 3.26, 0, 19.2, 18.2, 0.72, 5);
   addLayeredRoof(0, 5.1, -1.0, 13.8, 12.0, 0.64, 4);
+  addLayeredRoof(0, 3.08, -8.8, 12.4, 7.4, 0.5, 3);
 
   block(1.0, 1.2, 11.4, materials.roofDark, -6.9, 4.0, -0.4);
   block(1.0, 1.2, 11.4, materials.roofDark, 6.9, 4.0, -0.4);

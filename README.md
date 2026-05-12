@@ -32,7 +32,9 @@ http://localhost:5173
 - Main hall
 - West room
 - East room
-- Rear room shell
+- Rear room annex
+- Walkable interior doorways connecting the hall and rooms
+- Warm interior furnishings: lanterns, shelves, cabinets, planters, tables, cushions, books, and vases
 - Scenic water, sakura trees, horizon, and fast time-of-day cycle
 - Lightweight gradient skydome with visible sun/moon movement
 - Continuous lake around the bridge and house, with shoreline tree rings
