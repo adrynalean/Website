@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sashi Vijay | Sakura Walkthrough Portfolio</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <canvas id="scene" aria-label="First-person sakura portfolio walkthrough"></canvas>
+
+    <main class="hud">
+      <section class="intro" id="intro">
+        <p class="eyebrow">Sakura portfolio walkthrough</p>
+        <h1>Sashi Vijay</h1>
+        <p class="summary">
+          A calm first-person gallery with template rooms for projects,
+          experience, skills, about, and contact.
+        </p>
+        <button id="enterButton" class="primary">Enter walkthrough</button>
+      </section>
+
+      <nav class="room-nav" aria-label="Room navigation">
+        <button data-room="Lobby">Lobby</button>
+        <button data-room="Projects">Projects</button>
+        <button data-room="Experience">Experience</button>
+        <button data-room="Skills">Skills</button>
+        <button data-room="Contact">Contact</button>
+      </nav>
+
+      <div class="interaction-hint" id="interactionHint" hidden>
+        <span id="interactionTitle">Open panel</span>
+        <small>Click or press E</small>
+      </div>
+
+      <div class="corner-panel">
+        <span id="roomLabel">Lobby</span>
+        <small>WASD to walk - Shift to glide - Mouse to look - Esc to release</small>
+      </div>
+
+      <div class="reticle" id="reticle" aria-hidden="true"></div>
+    </main>
+
+    <section class="detail-modal" id="detailModal" hidden aria-modal="true" role="dialog">
+      <article class="detail-card">
+        <button class="close-button" id="closeModal" aria-label="Close detail panel">Close</button>
+        <p class="detail-kicker" id="modalKicker">Template</p>
+        <h2 id="modalTitle">Panel title</h2>
+        <p id="modalBody"></p>
+        <ul id="modalList"></ul>
+        <div class="detail-actions">
+          <a id="modalPrimary" href="#" target="_blank" rel="noreferrer">Primary link</a>
+          <a id="modalSecondary" href="#" target="_blank" rel="noreferrer">Secondary link</a>
+        </div>
+      </article>
+    </section>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
