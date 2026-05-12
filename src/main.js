@@ -209,13 +209,12 @@ function buildWorld() {
   addHouse();
   addExteriorDetails();
   addSakuraForest();
-  addForegroundBlossoms();
   addLakeDetails();
   addPetals();
 }
 
 function addWater() {
-  const water = new THREE.Mesh(new THREE.PlaneGeometry(170, 170, 40, 40), materials.water);
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(170, 170, 64, 64), materials.water);
   water.rotation.x = -Math.PI / 2;
   water.position.y = -0.34;
   water.receiveShadow = true;
@@ -262,32 +261,65 @@ function addDistantTerrain() {
 
 function addMountainRing() {
   addRidgeRange({
+    x: 0,
     z: -92,
     baseY: 0.7,
-    width: 150,
-    peaks: [-1, 4, 8, 6, 12, 9, 16, 11, 18, 12, 9, 14, 8, 12, 7, 9, 5, -1],
+    width: 178,
+    peaks: [-1, 4, 7, 11, 8, 14, 10, 18, 13, 21, 15, 17, 11, 16, 9, 13, 8, 10, 6, -1],
     color: "#8e7ca0",
     opacity: 0.5,
   });
   addRidgeRange({
+    x: 0,
     z: -98,
     baseY: 1.6,
-    width: 164,
-    peaks: [-1, 3, 5, 8, 6, 9, 7, 12, 8, 10, 7, 11, 6, 8, 5, 6, 3, -1],
+    width: 192,
+    peaks: [-1, 3, 5, 8, 6, 10, 8, 13, 10, 15, 11, 14, 9, 12, 7, 10, 6, 7, 4, -1],
     color: "#b9a6bd",
     opacity: 0.32,
   });
   addRidgeRange({
+    x: 0,
     z: -105,
     baseY: 2.1,
-    width: 176,
-    peaks: [-1, 2, 4, 6, 5, 7, 5, 8, 6, 7, 5, 6, 4, 5, 3, -1],
+    width: 204,
+    peaks: [-1, 2, 4, 6, 5, 7, 6, 9, 7, 10, 8, 9, 6, 8, 5, 7, 4, 5, 3, -1],
     color: "#d2bdc9",
     opacity: 0.22,
   });
+  addRidgeRange({
+    x: -90,
+    z: 2,
+    baseY: 0.45,
+    width: 156,
+    peaks: [-1, 3, 6, 9, 7, 12, 8, 15, 10, 13, 8, 11, 7, 9, 5, -1],
+    color: "#967fa3",
+    opacity: 0.34,
+    rotationY: Math.PI / 2,
+  });
+  addRidgeRange({
+    x: 90,
+    z: 2,
+    baseY: 0.45,
+    width: 156,
+    peaks: [-1, 4, 7, 10, 6, 13, 9, 16, 11, 14, 9, 12, 6, 8, 5, -1],
+    color: "#967fa3",
+    opacity: 0.34,
+    rotationY: -Math.PI / 2,
+  });
+  addRidgeRange({
+    x: 0,
+    z: 86,
+    baseY: 0.35,
+    width: 172,
+    peaks: [-1, 3, 5, 7, 5, 9, 7, 12, 8, 11, 7, 10, 6, 8, 4, -1],
+    color: "#a991ae",
+    opacity: 0.24,
+    rotationY: Math.PI,
+  });
 }
 
-function addRidgeRange({ z, baseY, width, peaks, color, opacity, rotationY = 0 }) {
+function addRidgeRange({ x = 0, z, baseY, width, peaks, color, opacity, rotationY = 0 }) {
   const vertices = [];
   const indices = [];
   const step = width / (peaks.length - 1);
@@ -320,7 +352,7 @@ function addRidgeRange({ z, baseY, width, peaks, color, opacity, rotationY = 0 }
     side: THREE.DoubleSide,
   });
   const ridge = new THREE.Mesh(geometry, material);
-  ridge.position.set(0, 0, z);
+  ridge.position.set(x, 0, z);
   ridge.rotation.y = rotationY;
   scene.add(ridge);
 }
@@ -432,6 +464,9 @@ function addLayeredRoof(x, y, z, w, d, stepY, layers) {
 }
 
 function addExteriorDetails() {
+  block(22.0, 0.24, 18.8, materials.shore, 0, -0.18, 0.2);
+  block(20.2, 0.36, 17.0, materials.grass, 0, -0.02, 0.2);
+
   addLantern(-4.6, 7.1, 2.1, 0.52);
   addLantern(4.6, 7.1, 2.1, 0.52);
   addLantern(-6.9, 5.4, 2.0, 0.42);
@@ -442,10 +477,10 @@ function addExteriorDetails() {
   }
   block(14.0, 0.18, 0.18, materials.bridgeDark, 0, 1.34, 7.12);
 
-  addSakuraTree(-9.5, 8.0, 1.2);
-  addSakuraTree(9.4, 8.6, 1.05);
-  addSakuraTree(-10.7, -5.5, 1.1);
-  addSakuraTree(11.0, -5.2, 1.0);
+  addSakuraTree(-9.3, 7.7, 0.95);
+  addSakuraTree(9.2, 7.9, 0.9);
+  addSakuraTree(-9.8, -5.6, 0.88);
+  addSakuraTree(9.8, -5.4, 0.86);
 
   addGardenBed(-5.8, 7.4, 3.8, 0.62);
   addGardenBed(5.8, 7.4, 3.8, 0.62);
@@ -463,55 +498,38 @@ function addGardenBed(x, z, w, d) {
 
 function addSakuraForest() {
   const positions = [
-    [-21, 7, 1.4],
-    [-18, 15, 1.05],
-    [-25, 25, 1.3],
-    [-17, 28, 1.1],
-    [21, 11, 1.25],
-    [26, 21, 1.1],
-    [18, 28, 1.35],
-    [27, -5, 1.15],
-    [-25, -16, 1.2],
-    [-16, -24, 1.0],
-    [-30, 3, 1.1],
-    [-31, 22, 0.95],
-    [-23, 34, 1.25],
-    [-9, 35, 0.9],
-    [8, 35, 1.05],
-    [21, 35, 1.2],
-    [32, 14, 0.95],
-    [31, -12, 1.1],
-    [15, -30, 1.0],
-    [-3, -33, 0.92],
-    [-22, -31, 1.12],
-    [-32, -8, 0.98],
-    [-14, 31, 1.18],
-    [-7, 32, 0.9],
-    [0, 33, 1.12],
-    [7, 32, 0.95],
-    [14, 31, 1.2],
-    [-35, 5, 1.08],
-    [-35, 13, 0.94],
-    [-35, 22, 1.16],
-    [35, 5, 1.0],
-    [35, 14, 1.18],
-    [35, 24, 0.96],
-    [-18, -18, 1.05],
-    [18, -18, 1.12],
+    [-41, 31, 1.18],
+    [-31, 38, 1.02],
+    [-18, 39, 1.16],
+    [-6, 40, 0.94],
+    [8, 39, 1.08],
+    [22, 38, 1.22],
+    [35, 33, 1.0],
+    [42, 22, 1.14],
+    [43, 9, 0.96],
+    [42, -8, 1.1],
+    [37, -26, 1.0],
+    [24, -39, 1.16],
+    [8, -42, 0.94],
+    [-9, -42, 1.08],
+    [-25, -38, 1.18],
+    [-38, -27, 1.0],
+    [-43, -10, 1.12],
+    [-44, 8, 0.98],
+    [-42, 22, 1.08],
   ];
   positions.forEach(([x, z, scale]) => addSakuraTree(x, z, scale));
 }
 
 function addLakeTreeRing() {
   const ring = [];
-  for (let i = 0; i < 56; i += 1) {
-    const angle = (i / 56) * Math.PI * 2;
-    const jitter = Math.sin(i * 2.17) * 1.9;
-    const x = Math.cos(angle) * (42 + jitter);
-    const z = Math.sin(angle) * (39 + Math.cos(i * 1.31) * 2.4);
-    if (z > 27 || z < -28 || Math.abs(x) > 30) {
-      ring.push([x, z, 0.72 + ((i % 5) * 0.08)]);
-    }
+  for (let i = 0; i < 72; i += 1) {
+    const angle = (i / 72) * Math.PI * 2;
+    const jitter = Math.sin(i * 2.17) * 1.55;
+    const x = Math.cos(angle) * (43 + jitter);
+    const z = Math.sin(angle) * (40 + Math.cos(i * 1.31) * 1.7);
+    if (Math.abs(x) < 15 && z > 28) continue;
+    ring.push([x, z, 0.66 + ((i % 5) * 0.07)]);
   }
 
   ring.forEach(([x, z, scale]) => {
@@ -789,14 +807,19 @@ function createWaterMaterial() {
       varying vec2 vUv;
       varying vec3 vWorldPosition;
       varying float vWave;
+      varying float vRipple;
       uniform float time;
+      float sineWave(vec2 point, float frequency, float speed, float amplitude, float phase) {
+        return sin(point.x * frequency + point.y * frequency * 0.62 + time * speed + phase) * amplitude;
+      }
       void main() {
         vUv = uv;
         vec3 pos = position;
-        float waveA = sin(pos.x * 0.22 + time * 0.9) * 0.045;
-        float waveB = sin(pos.y * 0.17 - time * 0.65) * 0.035;
-        float waveC = sin((pos.x + pos.y) * 0.08 + time * 0.42) * 0.025;
+        float waveA = sineWave(pos.xy, 0.24, 1.15, 0.07, 0.0);
+        float waveB = sineWave(pos.yx, 0.16, -0.82, 0.05, 1.7);
+        float waveC = sineWave(pos.xy + vec2(8.0, -3.0), 0.08, 0.48, 0.035, 2.4);
         vWave = waveA + waveB + waveC;
+        vRipple = sin(pos.x * 0.48 + time * 1.8) * sin(pos.y * 0.31 - time * 1.25);
         pos.z += vWave;
         vec4 worldPosition = modelMatrix * vec4(pos, 1.0);
         vWorldPosition = worldPosition.xyz;
@@ -811,15 +834,22 @@ function createWaterMaterial() {
       varying vec2 vUv;
       varying vec3 vWorldPosition;
       varying float vWave;
+      varying float vRipple;
+      float sineLine(float value, float frequency, float speed, float phase) {
+        return sin(value * frequency + time * speed + phase) * 0.5 + 0.5;
+      }
       void main() {
-        float rippleA = sin((vWorldPosition.x * 0.18 + time * 0.75) + sin(vWorldPosition.z * 0.08)) * 0.5 + 0.5;
-        float rippleB = sin((vWorldPosition.z * 0.15 - time * 0.55) + cos(vWorldPosition.x * 0.06)) * 0.5 + 0.5;
+        float rippleA = sineLine(vWorldPosition.x + vWorldPosition.z * 0.35, 0.23, 1.08, 0.0);
+        float rippleB = sineLine(vWorldPosition.z - vWorldPosition.x * 0.24, 0.18, -0.72, 1.3);
+        float rippleC = sineLine(vWorldPosition.x + vWorldPosition.z, 0.08, 0.36, 2.1);
         float band = smoothstep(0.15, 0.95, vUv.y);
         float reflection = smoothstep(0.48, 0.52, vUv.x) * smoothstep(0.15, 0.92, vUv.y);
-        float sparkle = pow(max(0.0, rippleA * rippleB), 5.0) * 0.22;
+        float waveCrest = smoothstep(0.72, 0.97, rippleA * 0.58 + rippleB * 0.32 + rippleC * 0.1);
+        float sparkle = pow(max(0.0, rippleA * rippleB), 4.5) * 0.18;
         vec3 color = mix(shallowColor, deepColor, band * 0.72);
-        color += glowColor * (reflection * 0.18 + sparkle + abs(vWave) * 0.8);
-        float alpha = 0.8 + rippleA * 0.05;
+        color += glowColor * (reflection * 0.16 + sparkle + waveCrest * 0.12 + abs(vWave) * 0.95);
+        color += vec3(0.10, 0.16, 0.19) * (vRipple * 0.035);
+        float alpha = 0.78 + rippleA * 0.06;
         gl_FragColor = vec4(color, alpha);
       }
     `,
