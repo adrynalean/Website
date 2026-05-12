@@ -49,6 +49,9 @@ const palette = {
   sakuraDark: "#a95770",
   leaf: "#526943",
   grass: "#34442f",
+  shore: "#695241",
+  mountain: "#49384f",
+  mountainSnow: "#e3d3cb",
   lantern: "#ffbd72",
   gold: "#d49a55",
 };
@@ -64,6 +67,9 @@ const materials = {
   tatami: blockMaterial("#b9a86d", "#d3c38a"),
   stone: blockMaterial(palette.stone, "#969085"),
   grass: blockMaterial(palette.grass, "#4d5f3f"),
+  shore: blockMaterial(palette.shore, "#826650"),
+  mountain: blockMaterial(palette.mountain, "#68516e"),
+  mountainSnow: blockMaterial(palette.mountainSnow, "#f0e0d6"),
   sakura: blockMaterial(palette.sakura, palette.sakuraLight),
   sakuraDark: blockMaterial(palette.sakuraDark, "#c8738a"),
   leaf: blockMaterial(palette.leaf, "#6f8457"),
@@ -82,6 +88,50 @@ const materials = {
 const colliders = [];
 const playable = [];
 const animated = [];
+
+const skyUniforms = {
+  topColor: { value: new THREE.Color("#894e8c") },
+  horizonColor: { value: new THREE.Color("#ffb082") },
+  bottomColor: { value: new THREE.Color("#273057") },
+};
+const skyDome = new THREE.Mesh(
+  new THREE.SphereGeometry(95, 24, 12),
+  new THREE.ShaderMaterial({
+    uniforms: skyUniforms,
+    vertexShader: `
+      varying vec3 vWorldPosition;
+      void main() {
+        vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+        vWorldPosition = worldPosition.xyz;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 topColor;
+      uniform vec3 horizonColor;
+      uniform vec3 bottomColor;
+      varying vec3 vWorldPosition;
+      void main() {
+        float h = normalize(vWorldPosition).y;
+        vec3 lower = mix(bottomColor, horizonColor, smoothstep(-0.35, 0.16, h));
+        vec3 upper = mix(horizonColor, topColor, smoothstep(0.05, 0.85, h));
+        gl_FragColor = vec4(mix(lower, upper, smoothstep(0.0, 0.42, h)), 1.0);
+      }
+    `,
+    side: THREE.BackSide,
+    depthWrite: false,
+    fog: false,
+  }),
+);
+scene.add(skyDome);
+
+const sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({ color: "#ffd28d", transparent: true, opacity: 0.95 }));
+sunSprite.scale.set(5.8, 5.8, 1);
+scene.add(sunSprite);
+
+const moonSprite = new THREE.Sprite(new THREE.SpriteMaterial({ color: "#cdd5ff", transparent: true, opacity: 0.0 }));
+moonSprite.scale.set(3.2, 3.2, 1);
+scene.add(moonSprite);
 
 const spots = {
   Bridge: { position: new THREE.Vector3(0, EYE_HEIGHT, 23), yaw: 0, label: "Bridge Approach" },
@@ -132,6 +182,7 @@ requestAnimationFrame(animate);
 function buildWorld() {
   addWater();
   addDistantTerrain();
+  addMountainRing();
   addBridge();
   addHouse();
   addExteriorDetails();
@@ -146,6 +197,14 @@ function addWater() {
   water.receiveShadow = true;
   scene.add(water);
   animated.push({ type: "water", mesh: water });
+
+  const riverGlow = new THREE.Mesh(
+    new THREE.PlaneGeometry(9, 70, 1, 1),
+    new THREE.MeshBasicMaterial({ color: "#31496f", transparent: true, opacity: 0.22 }),
+  );
+  riverGlow.rotation.x = -Math.PI / 2;
+  riverGlow.position.set(0, -0.265, 1);
+  scene.add(riverGlow);
 }
 
 function addDistantTerrain() {
@@ -160,7 +219,43 @@ function addDistantTerrain() {
   islands.forEach(([x, z, w, d]) => {
     const land = block(w, 0.6, d, materials.grass, x, -0.08, z);
     land.receiveShadow = true;
+    block(w + 1.4, 0.18, d + 1.4, materials.shore, x, -0.22, z);
     addVoxelCluster(x, z, w, d);
+  });
+
+  [
+    [-10, 33, 42, 4],
+    [22, -24, 28, 4],
+    [-29, 16, 4, 26],
+    [31, 18, 4, 28],
+  ].forEach(([x, z, w, d]) => block(w, 0.35, d, materials.shore, x, -0.12, z));
+}
+
+function addMountainRing() {
+  const mountains = [
+    [-42, -12, 9, 14],
+    [-34, 9, 7, 10],
+    [-38, 31, 10, 13],
+    [-12, 43, 8, 12],
+    [12, 44, 9, 13],
+    [36, 31, 11, 15],
+    [43, 6, 8, 12],
+    [38, -21, 10, 14],
+    [6, -43, 11, 15],
+    [-20, -40, 8, 11],
+  ];
+
+  mountains.forEach(([x, z, radius, height]) => {
+    const mountain = new THREE.Mesh(new THREE.ConeGeometry(radius, height, 4), materials.mountain);
+    mountain.position.set(x, height / 2 - 0.35, z);
+    mountain.rotation.y = Math.PI / 4 + random(-0.15, 0.15);
+    mountain.receiveShadow = false;
+    scene.add(mountain);
+
+    const cap = new THREE.Mesh(new THREE.ConeGeometry(radius * 0.42, height * 0.28, 4), materials.mountainSnow);
+    cap.position.set(x, height - height * 0.14 - 0.35, z);
+    cap.rotation.y = mountain.rotation.y;
+    scene.add(cap);
   });
 }
 
@@ -299,6 +394,18 @@ function addSakuraForest() {
     [27, -5, 1.15],
     [-25, -16, 1.2],
     [-16, -24, 1.0],
+    [-30, 3, 1.1],
+    [-31, 22, 0.95],
+    [-23, 34, 1.25],
+    [-9, 35, 0.9],
+    [8, 35, 1.05],
+    [21, 35, 1.2],
+    [32, 14, 0.95],
+    [31, -12, 1.1],
+    [15, -30, 1.0],
+    [-3, -33, 0.92],
+    [-22, -31, 1.12],
+    [-32, -8, 0.98],
   ];
   positions.forEach(([x, z, scale]) => addSakuraTree(x, z, scale));
 }
@@ -407,9 +514,12 @@ function addLantern(x, z, y, size) {
   block(size * 0.18, size * 1.1, size * 0.18, materials.bridgeDark, x, y - size * 0.3, z);
   const shade = block(size * 0.6, size * 0.6, size * 0.6, materials.lanternGlow, x, y + size * 0.22, z);
   shade.userData.baseIntensity = 1;
-  const light = new THREE.PointLight("#ffb36b", 1.4, 7, 2);
-  light.position.set(x, y + size * 0.24, z);
-  scene.add(light);
+  const shouldCastLight = size >= 0.42 || Math.abs(x) > 3.9 || Math.abs(z) < 11;
+  const light = shouldCastLight ? new THREE.PointLight("#ffb36b", 1.6, 8, 2) : null;
+  if (light) {
+    light.position.set(x, y + size * 0.24, z);
+    scene.add(light);
+  }
   animated.push({ type: "lantern", mesh: shade, light });
 }
 
@@ -461,7 +571,7 @@ function addPetals() {
 function block(w, h, d, material, x, y, z, parent = scene) {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
   mesh.position.set(x, y, z);
-  mesh.castShadow = true;
+  mesh.castShadow = false;
   mesh.receiveShadow = true;
   parent.add(mesh);
   return mesh;
@@ -578,31 +688,72 @@ function updateCamera(delta) {
 }
 
 function updateLighting(delta) {
-  state.dayTime = (state.dayTime + delta * 0.018) % 1;
+  state.dayTime = (state.dayTime + delta * 0.0026) % 1;
   const t = state.dayTime;
   const angle = t * Math.PI * 2;
   const sunHeight = Math.sin(angle) * 18;
-  const warm = new THREE.Color("#ffb07b");
-  const dusk = new THREE.Color("#8e5d91");
-  const night = new THREE.Color("#18213b");
-  const sky = new THREE.Color();
+  const dayTop = new THREE.Color("#7bb7ff");
+  const dayHorizon = new THREE.Color("#ffd0a3");
+  const dayBottom = new THREE.Color("#eb9f86");
+  const sunsetTop = new THREE.Color("#7f5a9e");
+  const sunsetHorizon = new THREE.Color("#ff9d72");
+  const sunsetBottom = new THREE.Color("#60436f");
+  const nightTop = new THREE.Color("#11182f");
+  const nightHorizon = new THREE.Color("#49315c");
+  const nightBottom = new THREE.Color("#141a2d");
+
+  const top = new THREE.Color();
+  const horizon = new THREE.Color();
+  const bottom = new THREE.Color();
+  const daylight = THREE.MathUtils.smoothstep(sunHeight, -2, 12);
+  const evening = 1 - THREE.MathUtils.smoothstep(Math.abs(sunHeight), 0, 9);
 
   if (sunHeight > 6) {
-    sky.copy(warm).lerp(new THREE.Color("#f0a29a"), 0.35);
+    top.copy(dayTop);
+    horizon.copy(dayHorizon);
+    bottom.copy(dayBottom);
     timeLabel.textContent = "Golden Hour";
   } else if (sunHeight > -3) {
-    sky.copy(dusk).lerp(warm, Math.max(sunHeight, 0) / 6);
+    const blend = Math.max(sunHeight + 3, 0) / 9;
+    top.copy(sunsetTop).lerp(dayTop, blend);
+    horizon.copy(sunsetHorizon).lerp(dayHorizon, blend);
+    bottom.copy(sunsetBottom).lerp(dayBottom, blend);
     timeLabel.textContent = "Sunset";
   } else {
-    sky.copy(night).lerp(dusk, Math.max(sunHeight + 18, 0) / 15);
+    const blend = Math.max(sunHeight + 18, 0) / 15;
+    top.copy(nightTop).lerp(sunsetTop, blend);
+    horizon.copy(nightHorizon).lerp(sunsetHorizon, blend);
+    bottom.copy(nightBottom).lerp(sunsetBottom, blend);
     timeLabel.textContent = "Lantern Night";
   }
 
-  scene.background = sky;
-  scene.fog.color.copy(sky);
-  sun.position.set(Math.cos(angle) * 18, Math.max(3, sunHeight + 10), Math.sin(angle) * 18);
-  sun.intensity = THREE.MathUtils.clamp((sunHeight + 18) / 20, 0.28, 2.2);
-  hemiLight.intensity = THREE.MathUtils.clamp((sunHeight + 20) / 18, 0.58, 1.65);
+  skyUniforms.topColor.value.copy(top);
+  skyUniforms.horizonColor.value.copy(horizon);
+  skyUniforms.bottomColor.value.copy(bottom);
+  scene.background.copy(horizon);
+  scene.fog.color.copy(horizon);
+
+  const sunX = Math.cos(angle) * 48;
+  const sunY = sunHeight + 18;
+  sun.position.set(Math.cos(angle) * 22, Math.max(4, sunHeight + 12), Math.sin(angle) * 22);
+  sunSprite.position.set(sunX, sunY, -78);
+  sunSprite.material.opacity = THREE.MathUtils.clamp(daylight + evening * 0.7, 0, 1);
+
+  moonSprite.position.set(-sunX * 0.9, Math.max(8, -sunHeight + 13), -78);
+  moonSprite.material.opacity = THREE.MathUtils.clamp(1 - daylight, 0, 0.7);
+
+  sun.intensity = THREE.MathUtils.clamp(0.55 + daylight * 2.05 + evening * 0.55, 0.42, 2.7);
+  hemiLight.intensity = THREE.MathUtils.clamp(0.72 + daylight * 1.15 + evening * 0.35, 0.72, 2.05);
+  renderer.toneMappingExposure = THREE.MathUtils.clamp(1.02 + daylight * 0.18 + evening * 0.08, 0.96, 1.22);
+  scene.fog.near = 36;
+  scene.fog.far = 108;
+
+  animated.forEach((item) => {
+    if (item.type !== "lantern") return;
+    const nightBoost = THREE.MathUtils.clamp(1.15 - daylight + evening * 0.8, 0.35, 1.55);
+    item.mesh.material.opacity = 1;
+    if (item.light) item.light.userData.targetIntensity = 1.35 * nightBoost;
+  });
 }
 
 function updateAnimated(delta, now) {
@@ -612,7 +763,7 @@ function updateAnimated(delta, now) {
     }
     if (item.type === "lantern") {
       const flicker = 0.88 + Math.sin(now * 0.006 + item.mesh.position.x) * 0.12;
-      item.light.intensity = 1.15 * flicker;
+      if (item.light) item.light.intensity = (item.light.userData.targetIntensity ?? 1.1) * flicker;
     }
     if (item.type === "petals") {
       item.group.children.forEach((petal) => {

@@ -34,6 +34,9 @@ http://localhost:5173
 - East room
 - Rear room shell
 - Scenic water, sakura trees, horizon, and fast time-of-day cycle
+- Lightweight gradient skydome with visible sun/moon movement
+- Distant low-poly mountains, shorelines, islands, and sakura trees
+- Slower time-of-day cycle with brighter daytime and stronger evening lanterns
 
 The playable boundary is intentionally restricted to the bridge, entry platform,
 and house interior. The scenery beyond that is decorative.
