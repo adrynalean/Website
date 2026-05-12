@@ -26,6 +26,9 @@ scene.fog = new THREE.Fog("#d58b82", 30, 92);
 const camera = new THREE.PerspectiveCamera(68, window.innerWidth / window.innerHeight, 0.08, 140);
 
 const EYE_HEIGHT = 1.7;
+const UPPER_FLOOR_Y = 3.28;
+const GRAVITY = 11.5;
+const JUMP_VELOCITY = 4.35;
 const mouseSensitivity = 0.00135;
 const keyboardTurnSpeed = 1.7;
 const lookEase = 18;
@@ -100,13 +103,6 @@ const materials = {
 const colliders = [];
 const playable = [];
 const animated = [];
-const frontGate = {
-  panels: [],
-  colliders: [],
-  open: true,
-  progress: 1,
-  target: 1,
-};
 
 const skyUniforms = {
   topColor: { value: new THREE.Color("#894e8c") },
@@ -191,6 +187,10 @@ const state = {
   sway: 0,
   lookSway: 0,
   dayTime: 0.12,
+  floorY: 0,
+  jumpOffset: 0,
+  verticalVelocity: 0,
+  grounded: true,
 };
 
 camera.position.copy(spots.Bridge.position);
@@ -374,8 +374,7 @@ function addRidgeRange({ x = 0, z, baseY, width, peaks, color, opacity, rotation
 }
 
 function addBridge() {
-  addPlayable(0, 20.5, 3.8, 15.5);
-  addPlayable(0, 8.2, 5.4, 5.8);
+  addPlayable(0, 16.4, 5.4, 23.8);
   addCollider(-2.25, 16.2, 0.55, 17.2);
   addCollider(2.25, 16.2, 0.55, 17.2);
 
@@ -407,27 +406,6 @@ function addEntryLanding() {
   });
   block(1.5, 0.14, 0.14, materials.bridgeDark, -2.1, 1.08, 6.35);
   block(1.5, 0.14, 0.14, materials.bridgeDark, 2.1, 1.08, 6.35);
-  addFrontGate();
-}
-
-function addFrontGate() {
-  const z = 6.33;
-  [
-    { side: -1, closedX: -0.58, openX: -1.45 },
-    { side: 1, closedX: 0.58, openX: 1.45 },
-  ].forEach(({ side, closedX, openX }) => {
-    const group = new THREE.Group();
-    group.position.set(openX, 0, z);
-    block(0.12, 0.9, 0.12, materials.bridgeDark, side * -0.52, 0.78, 0, group);
-    block(0.12, 0.9, 0.12, materials.bridgeDark, side * 0.52, 0.78, 0, group);
-    block(1.05, 0.12, 0.12, materials.bridgeDark, 0, 1.14, 0, group);
-    block(1.05, 0.12, 0.12, materials.woodLight, 0, 0.72, 0, group);
-    block(0.22, 0.18, 0.14, materials.gold, side * -0.1, 0.96, -0.05, group);
-    scene.add(group);
-    const collider = addCollider(closedX, z, 1.05, 0.36, false);
-    frontGate.panels.push({ group, closedX, openX });
-    frontGate.colliders.push(collider);
-  });
 }
 
 function addHouse() {
@@ -445,10 +423,10 @@ function addHouse() {
   addInteriorFloor(0, -8.55, 9.2, 4.2);
   addHouseWalls();
   addUpperStory();
-  addFrontFacadeDetails();
   addRoofs();
   addRoomPartitions();
   addInteriorPosts();
+  addStaircase();
   addInteriorDetails();
 }
 
@@ -509,63 +487,6 @@ function addUpperStory() {
   addWindow(5.33, -2.0, 1.65, "z", 4.34);
 }
 
-function addFrontFacadeDetails() {
-  const z = 6.98;
-
-  [-6.4, -3.25, 3.25, 6.4].forEach((x) => {
-    block(0.32, 2.6, 0.22, materials.bridgeDark, x, 1.82, z);
-  });
-  [-4.9, 4.9].forEach((x) => {
-    block(2.4, 1.35, 0.16, materials.blossomPanel, x, 1.9, z + 0.02);
-    addShojiGrid(x, z + 0.12, 2.0, 1.05, 1.9);
-  });
-  block(0.52, 2.05, 0.18, materials.paperWarm, -1.28, 1.92, z + 0.04);
-  block(0.52, 2.05, 0.18, materials.paperWarm, 1.28, 1.92, z + 0.04);
-  block(2.35, 0.18, 0.22, materials.bridgeDark, 0, 3.03, z + 0.05);
-  block(2.35, 0.18, 0.22, materials.bridgeDark, 0, 0.88, z + 0.05);
-  [-1.08, 1.08].forEach((x) => block(0.18, 2.2, 0.22, materials.bridgeDark, x, 1.95, z + 0.05));
-
-  [-3.2, 3.2].forEach((x) => {
-    block(2.0, 1.25, 0.16, materials.blossomPanel, x, 4.38, z - 2.62);
-    addShojiGrid(x, z - 2.5, 1.7, 0.95, 4.38);
-  });
-  [-5.4, -2.1, 2.1, 5.4].forEach((x) => {
-    block(0.24, 1.9, 0.18, materials.bridgeDark, x, 4.28, z - 2.55);
-  });
-
-  block(12.8, 0.28, 0.34, materials.bridgeDark, 0, 3.12, z + 0.08);
-  block(11.2, 0.24, 0.3, materials.bridgeDark, 0, 5.18, z - 2.56);
-  block(7.2, 0.22, 0.32, materials.roofDark, 0, 6.55, z - 2.65);
-  addSteppedGable(0, z - 2.7, 6.45);
-}
-
-function addShojiGrid(x, z, w, h, y) {
-  block(w, h, 0.06, materials.paperWarm, x, y, z);
-  block(w + 0.16, 0.08, 0.08, materials.bridgeDark, x, y + h / 2, z + 0.03);
-  block(w + 0.16, 0.08, 0.08, materials.bridgeDark, x, y - h / 2, z + 0.03);
-  for (let i = -1; i <= 1; i += 1) {
-    block(0.06, h + 0.12, 0.08, materials.bridgeDark, x + (i * w) / 3, y, z + 0.03);
-  }
-  block(w + 0.12, 0.06, 0.08, materials.bridgeDark, x, y, z + 0.03);
-}
-
-function addSteppedGable(x, z, y) {
-  const rows = [
-    [0, 2.6, 0.28],
-    [0, 2.0, 0.82],
-    [0, 1.35, 1.36],
-    [0, 0.72, 1.9],
-  ];
-  rows.forEach(([ox, w, oy]) => {
-    block(w, 0.34, 0.28, materials.blossomPanel, x + ox, y + oy, z);
-    block(w + 0.42, 0.22, 0.34, materials.bridgeDark, x + ox, y + oy + 0.26, z + 0.04);
-  });
-  [-1.65, 1.65].forEach((sx) => {
-    block(0.32, 2.4, 0.32, materials.bridgeDark, x + sx, y + 1.2, z + 0.04);
-    block(0.6, 0.32, 0.34, materials.bridgeDark, x + sx, y + 2.55, z + 0.04);
-  });
-}
-
 function addRoomPartitions() {
   partitionWithDoor(-3.0, -1.5, 5.7, "z", -1.15, 1.65);
   partitionWithDoor(3.0, -1.5, 5.7, "z", -1.15, 1.65);
@@ -608,6 +529,23 @@ function addInteriorPosts() {
       addCollider(x, z, 0.55, 0.55);
     });
   });
+}
+
+function addStaircase() {
+  const x = 5.05;
+  const startZ = 3.6;
+  const stepCount = 10;
+  for (let i = 0; i < stepCount; i += 1) {
+    const t = i / (stepCount - 1);
+    const z = startZ - i * 0.55;
+    const y = 0.82 + t * (UPPER_FLOOR_Y - 0.62);
+    block(1.55, 0.18, 0.52, materials.woodLight, x, y, z);
+    block(0.12, 0.42 + t * 0.18, 0.12, materials.bridgeDark, x - 0.9, y + 0.28, z);
+    block(0.12, 0.42 + t * 0.18, 0.12, materials.bridgeDark, x + 0.9, y + 0.28, z);
+  }
+  block(0.14, 0.14, 5.7, materials.bridgeDark, x - 0.95, 2.35, 1.1);
+  block(0.14, 0.14, 5.7, materials.bridgeDark, x + 0.95, 2.35, 1.1);
+  block(2.2, 0.18, 1.0, materials.floorAlt, x, UPPER_FLOOR_Y + 0.08, -2.1);
 }
 
 function addInteriorDetails() {
@@ -1235,6 +1173,20 @@ function isPlayable(x, z) {
   return playable.some((box) => x + r > box.minX && x - r < box.maxX && z + r > box.minZ && z - r < box.maxZ);
 }
 
+function getFloorHeight(x, z) {
+  if (x > 4.0 && x < 6.15 && z > -2.35 && z < 3.75) {
+    const t = THREE.MathUtils.clamp((3.75 - z) / 6.1, 0, 1);
+    return THREE.MathUtils.smoothstep(t, 0, 1) * UPPER_FLOOR_Y;
+  }
+
+  const onUpperFootprint = x > -5.65 && x < 5.65 && z > -5.8 && z < 4.5;
+  if (onUpperFootprint && state.floorY > UPPER_FLOOR_Y * 0.62) {
+    return UPPER_FLOOR_Y;
+  }
+
+  return 0;
+}
+
 function hitsCollider(x, z) {
   const r = 0.34;
   return colliders.some((box) => box.active !== false && x + r > box.minX && x - r < box.maxX && z + r > box.minZ && z - r < box.maxZ);
@@ -1284,13 +1236,27 @@ function movePlayer(delta) {
     state.velocity.z = 0;
   }
 
+  const targetFloorY = getFloorHeight(camera.position.x, camera.position.z);
+  const floorEase = Math.abs(targetFloorY - state.floorY) > 0.05 ? 10 : 18;
+  state.floorY = damp(state.floorY, targetFloorY, floorEase, delta);
+
+  if (!state.grounded || state.verticalVelocity > 0) {
+    state.jumpOffset += state.verticalVelocity * delta;
+    state.verticalVelocity -= GRAVITY * delta;
+    if (state.jumpOffset <= 0) {
+      state.jumpOffset = 0;
+      state.verticalVelocity = 0;
+      state.grounded = true;
+    }
+  }
+
   const planarSpeed = Math.hypot(state.velocity.x, state.velocity.z);
   state.bobPhase += delta * planarSpeed * 6.6;
   const bobTarget = THREE.MathUtils.clamp(planarSpeed / 3.15, 0, 1) * state.moveBlend;
   state.bobAmount = damp(state.bobAmount, bobTarget, 8, delta);
   const stepBob = Math.sin(state.bobPhase) * 0.03 * state.bobAmount;
   const stepLift = Math.abs(Math.cos(state.bobPhase)) * 0.015 * state.bobAmount;
-  camera.position.y = EYE_HEIGHT + stepBob + stepLift;
+  camera.position.y = state.floorY + EYE_HEIGHT + state.jumpOffset + stepBob + stepLift;
 }
 
 function updateCamera(delta) {
@@ -1373,14 +1339,6 @@ function updateLighting(delta) {
 }
 
 function updateAnimated(delta, now) {
-  frontGate.progress = damp(frontGate.progress, frontGate.target, 10, delta);
-  frontGate.panels.forEach((panel) => {
-    panel.group.position.x = THREE.MathUtils.lerp(panel.closedX, panel.openX, frontGate.progress);
-  });
-  frontGate.colliders.forEach((collider) => {
-    collider.active = frontGate.target < 0.5 && frontGate.progress < 0.18;
-  });
-
   animated.forEach((item) => {
     if (item.type === "water") {
       item.mesh.material.uniforms.time.value = now * 0.001;
@@ -1409,10 +1367,6 @@ function updateAnimated(delta, now) {
 }
 
 function updateSpotLabel() {
-  if (camera.position.distanceTo(new THREE.Vector3(0, camera.position.y, 6.6)) < 3.2) {
-    spotLabel.textContent = frontGate.open ? "Entry Gate - F to close" : "Entry Gate - F to open";
-    return;
-  }
   let closest = "Bridge";
   let distance = Infinity;
   Object.entries(spots).forEach(([name, spot]) => {
@@ -1423,13 +1377,6 @@ function updateSpotLabel() {
     }
   });
   spotLabel.textContent = spots[closest].label;
-}
-
-function toggleFrontGate() {
-  const nearGate = Math.abs(camera.position.x) < 3.4 && camera.position.z > 4.6 && camera.position.z < 9.2;
-  if (!nearGate) return;
-  frontGate.open = !frontGate.open;
-  frontGate.target = frontGate.open ? 1 : 0;
 }
 
 function animate(now) {
@@ -1450,6 +1397,11 @@ function teleportTo(name) {
   intro.classList.add("is-hidden");
   state.velocity.set(0, 0, 0);
   camera.position.copy(spot.position);
+  state.floorY = getFloorHeight(camera.position.x, camera.position.z);
+  state.jumpOffset = 0;
+  state.verticalVelocity = 0;
+  state.grounded = true;
+  camera.position.y = state.floorY + EYE_HEIGHT;
   state.yaw = spot.yaw;
   state.targetYaw = spot.yaw;
   state.pitch = 0;
@@ -1521,12 +1473,13 @@ document.addEventListener("mousemove", (event) => {
 
 document.addEventListener("keydown", (event) => {
   state.keys.add(event.code);
-  if (event.code === "KeyF" && !event.repeat) {
-    toggleFrontGate();
-  }
   if (event.code === "Space") {
     intro.classList.add("is-hidden");
     requestLookControl();
+    if (state.grounded && !event.repeat) {
+      state.verticalVelocity = JUMP_VELOCITY;
+      state.grounded = false;
+    }
   }
 });
 
