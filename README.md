@@ -17,11 +17,13 @@ http://localhost:5173
 ## Controls
 
 - Click **Enter walkthrough** to start.
-- Use `WASD` to walk.
+- Use `W/S` to move forward and backward.
+- Use `A/D` or the left/right arrow keys to turn the camera.
+- Use `Q/E` to strafe left and right.
 - Hold `Shift` to move faster.
 - Move the mouse to look. If pointer lock is blocked by an embedded browser,
   click and drag to look around.
-- Center the reticle on a panel, then click or press `E` to open it.
+- Center the reticle on a panel, then click or press `F` to open it.
 - Press `Esc` or click **Close** to close a detail panel.
 
 ## Where to fill in your content

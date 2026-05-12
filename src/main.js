@@ -40,6 +40,7 @@ const camera = new THREE.PerspectiveCamera(
 
 const EYE_HEIGHT = 1.68;
 const mouseSensitivity = 0.00135;
+const keyboardTurnSpeed = 1.65;
 const lookEase = 18;
 const moveEase = 9.5;
 const stopEase = 12;
@@ -52,18 +53,18 @@ let hoveredPanel = null;
 
 const palette = {
   ink: "#171817",
-  cedar: "#4a2f27",
-  cedarDark: "#271c19",
-  paper: "#fff4eb",
-  paperWarm: "#f4dfcf",
-  blush: "#f3b8c6",
-  blushSoft: "#ffd8df",
-  moss: "#7f9470",
-  mossDark: "#526349",
-  gold: "#c79c5a",
-  stone: "#9b958b",
-  water: "#8fb9bd",
-  vermilion: "#b95a4f",
+  cedar: "#3f302b",
+  cedarDark: "#201b18",
+  paper: "#f8eee4",
+  paperWarm: "#ead8ca",
+  blush: "#d9a1ad",
+  blushSoft: "#efc6cf",
+  moss: "#74846d",
+  mossDark: "#495846",
+  gold: "#a88452",
+  stone: "#8d8a83",
+  water: "#7ea5a5",
+  vermilion: "#8f5149",
 };
 
 const materials = {
@@ -349,6 +350,7 @@ function buildWorld() {
   addRoom({ x: -16, z: 0, w: 13, d: 11, portals: ["east"] });
   addRoom({ x: 0, z: -16, w: 13, d: 12, portals: ["south"] });
   addRoom({ x: 0, z: 16, w: 13, d: 11, portals: ["north"] });
+  addMapBoundary();
 
   addTorii(6.55, 0, Math.PI / 2);
   addTorii(-6.55, 0, -Math.PI / 2);
@@ -432,6 +434,47 @@ function addWalkway(x, z, w, d) {
     line.position.set(w > d ? x + offset : x, 0.005, w > d ? z : z + offset);
     scene.add(line);
   }
+}
+
+function addMapBoundary() {
+  const extent = 24;
+  const railHeight = 0.64;
+  const rails = [
+    [0, -extent, extent * 2, 0.32],
+    [0, extent, extent * 2, 0.32],
+    [-extent, 0, 0.32, extent * 2],
+    [extent, 0, 0.32, extent * 2],
+  ];
+
+  rails.forEach(([x, z, w, d]) => {
+    const base = new THREE.Mesh(new THREE.BoxGeometry(w, railHeight, d), materials.mossDark);
+    base.position.set(x, railHeight / 2 - 0.04, z);
+    scene.add(base);
+    addCollider(x, z, w, d);
+
+    const cap = new THREE.Mesh(new THREE.BoxGeometry(w + (w > d ? 0.28 : 0), 0.12, d + (d > w ? 0.28 : 0)), materials.darkWood);
+    cap.position.set(x, railHeight + 0.03, z);
+    scene.add(cap);
+  });
+
+  for (let x = -20; x <= 20; x += 4) {
+    addBoundaryLamp(x, -23.78);
+    addBoundaryLamp(x, 23.78);
+  }
+  for (let z = -20; z <= 20; z += 4) {
+    addBoundaryLamp(-23.78, z);
+    addBoundaryLamp(23.78, z);
+  }
+}
+
+function addBoundaryLamp(x, z) {
+  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, 0.72, 10), materials.darkWood);
+  post.position.set(x, 0.36, z);
+  scene.add(post);
+
+  const shade = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.19, 0.16, 16), materials.lanternGlow);
+  shade.position.set(x, 0.78, z);
+  scene.add(shade);
 }
 
 function addWall(cx, cz, length, axis, hasDoor) {
@@ -538,6 +581,12 @@ function addTorii(x, z, rotationY) {
   group.position.set(x, 0, z);
   group.rotation.y = rotationY;
   scene.add(group);
+
+  [-1.25, 1.25].forEach((offset) => {
+    const postX = x + Math.cos(rotationY) * offset;
+    const postZ = z - Math.sin(rotationY) * offset;
+    addCollider(postX, postZ, 0.46, 0.46);
+  });
 }
 
 function addLobbyGarden() {
@@ -558,7 +607,9 @@ function addLobbyGarden() {
     stone.position.set(x, 0.08, z);
     stone.rotation.y = index * 0.4;
     scene.add(stone);
+    addCollider(x, z, 0.74, 0.74);
   });
+  addCollider(-2.8, 0.85, 4.4, 2.2);
 
   addSakuraTree(3.35, 0.12, 1.28, 1.15);
   addStoneLantern(-4.65, 0.0, -2.7);
@@ -630,6 +681,7 @@ function addSkillsRoom() {
     scroll.rotation.y = 0.06 * (x + 16);
     scroll.scale.setScalar(0.72);
     scene.add(scroll);
+    addCollider(x, 0.85, 1.35, 0.92);
   });
 
   addLowTable(-16, 0.05, 2.85, 3.8);
@@ -646,15 +698,27 @@ function addContactRoom() {
 }
 
 function addDisplayPedestal(x, z, color) {
-  const baseMat = new THREE.MeshStandardMaterial({ color, roughness: 0.6, metalness: 0.08 });
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.88, 0.35, 32), materials.darkWood);
-  base.position.set(x, 0.2, z);
+  const accentMat = new THREE.MeshStandardMaterial({ color, roughness: 0.54, metalness: 0.14 });
+  const base = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.24, 0.92), materials.darkWood);
+  base.position.set(x, 0.18, z);
   scene.add(base);
 
-  const orb = new THREE.Mesh(new THREE.IcosahedronGeometry(0.42, 2), baseMat);
-  orb.position.set(x, 0.86, z);
-  scene.add(orb);
-  animated.push({ type: "orb", mesh: orb, speed: 0.35 + Math.random() * 0.18 });
+  const plinth = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.06, 0.7), materials.gold);
+  plinth.position.set(x, 0.34, z);
+  scene.add(plinth);
+
+  const caseFrame = new THREE.Mesh(new THREE.TorusGeometry(0.38, 0.018, 10, 56), accentMat);
+  caseFrame.position.set(x, 0.82, z);
+  caseFrame.scale.set(1, 0.72, 1);
+  scene.add(caseFrame);
+
+  const blade = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.035, 0.08), accentMat);
+  blade.position.set(x, 0.82, z);
+  blade.rotation.y = Math.PI / 5;
+  scene.add(blade);
+
+  animated.push({ type: "orb", mesh: caseFrame, speed: 0.2 + Math.random() * 0.12 });
+  addCollider(x, z, 1.65, 1.05);
 }
 
 function addLowTable(x, y, z, width) {
@@ -669,6 +733,7 @@ function addLowTable(x, y, z, width) {
       scene.add(leg);
     });
   });
+  addCollider(x, z, width + 0.22, 1.38);
 }
 
 function addStoneLantern(x, y, z) {
@@ -693,6 +758,7 @@ function addStoneLantern(x, y, z) {
 
   group.position.set(x, y, z);
   scene.add(group);
+  addCollider(x, z, 0.86, 0.86);
 }
 
 function addSakuraTree(x, y, z, scale) {
@@ -726,6 +792,7 @@ function addSakuraTree(x, y, z, scale) {
   group.position.set(x, y, z);
   group.scale.setScalar(scale);
   scene.add(group);
+  addCollider(x, z, 1.35 * scale, 1.35 * scale);
 }
 
 function cylinderBetween(start, end, radius, material) {
@@ -893,8 +960,13 @@ function movePlayer(delta) {
   const input = new THREE.Vector3();
   if (state.keys.has("KeyW") || state.keys.has("ArrowUp")) input.z -= 1;
   if (state.keys.has("KeyS") || state.keys.has("ArrowDown")) input.z += 1;
-  if (state.keys.has("KeyA") || state.keys.has("ArrowLeft")) input.x -= 1;
-  if (state.keys.has("KeyD") || state.keys.has("ArrowRight")) input.x += 1;
+  if (state.keys.has("KeyQ")) input.x -= 1;
+  if (state.keys.has("KeyE")) input.x += 1;
+
+  const turnInput =
+    (state.keys.has("KeyA") || state.keys.has("ArrowLeft") ? 1 : 0) -
+    (state.keys.has("KeyD") || state.keys.has("ArrowRight") ? 1 : 0);
+  state.targetYaw += turnInput * keyboardTurnSpeed * delta;
 
   const speed = state.keys.has("ShiftLeft") || state.keys.has("ShiftRight") ? 5.55 : 3.1;
   const desired = new THREE.Vector3();
@@ -994,6 +1066,10 @@ function updateAnimated(delta, now) {
 function hitsWall(x, z) {
   const r = 0.34;
   return colliders.some((box) => x + r > box.minX && x - r < box.maxX && z + r > box.minZ && z - r < box.maxZ);
+}
+
+function addCollider(x, z, w, d) {
+  colliders.push(box2D(x, z, w, d));
 }
 
 function box2D(x, z, w, d) {
@@ -1183,7 +1259,7 @@ document.addEventListener("keydown", (event) => {
     return;
   }
 
-  if (event.code === "KeyE" && hoveredPanel) {
+  if (event.code === "KeyF" && hoveredPanel) {
     openCard(hoveredPanel.userData.card);
     return;
   }

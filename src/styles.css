@@ -191,7 +191,7 @@ button:active,
 .interaction-hint {
   left: 50%;
   bottom: 70px;
-  min-width: 210px;
+  min-width: 220px;
   transform: translateX(-50%);
   text-align: center;
 }
