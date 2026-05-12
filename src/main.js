@@ -3,18 +3,8 @@ import * as THREE from "https://unpkg.com/three@0.164.1/build/three.module.js";
 const canvas = document.querySelector("#scene");
 const enterButton = document.querySelector("#enterButton");
 const intro = document.querySelector("#intro");
-const roomLabel = document.querySelector("#roomLabel");
-const interactionHint = document.querySelector("#interactionHint");
-const interactionTitle = document.querySelector("#interactionTitle");
-const reticle = document.querySelector("#reticle");
-const detailModal = document.querySelector("#detailModal");
-const closeModal = document.querySelector("#closeModal");
-const modalKicker = document.querySelector("#modalKicker");
-const modalTitle = document.querySelector("#modalTitle");
-const modalBody = document.querySelector("#modalBody");
-const modalList = document.querySelector("#modalList");
-const modalPrimary = document.querySelector("#modalPrimary");
-const modalSecondary = document.querySelector("#modalSecondary");
+const spotLabel = document.querySelector("#spotLabel");
+const timeLabel = document.querySelector("#timeLabel");
 
 const renderer = new THREE.WebGLRenderer({
   canvas,
@@ -25,296 +15,81 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.55));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.0;
+renderer.toneMappingExposure = 1.04;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color("#f3dfdc");
-scene.fog = new THREE.Fog("#f3dfdc", 18, 54);
+scene.background = new THREE.Color("#d58b82");
+scene.fog = new THREE.Fog("#d58b82", 30, 92);
 
-const camera = new THREE.PerspectiveCamera(
-  68,
-  window.innerWidth / window.innerHeight,
-  0.08,
-  90,
-);
+const camera = new THREE.PerspectiveCamera(68, window.innerWidth / window.innerHeight, 0.08, 140);
 
-const EYE_HEIGHT = 1.68;
+const EYE_HEIGHT = 1.7;
 const mouseSensitivity = 0.00135;
-const keyboardTurnSpeed = 1.65;
+const keyboardTurnSpeed = 1.7;
 const lookEase = 18;
 const moveEase = 9.5;
 const stopEase = 12;
-const raycaster = new THREE.Raycaster();
-const screenCenter = new THREE.Vector2(0, 0);
-const colliders = [];
-const interactables = [];
-const animated = [];
-let hoveredPanel = null;
 
 const palette = {
-  ink: "#171817",
-  cedar: "#3f302b",
-  cedarDark: "#201b18",
-  paper: "#f8eee4",
-  paperWarm: "#ead8ca",
-  blush: "#d9a1ad",
-  blushSoft: "#efc6cf",
-  moss: "#74846d",
-  mossDark: "#495846",
-  gold: "#a88452",
-  stone: "#8d8a83",
-  water: "#7ea5a5",
-  vermilion: "#8f5149",
+  cedar: "#5e2e20",
+  cedarDark: "#2c1713",
+  cedarLight: "#8f4d2d",
+  roof: "#b45725",
+  roofDark: "#71311e",
+  roofHighlight: "#d87b3d",
+  paper: "#ffe7c2",
+  paperDim: "#d8b98c",
+  stone: "#7d786e",
+  water: "#29385b",
+  deepWater: "#182139",
+  sakura: "#e7a3b3",
+  sakuraLight: "#ffd1d8",
+  sakuraDark: "#a95770",
+  leaf: "#526943",
+  grass: "#34442f",
+  lantern: "#ffbd72",
+  gold: "#d49a55",
 };
 
 const materials = {
-  tatami: new THREE.MeshStandardMaterial({
-    color: "#d9cda7",
-    map: makeTatamiTexture("#d7cca4", "#b6a975"),
-    roughness: 0.92,
-    metalness: 0.01,
-  }),
-  tatamiAlt: new THREE.MeshStandardMaterial({
-    color: "#cfc29a",
-    map: makeTatamiTexture("#d1c294", "#aa9a65"),
-    roughness: 0.94,
-    metalness: 0.01,
-  }),
-  wood: new THREE.MeshStandardMaterial({
-    color: palette.cedar,
-    map: makeWoodTexture("#4a2f27", "#6a4032"),
-    roughness: 0.65,
-    metalness: 0.03,
-  }),
-  darkWood: new THREE.MeshStandardMaterial({
-    color: palette.cedarDark,
-    map: makeWoodTexture("#2b1d19", "#513229"),
-    roughness: 0.72,
-    metalness: 0.02,
-  }),
-  paper: new THREE.MeshStandardMaterial({
-    color: palette.paper,
-    map: makeWashiTexture("#fff4eb", "#ecd5c5"),
-    roughness: 0.88,
-    metalness: 0,
-  }),
-  paperAlt: new THREE.MeshStandardMaterial({
-    color: palette.paperWarm,
-    map: makeWashiTexture("#f4dfcf", "#ead0bf"),
-    roughness: 0.9,
-    metalness: 0,
-  }),
-  panel: new THREE.MeshStandardMaterial({
-    color: "#201a18",
-    roughness: 0.62,
-    metalness: 0.05,
-  }),
-  blush: new THREE.MeshStandardMaterial({
-    color: palette.blush,
-    roughness: 0.78,
-    metalness: 0.02,
-  }),
-  blushSoft: new THREE.MeshStandardMaterial({
-    color: palette.blushSoft,
-    roughness: 0.86,
-    metalness: 0,
-  }),
-  moss: new THREE.MeshStandardMaterial({
-    color: palette.moss,
-    roughness: 0.88,
-    metalness: 0,
-  }),
-  mossDark: new THREE.MeshStandardMaterial({
-    color: palette.mossDark,
-    roughness: 0.9,
-    metalness: 0,
-  }),
-  stone: new THREE.MeshStandardMaterial({
-    color: palette.stone,
-    map: makeStoneTexture(),
-    roughness: 0.86,
-    metalness: 0.01,
-  }),
-  gold: new THREE.MeshStandardMaterial({
-    color: palette.gold,
-    roughness: 0.38,
-    metalness: 0.42,
-  }),
+  bridge: blockMaterial(palette.cedar, "#7e3c26"),
+  bridgeDark: blockMaterial(palette.cedarDark, "#402019"),
+  roof: blockMaterial(palette.roof, palette.roofHighlight),
+  roofDark: blockMaterial(palette.roofDark, "#9b4526"),
+  paper: blockMaterial(palette.paper, "#fff0ce"),
+  paperDim: blockMaterial(palette.paperDim, "#e6c99b"),
+  floor: blockMaterial("#734229", "#9b5e37"),
+  tatami: blockMaterial("#b9a86d", "#d3c38a"),
+  stone: blockMaterial(palette.stone, "#969085"),
+  grass: blockMaterial(palette.grass, "#4d5f3f"),
+  sakura: blockMaterial(palette.sakura, palette.sakuraLight),
+  sakuraDark: blockMaterial(palette.sakuraDark, "#c8738a"),
+  leaf: blockMaterial(palette.leaf, "#6f8457"),
+  trunk: blockMaterial("#6a3928", "#8a5137"),
+  lanternGlow: new THREE.MeshBasicMaterial({ color: palette.lantern }),
   water: new THREE.MeshPhysicalMaterial({
     color: palette.water,
-    roughness: 0.12,
+    roughness: 0.2,
     metalness: 0,
-    transmission: 0.18,
-    thickness: 0.35,
-    transparent: true,
-    opacity: 0.72,
-  }),
-  vermilion: new THREE.MeshStandardMaterial({
-    color: palette.vermilion,
-    roughness: 0.58,
-    metalness: 0.02,
-  }),
-  lanternGlow: new THREE.MeshBasicMaterial({ color: "#ffe5be" }),
-  petal: new THREE.MeshBasicMaterial({
-    color: palette.blushSoft,
-    side: THREE.DoubleSide,
+    transmission: 0.08,
     transparent: true,
     opacity: 0.82,
   }),
 };
 
-const rooms = {
-  Lobby: {
-    center: new THREE.Vector3(0, EYE_HEIGHT, 4.8),
-    viewYaw: 0,
-    label: "Lobby Garden",
-  },
-  Projects: {
-    center: new THREE.Vector3(16, EYE_HEIGHT, 3.9),
-    viewYaw: 0,
-    label: "Project Gallery",
-  },
-  Experience: {
-    center: new THREE.Vector3(0, EYE_HEIGHT, -12.2),
-    viewYaw: 0,
-    label: "Experience Walk",
-  },
-  Skills: {
-    center: new THREE.Vector3(-16, EYE_HEIGHT, 3.9),
-    viewYaw: 0,
-    label: "Skills Tea Room",
-  },
-  Contact: {
-    center: new THREE.Vector3(0, EYE_HEIGHT, 12.4),
-    viewYaw: Math.PI,
-    label: "Contact Veranda",
-  },
-};
+const colliders = [];
+const playable = [];
+const animated = [];
 
-const cards = [
-  {
-    room: "Lobby",
-    title: "About Sashi",
-    kicker: "Template - intro",
-    summary: "Replace this with a concise 2-3 sentence personal introduction.",
-    body:
-      "Use this panel for your professional identity: what you build, what you are studying, what kind of role you want, and what makes your work distinctive.",
-    bullets: [
-      "Add your current school, role, or focus area.",
-      "Add the strongest technical themes you want people to remember.",
-      "Add one human detail that gives the site warmth.",
-    ],
-    primary: "Resume",
-    secondary: "About page",
-    position: [0, 2.18, -4.92],
-    rotation: 0,
-  },
-  {
-    room: "Projects",
-    title: "Project One",
-    kicker: "Template - featured case study",
-    summary: "Project name, role, stack, and outcome.",
-    body:
-      "Use this as your strongest case study. The modal should explain the problem, your technical contribution, the architecture, and the measurable result or demo.",
-    bullets: [
-      "Problem: what was difficult or useful about the project.",
-      "Build: models, APIs, frontend, backend, data, or 3D pieces.",
-      "Impact: demo link, users, performance, or what you learned.",
-    ],
-    primary: "Live demo",
-    secondary: "GitHub",
-    position: [13.2, 1.9, -4.95],
-    rotation: 0,
-    accent: "#f0a6b7",
-  },
-  {
-    room: "Projects",
-    title: "Project Two",
-    kicker: "Template - product build",
-    summary: "Short product-style description goes here.",
-    body:
-      "Use this panel for a product, app, or AI tool. Keep the copy plain and specific so the polished 3D space does not overpower the actual work.",
-    bullets: [
-      "Add the user problem and your solution.",
-      "Add stack details and the most interesting implementation choice.",
-      "Add screenshots or a video later if you want richer project displays.",
-    ],
-    primary: "Case study",
-    secondary: "Repository",
-    position: [16, 1.9, -4.95],
-    rotation: 0,
-    accent: "#d5a45f",
-  },
-  {
-    room: "Projects",
-    title: "Project Three",
-    kicker: "Template - experiment",
-    summary: "Use this for a creative or technical experiment.",
-    body:
-      "This is a good place for your 3D portfolio itself, a machine-learning experiment, or a smaller prototype that shows taste and curiosity.",
-    bullets: [
-      "Add the core idea in one sentence.",
-      "Add the hardest implementation detail.",
-      "Add what you would improve next.",
-    ],
-    primary: "Explore",
-    secondary: "Notes",
-    position: [18.8, 1.9, -4.95],
-    rotation: 0,
-    accent: "#9dbb8a",
-  },
-  {
-    room: "Experience",
-    title: "Experience Timeline",
-    kicker: "Template - roles",
-    summary: "Internships, research, leadership, hackathons, and selected wins.",
-    body:
-      "Use this room as a calm timeline instead of a resume dump. Each item should show where you worked, what you owned, and one outcome.",
-    bullets: [
-      "Role or organization - one-line responsibility.",
-      "Technical contribution - tools, models, systems, or product surface.",
-      "Outcome - launch, metric, paper, award, or responsibility level.",
-    ],
-    primary: "Resume",
-    secondary: "LinkedIn",
-    position: [0, 1.95, -21.35],
-    rotation: 0,
-  },
-  {
-    room: "Skills",
-    title: "Technical Stack",
-    kicker: "Template - skills",
-    summary: "AI, full-stack, data, 3D web, and tooling.",
-    body:
-      "This section should be scannable. Keep it grouped by capability rather than listing every tool you have ever touched.",
-    bullets: [
-      "AI/ML: frameworks, computer vision, NLP, evaluation, deployment.",
-      "Full-stack: frontend, backend, databases, auth, cloud.",
-      "Creative web: Three.js, animation, performance, interaction design.",
-    ],
-    primary: "Stack notes",
-    secondary: "GitHub",
-    position: [-16, 2.0, -4.95],
-    rotation: 0,
-  },
-  {
-    room: "Contact",
-    title: "Contact",
-    kicker: "Template - next step",
-    summary: "Invite recruiters, collaborators, and friends to reach out.",
-    body:
-      "Keep this panel direct. Add your email, LinkedIn, GitHub, and resume. You can also include the kind of work you are currently looking for.",
-    bullets: [
-      "Email: your.email@example.com",
-      "LinkedIn: replace with your profile URL.",
-      "Resume: replace with your hosted resume PDF.",
-    ],
-    primary: "Email",
-    secondary: "LinkedIn",
-    position: [0, 2.08, 21.25],
-    rotation: Math.PI,
-  },
-];
+const spots = {
+  Bridge: { position: new THREE.Vector3(0, EYE_HEIGHT, 23), yaw: 0, label: "Bridge Approach" },
+  Gate: { position: new THREE.Vector3(0, EYE_HEIGHT, 8.4), yaw: 0, label: "Lantern Gate" },
+  Hall: { position: new THREE.Vector3(0, EYE_HEIGHT, -2.4), yaw: 0, label: "Main Hall" },
+  "West Room": { position: new THREE.Vector3(-5.2, EYE_HEIGHT, -3.1), yaw: -Math.PI / 2, label: "West Room" },
+  "East Room": { position: new THREE.Vector3(5.2, EYE_HEIGHT, -3.1), yaw: Math.PI / 2, label: "East Room" },
+};
 
 const state = {
   keys: new Set(),
@@ -325,635 +100,420 @@ const state = {
   velocity: new THREE.Vector3(),
   last: performance.now(),
   pointerLocked: false,
+  dragLook: false,
   bobPhase: 0,
   bobAmount: 0,
   moveBlend: 0,
   sway: 0,
   lookSway: 0,
-  dragLook: false,
+  dayTime: 0.12,
 };
 
-camera.position.copy(rooms.Lobby.center);
+camera.position.copy(spots.Bridge.position);
+
+const hemiLight = new THREE.HemisphereLight("#ffd8bc", "#2d2d42", 1.5);
+scene.add(hemiLight);
+
+const sun = new THREE.DirectionalLight("#ffc78d", 2.2);
+sun.castShadow = true;
+sun.shadow.mapSize.width = 512;
+sun.shadow.mapSize.height = 512;
+sun.shadow.camera.near = 1;
+sun.shadow.camera.far = 70;
+sun.shadow.camera.left = -30;
+sun.shadow.camera.right = 30;
+sun.shadow.camera.top = 30;
+sun.shadow.camera.bottom = -30;
+scene.add(sun);
 
 buildWorld();
-buildLighting();
 requestAnimationFrame(animate);
 
 function buildWorld() {
-  addWalkway(8, 0, 7.4, 4.2);
-  addWalkway(-8, 0, 7.4, 4.2);
-  addWalkway(0, -8, 4.2, 7.4);
-  addWalkway(0, 8, 4.2, 7.4);
-
-  addRoom({ x: 0, z: 0, w: 13, d: 11, portals: ["east", "west", "north", "south"] });
-  addRoom({ x: 16, z: 0, w: 13, d: 11, portals: ["west"] });
-  addRoom({ x: -16, z: 0, w: 13, d: 11, portals: ["east"] });
-  addRoom({ x: 0, z: -16, w: 13, d: 12, portals: ["south"] });
-  addRoom({ x: 0, z: 16, w: 13, d: 11, portals: ["north"] });
-  addMapBoundary();
-
-  addTorii(6.55, 0, Math.PI / 2);
-  addTorii(-6.55, 0, -Math.PI / 2);
-  addTorii(0, -5.55, 0);
-  addTorii(0, 5.55, Math.PI);
-
-  addLobbyGarden();
-  addProjectRoom();
-  addExperienceRoom();
-  addSkillsRoom();
-  addContactRoom();
-  addSakuraPetals();
-
-  cards.forEach(addTemplatePanel);
+  addWater();
+  addDistantTerrain();
+  addBridge();
+  addHouse();
+  addExteriorDetails();
+  addSakuraForest();
+  addPetals();
 }
 
-function buildLighting() {
-  scene.add(new THREE.HemisphereLight("#fff7ed", "#6d7668", 1.8));
+function addWater() {
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(120, 120, 1, 1), materials.water);
+  water.rotation.x = -Math.PI / 2;
+  water.position.y = -0.28;
+  water.receiveShadow = true;
+  scene.add(water);
+  animated.push({ type: "water", mesh: water });
+}
 
-  const sun = new THREE.DirectionalLight("#fff0d4", 1.6);
-  sun.position.set(-8, 14, 10);
-  scene.add(sun);
+function addDistantTerrain() {
+  const islands = [
+    [-22, -8, 16, 12],
+    [24, 3, 18, 15],
+    [-24, 24, 20, 14],
+    [22, 26, 18, 12],
+    [-10, -28, 20, 12],
+  ];
 
-  [
-    [0, 3.2, 1.4],
-    [16, 3.1, 0],
-    [-16, 3.1, 0],
-    [0, 3.1, -16],
-    [0, 3.1, 16],
-  ].forEach(([x, y, z]) => {
-    const light = new THREE.PointLight("#ffd6c9", 1.35, 11, 2);
-    light.position.set(x, y, z);
-    scene.add(light);
+  islands.forEach(([x, z, w, d]) => {
+    const land = block(w, 0.6, d, materials.grass, x, -0.08, z);
+    land.receiveShadow = true;
+    addVoxelCluster(x, z, w, d);
   });
 }
 
-function addRoom({ x, z, w, d, portals }) {
-  addTatamiFloor(x, z, w, d);
-  addWall(x, z - d / 2, w, "x", portals.includes("north"));
-  addWall(x, z + d / 2, w, "x", portals.includes("south"));
-  addWall(x - w / 2, z, d, "z", portals.includes("west"));
-  addWall(x + w / 2, z, d, "z", portals.includes("east"));
-  addCeilingBeams(x, z, w, d);
-  addFloorBorder(x, z, w, d);
+function addBridge() {
+  addPlayable(0, 20.5, 3.8, 15.5);
+  addPlayable(0, 9.2, 7.4, 4.8);
+  addCollider(-2.25, 16.2, 0.55, 17.2);
+  addCollider(2.25, 16.2, 0.55, 17.2);
+
+  for (let z = 10; z <= 25.5; z += 0.72) {
+    const plank = block(3.55, 0.16, 0.55, materials.bridge, 0, 0.05, z);
+    plank.castShadow = true;
+    plank.receiveShadow = true;
+  }
+
+  [-2.05, 2.05].forEach((x) => {
+    block(0.22, 0.45, 16.7, materials.bridgeDark, x, 0.38, 17.75);
+    for (let z = 10.2; z <= 25.3; z += 1.8) {
+      block(0.34, 1.15, 0.34, materials.bridgeDark, x, 0.72, z);
+      addLantern(x, z, 1.5, 0.36);
+    }
+  });
+
+  addToriiGate(0, 9.4, Math.PI);
 }
 
-function addTatamiFloor(x, z, w, d) {
-  const base = new THREE.Mesh(new THREE.BoxGeometry(w, 0.14, d), materials.darkWood);
-  base.position.set(x, -0.09, z);
-  scene.add(base);
+function addHouse() {
+  addPlayable(0, 0.3, 15.2, 14.8);
+  addPlayable(-5.3, -3.0, 6.2, 7.4);
+  addPlayable(5.3, -3.0, 6.2, 7.4);
+  addPlayable(0, -8.5, 9.8, 5.5);
 
-  const matW = 1.82;
-  const matD = 0.92;
-  const cols = Math.floor((w - 0.8) / matW);
-  const rows = Math.floor((d - 0.8) / matD);
-  const startX = x - ((cols - 1) * matW) / 2;
-  const startZ = z - ((rows - 1) * matD) / 2;
+  block(16.5, 0.8, 15.5, materials.stone, 0, 0, 0);
+  block(15.2, 0.28, 14.2, materials.floor, 0, 0.54, 0);
 
-  for (let row = 0; row < rows; row += 1) {
-    for (let col = 0; col < cols; col += 1) {
-      const mat = (row + col) % 2 === 0 ? materials.tatami : materials.tatamiAlt;
-      const tile = new THREE.Mesh(new THREE.BoxGeometry(matW - 0.04, 0.035, matD - 0.04), mat);
-      tile.position.set(startX + col * matW, 0.02, startZ + row * matD);
-      scene.add(tile);
+  addInteriorFloor(0, 0, 14.2, 13.2);
+  addHouseWalls();
+  addRoofs();
+  addRoomPartitions();
+  addInteriorPosts();
+}
+
+function addHouseWalls() {
+  const wallY = 1.8;
+  const h = 2.25;
+  const zFront = 6.8;
+  const zBack = -6.8;
+  const xLeft = -7.6;
+  const xRight = 7.6;
+
+  wallSegment(-5.1, zFront, 3.7, h, "x", wallY);
+  wallSegment(5.1, zFront, 3.7, h, "x", wallY);
+  wallSegment(0, zBack, 15.2, h, "x", wallY);
+  wallSegment(xLeft, 0, 13.6, h, "z", wallY);
+  wallSegment(xRight, 0, 13.6, h, "z", wallY);
+
+  addCollider(-5.1, zFront, 3.7, 0.5);
+  addCollider(5.1, zFront, 3.7, 0.5);
+  addCollider(0, zBack, 15.2, 0.5);
+  addCollider(xLeft, 0, 0.5, 13.6);
+  addCollider(xRight, 0, 0.5, 13.6);
+
+  addWindow(-5.1, zFront + 0.03, 2.2, "x");
+  addWindow(5.1, zFront + 0.03, 2.2, "x");
+  addWindow(-7.63, -2.6, 2.2, "z");
+  addWindow(7.63, -2.6, 2.2, "z");
+}
+
+function addRoomPartitions() {
+  wallSegment(-3.0, -1.5, 5.7, 1.9, "z", 1.64);
+  wallSegment(3.0, -1.5, 5.7, 1.9, "z", 1.64);
+  wallSegment(0, -5.5, 4.8, 1.9, "x", 1.64);
+  addCollider(-3.0, -1.5, 0.42, 5.7);
+  addCollider(3.0, -1.5, 0.42, 5.7);
+  addCollider(0, -5.5, 4.8, 0.42);
+
+  addRoomMarker(-5.2, -3.1, "Room A");
+  addRoomMarker(5.2, -3.1, "Room B");
+  addRoomMarker(0, -8.2, "Rear Room");
+}
+
+function addInteriorPosts() {
+  [-6.5, -3.1, 3.1, 6.5].forEach((x) => {
+    [-5.8, 5.8].forEach((z) => {
+      block(0.42, 3.0, 0.42, materials.bridgeDark, x, 1.88, z);
+      addCollider(x, z, 0.55, 0.55);
+    });
+  });
+}
+
+function addRoofs() {
+  addLayeredRoof(0, 3.26, 0, 19.2, 18.2, 0.72, 5);
+  addLayeredRoof(0, 5.1, -1.0, 13.8, 12.0, 0.64, 4);
+
+  block(1.0, 1.2, 11.4, materials.roofDark, -6.9, 4.0, -0.4);
+  block(1.0, 1.2, 11.4, materials.roofDark, 6.9, 4.0, -0.4);
+  block(12.5, 1.0, 0.92, materials.roofDark, 0, 4.1, -6.1);
+  block(12.5, 1.0, 0.92, materials.roofDark, 0, 4.1, 5.4);
+}
+
+function addLayeredRoof(x, y, z, w, d, stepY, layers) {
+  for (let i = 0; i < layers; i += 1) {
+    const roof = block(w - i * 1.45, 0.34, d - i * 1.1, i % 2 === 0 ? materials.roof : materials.roofDark, x, y + i * stepY, z);
+    roof.castShadow = true;
+  }
+  block(0.55, 0.44, d + 0.8, materials.roofDark, x - w / 2 + 0.7, y + 0.18, z);
+  block(0.55, 0.44, d + 0.8, materials.roofDark, x + w / 2 - 0.7, y + 0.18, z);
+}
+
+function addExteriorDetails() {
+  addLantern(-4.6, 7.1, 2.1, 0.52);
+  addLantern(4.6, 7.1, 2.1, 0.52);
+  addLantern(-6.9, 5.4, 2.0, 0.42);
+  addLantern(6.9, 5.4, 2.0, 0.42);
+
+  for (let x = -6.6; x <= 6.6; x += 1.2) {
+    block(0.18, 0.58, 0.18, materials.bridgeDark, x, 1.05, 7.12);
+  }
+  block(14.0, 0.18, 0.18, materials.bridgeDark, 0, 1.34, 7.12);
+
+  addSakuraTree(-9.5, 8.0, 1.2);
+  addSakuraTree(9.4, 8.6, 1.05);
+  addSakuraTree(-10.7, -5.5, 1.1);
+  addSakuraTree(11.0, -5.2, 1.0);
+}
+
+function addSakuraForest() {
+  const positions = [
+    [-21, 7, 1.4],
+    [-18, 15, 1.05],
+    [-25, 25, 1.3],
+    [-17, 28, 1.1],
+    [21, 11, 1.25],
+    [26, 21, 1.1],
+    [18, 28, 1.35],
+    [27, -5, 1.15],
+    [-25, -16, 1.2],
+    [-16, -24, 1.0],
+  ];
+  positions.forEach(([x, z, scale]) => addSakuraTree(x, z, scale));
+}
+
+function addInteriorFloor(x, z, w, d) {
+  const tileW = 1.1;
+  const tileD = 1.0;
+  for (let ix = -Math.floor(w / 2); ix <= Math.floor(w / 2); ix += 1) {
+    for (let iz = -Math.floor(d / 2); iz <= Math.floor(d / 2); iz += 1) {
+      const mat = (ix + iz) % 2 === 0 ? materials.tatami : materials.floor;
+      block(tileW - 0.04, 0.035, tileD - 0.04, mat, x + ix * tileW, 0.72, z + iz * tileD);
     }
   }
 }
 
-function addWalkway(x, z, w, d) {
-  const deck = new THREE.Mesh(new THREE.BoxGeometry(w, 0.12, d), materials.darkWood);
-  deck.position.set(x, -0.08, z);
-  scene.add(deck);
+function wallSegment(x, z, length, height, axis, y) {
+  const wall = block(
+    axis === "x" ? length : 0.34,
+    height,
+    axis === "z" ? length : 0.34,
+    materials.paperDim,
+    x,
+    y,
+    z,
+  );
+  wall.castShadow = true;
 
-  const planks = Math.floor((w > d ? w : d) / 0.72);
-  for (let i = 0; i < planks; i += 1) {
-    const line = new THREE.Mesh(
-      new THREE.BoxGeometry(w > d ? 0.035 : w, 0.025, w > d ? d : 0.035),
-      materials.wood,
-    );
-    const offset = (i - planks / 2) * 0.72;
-    line.position.set(w > d ? x + offset : x, 0.005, w > d ? z : z + offset);
-    scene.add(line);
+  const beams = [-height / 2, height / 2].map((offsetY) =>
+    block(
+      axis === "x" ? length + 0.15 : 0.42,
+      0.16,
+      axis === "z" ? length + 0.15 : 0.42,
+      materials.bridgeDark,
+      x,
+      y + offsetY,
+      z,
+    ),
+  );
+  beams.forEach((beam) => (beam.castShadow = true));
+}
+
+function addWindow(x, z, width, axis) {
+  const glow = block(
+    axis === "x" ? width : 0.08,
+    0.72,
+    axis === "z" ? width : 0.08,
+    materials.lanternGlow,
+    x,
+    2.05,
+    z,
+  );
+  glow.scale.y = 1;
+}
+
+function addRoomMarker(x, z, label) {
+  const canvasTexture = document.createElement("canvas");
+  canvasTexture.width = 512;
+  canvasTexture.height = 180;
+  const ctx = canvasTexture.getContext("2d");
+  ctx.fillStyle = "#2c1713";
+  roundRect(ctx, 0, 0, 512, 180, 18);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255, 184, 143, 0.55)";
+  ctx.lineWidth = 6;
+  roundRect(ctx, 12, 12, 488, 156, 14);
+  ctx.stroke();
+  ctx.fillStyle = "#ffe7c2";
+  ctx.font = "700 46px Georgia";
+  ctx.textAlign = "center";
+  ctx.fillText(label, 256, 108);
+  const texture = new THREE.CanvasTexture(canvasTexture);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.64), new THREE.MeshBasicMaterial({ map: texture, transparent: true }));
+  sign.position.set(x, 1.65, z);
+  sign.rotation.y = Math.PI;
+  scene.add(sign);
+}
+
+function addVoxelCluster(x, z, w, d) {
+  const count = Math.floor((w + d) * 0.5);
+  for (let i = 0; i < count; i += 1) {
+    const bx = x + random(-w * 0.42, w * 0.42);
+    const bz = z + random(-d * 0.42, d * 0.42);
+    const h = random(0.35, 1.1);
+    block(random(1.2, 2.6), h, random(1.2, 2.8), Math.random() > 0.55 ? materials.grass : materials.sakuraDark, bx, h * 0.5 - 0.02, bz);
   }
 }
 
-function addMapBoundary() {
-  const extent = 24;
-  const railHeight = 0.64;
-  const rails = [
-    [0, -extent, extent * 2, 0.32],
-    [0, extent, extent * 2, 0.32],
-    [-extent, 0, 0.32, extent * 2],
-    [extent, 0, 0.32, extent * 2],
-  ];
-
-  rails.forEach(([x, z, w, d]) => {
-    const base = new THREE.Mesh(new THREE.BoxGeometry(w, railHeight, d), materials.mossDark);
-    base.position.set(x, railHeight / 2 - 0.04, z);
-    scene.add(base);
-    addCollider(x, z, w, d);
-
-    const cap = new THREE.Mesh(new THREE.BoxGeometry(w + (w > d ? 0.28 : 0), 0.12, d + (d > w ? 0.28 : 0)), materials.darkWood);
-    cap.position.set(x, railHeight + 0.03, z);
-    scene.add(cap);
-  });
-
-  for (let x = -20; x <= 20; x += 4) {
-    addBoundaryLamp(x, -23.78);
-    addBoundaryLamp(x, 23.78);
-  }
-  for (let z = -20; z <= 20; z += 4) {
-    addBoundaryLamp(-23.78, z);
-    addBoundaryLamp(23.78, z);
-  }
-}
-
-function addBoundaryLamp(x, z) {
-  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, 0.72, 10), materials.darkWood);
-  post.position.set(x, 0.36, z);
-  scene.add(post);
-
-  const shade = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.19, 0.16, 16), materials.lanternGlow);
-  shade.position.set(x, 0.78, z);
-  scene.add(shade);
-}
-
-function addWall(cx, cz, length, axis, hasDoor) {
-  const door = hasDoor ? 4.1 : 0;
-  const parts = hasDoor ? [(length - door) / 2, (length - door) / 2] : [length];
-  const offsets = hasDoor ? [-(length + door) / 4, (length + door) / 4] : [0];
-
-  parts.forEach((partLength, index) => {
-    if (partLength <= 0.2) return;
-    const ox = axis === "x" ? offsets[index] : 0;
-    const oz = axis === "z" ? offsets[index] : 0;
-    const x = cx + ox;
-    const z = cz + oz;
-
-    const panel = new THREE.Mesh(
-      axis === "x"
-        ? new THREE.BoxGeometry(partLength, 2.75, 0.12)
-        : new THREE.BoxGeometry(0.12, 2.75, partLength),
-      materials.paper,
-    );
-    panel.position.set(x, 1.48, z);
-    scene.add(panel);
-
-    addShojiGrid(x, z, partLength, axis);
-    colliders.push(box2D(x, z, axis === "x" ? partLength : 0.16, axis === "z" ? partLength : 0.16));
-  });
-}
-
-function addShojiGrid(x, z, length, axis) {
-  const horizontalYs = [0.22, 1.05, 1.9, 2.72];
-  horizontalYs.forEach((y) => {
-    const rail = new THREE.Mesh(
-      axis === "x"
-        ? new THREE.BoxGeometry(length + 0.08, 0.07, 0.18)
-        : new THREE.BoxGeometry(0.18, 0.07, length + 0.08),
-      materials.wood,
-    );
-    rail.position.set(x, y, z);
-    scene.add(rail);
-  });
-
-  const count = Math.max(2, Math.floor(length / 1.08));
-  for (let i = 0; i <= count; i += 1) {
-    const offset = -length / 2 + (i * length) / count;
-    const post = new THREE.Mesh(
-      axis === "x"
-        ? new THREE.BoxGeometry(0.07, 2.58, 0.18)
-        : new THREE.BoxGeometry(0.18, 2.58, 0.07),
-      materials.wood,
-    );
-    post.position.set(axis === "x" ? x + offset : x, 1.46, axis === "z" ? z + offset : z);
-    scene.add(post);
-  }
-}
-
-function addCeilingBeams(x, z, w, d) {
-  for (let i = -1; i <= 1; i += 1) {
-    const beam = new THREE.Mesh(new THREE.BoxGeometry(w + 0.25, 0.16, 0.18), materials.darkWood);
-    beam.position.set(x, 3.04, z + i * (d / 3));
-    scene.add(beam);
-  }
-
-  for (let i = -1; i <= 1; i += 1) {
-    const beam = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.16, d + 0.25), materials.darkWood);
-    beam.position.set(x + i * (w / 3), 3.08, z);
-    scene.add(beam);
-  }
-}
-
-function addFloorBorder(x, z, w, d) {
-  const bars = [
-    [x, z - d / 2 + 0.2, w, 0.08],
-    [x, z + d / 2 - 0.2, w, 0.08],
-    [x - w / 2 + 0.2, z, 0.08, d],
-    [x + w / 2 - 0.2, z, 0.08, d],
-  ];
-  bars.forEach(([bx, bz, bw, bd]) => {
-    const bar = new THREE.Mesh(new THREE.BoxGeometry(bw, 0.05, bd), materials.gold);
-    bar.position.set(bx, 0.06, bz);
-    scene.add(bar);
-  });
-}
-
-function addTorii(x, z, rotationY) {
+function addToriiGate(x, z, rotationY) {
   const group = new THREE.Group();
-  const postGeo = new THREE.BoxGeometry(0.22, 2.55, 0.22);
-  const lintelGeo = new THREE.BoxGeometry(3.25, 0.24, 0.24);
-  const capGeo = new THREE.BoxGeometry(3.75, 0.16, 0.34);
-
-  [-1.25, 1.25].forEach((offset) => {
-    const post = new THREE.Mesh(postGeo, materials.vermilion);
-    post.position.set(offset, 1.25, 0);
-    group.add(post);
+  [-1.9, 1.9].forEach((offset) => {
+    const post = block(0.38, 3.2, 0.38, materials.roofDark, offset, 1.6, 0, group);
+    post.castShadow = true;
   });
-
-  const lintel = new THREE.Mesh(lintelGeo, materials.vermilion);
-  lintel.position.set(0, 2.42, 0);
-  group.add(lintel);
-
-  const cap = new THREE.Mesh(capGeo, materials.darkWood);
-  cap.position.set(0, 2.62, 0);
-  group.add(cap);
-
-  group.position.set(x, 0, z);
+  block(4.8, 0.42, 0.42, materials.roof, 0, 3.02, 0, group);
+  block(5.5, 0.3, 0.6, materials.roofDark, 0, 3.36, 0, group);
+  block(3.6, 0.28, 0.38, materials.roofDark, 0, 2.55, 0, group);
+  group.position.set(x, 0.05, z);
   group.rotation.y = rotationY;
   scene.add(group);
-
-  [-1.25, 1.25].forEach((offset) => {
-    const postX = x + Math.cos(rotationY) * offset;
-    const postZ = z - Math.sin(rotationY) * offset;
-    addCollider(postX, postZ, 0.46, 0.46);
-  });
+  addCollider(x - 1.9, z, 0.62, 0.62);
+  addCollider(x + 1.9, z, 0.62, 0.62);
 }
 
-function addLobbyGarden() {
-  const pond = new THREE.Mesh(new THREE.CircleGeometry(1.62, 48), materials.water);
-  pond.rotation.x = -Math.PI / 2;
-  pond.scale.set(1.45, 0.72, 1);
-  pond.position.set(-2.8, 0.045, 0.85);
-  scene.add(pond);
-  animated.push({ type: "water", mesh: pond });
-
-  [
-    [-3.8, 1.9],
-    [-2.85, 1.55],
-    [-1.85, 1.18],
-    [-0.85, 0.78],
-  ].forEach(([x, z], index) => {
-    const stone = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.5, 0.1, 18), materials.stone);
-    stone.position.set(x, 0.08, z);
-    stone.rotation.y = index * 0.4;
-    scene.add(stone);
-    addCollider(x, z, 0.74, 0.74);
-  });
-  addCollider(-2.8, 0.85, 4.4, 2.2);
-
-  addSakuraTree(3.35, 0.12, 1.28, 1.15);
-  addStoneLantern(-4.65, 0.0, -2.7);
-  addStoneLantern(4.8, 0.0, -2.85);
+function addLantern(x, z, y, size) {
+  block(size * 0.18, size * 1.1, size * 0.18, materials.bridgeDark, x, y - size * 0.3, z);
+  const shade = block(size * 0.6, size * 0.6, size * 0.6, materials.lanternGlow, x, y + size * 0.22, z);
+  shade.userData.baseIntensity = 1;
+  const light = new THREE.PointLight("#ffb36b", 1.4, 7, 2);
+  light.position.set(x, y + size * 0.24, z);
+  scene.add(light);
+  animated.push({ type: "lantern", mesh: shade, light });
 }
 
-function addProjectRoom() {
-  [
-    [13.2, 0.42, "#f3b8c6"],
-    [16, 0.42, "#d2aa6b"],
-    [18.8, 0.42, "#98ad84"],
-  ].forEach(([x, z, color]) => addDisplayPedestal(x, z, color));
+function addSakuraTree(x, z, scale = 1) {
+  const trunkHeight = 2.2 * scale;
+  block(0.48 * scale, trunkHeight, 0.48 * scale, materials.trunk, x, trunkHeight / 2, z);
 
-  addLowTable(16, 0.1, 2.8, 3.4);
-  addStoneLantern(11.6, 0, 3.15);
-  addStoneLantern(20.4, 0, 3.15);
-}
-
-function addExperienceRoom() {
-  const rail = new THREE.Mesh(new THREE.BoxGeometry(8.2, 0.08, 0.08), materials.gold);
-  rail.position.set(0, 1.28, -19.85);
-  scene.add(rail);
-
-  [-3.8, -1.3, 1.3, 3.8].forEach((x, index) => {
-    const marker = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.12, 24), materials.blush);
-    marker.position.set(x, 1.28, -19.85);
-    marker.rotation.x = Math.PI / 2;
-    scene.add(marker);
-
-    const plaque = makeTextPlane(`Milestone ${index + 1}`, "Replace with role, year, and result.", 520, 260);
-    plaque.position.set(x, 1.86, -19.75);
-    plaque.scale.setScalar(0.42);
-    scene.add(plaque);
-  });
-
-  addStoneLantern(-5, 0, -13.2);
-  addStoneLantern(5, 0, -13.2);
-}
-
-function addSkillsRoom() {
-  const skillData = [
-    ["AI", -19.9, "#f3b8c6"],
-    ["Frontend", -17.3, "#d2aa6b"],
-    ["Backend", -14.7, "#9dbb8a"],
-    ["3D Web", -12.1, "#98b8bf"],
+  const canopy = [
+    [0, 2.35, 0, 1.35],
+    [-0.8, 2.08, 0.25, 1.1],
+    [0.82, 2.2, 0.18, 1.08],
+    [0.18, 2.58, -0.78, 1.0],
+    [-0.35, 2.72, -0.38, 0.82],
   ];
 
-  skillData.forEach(([label, x, color]) => {
-    const scroll = new THREE.Group();
-    const paper = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 1.62, 32, 1, true), materials.paperAlt);
-    paper.rotation.z = Math.PI / 2;
-    paper.position.y = 1.24;
-    scroll.add(paper);
-
-    const capMat = new THREE.MeshStandardMaterial({ color, roughness: 0.56, metalness: 0.08 });
-    [-0.88, 0.88].forEach((offset) => {
-      const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.32, 18), capMat);
-      cap.rotation.z = Math.PI / 2;
-      cap.position.set(offset, 1.24, 0);
-      scroll.add(cap);
-    });
-
-    const labelPlane = makeTextPlane(label, "Template skill group", 420, 220);
-    labelPlane.position.set(0, 1.25, -0.46);
-    labelPlane.scale.setScalar(0.4);
-    scroll.add(labelPlane);
-
-    scroll.position.set(x, 0, 0.85);
-    scroll.rotation.y = 0.06 * (x + 16);
-    scroll.scale.setScalar(0.72);
-    scene.add(scroll);
-    addCollider(x, 0.85, 1.35, 0.92);
-  });
-
-  addLowTable(-16, 0.05, 2.85, 3.8);
-}
-
-function addContactRoom() {
-  addLowTable(0, 0.25, 15.5, 4.4);
-  addStoneLantern(-4.8, 0, 18.2);
-  addStoneLantern(4.8, 0, 18.2);
-
-  const bridge = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.12, 1.15), materials.wood);
-  bridge.position.set(0, 0.08, 13.55);
-  scene.add(bridge);
-}
-
-function addDisplayPedestal(x, z, color) {
-  const accentMat = new THREE.MeshStandardMaterial({ color, roughness: 0.54, metalness: 0.14 });
-  const base = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.24, 0.92), materials.darkWood);
-  base.position.set(x, 0.18, z);
-  scene.add(base);
-
-  const plinth = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.06, 0.7), materials.gold);
-  plinth.position.set(x, 0.34, z);
-  scene.add(plinth);
-
-  const caseFrame = new THREE.Mesh(new THREE.TorusGeometry(0.38, 0.018, 10, 56), accentMat);
-  caseFrame.position.set(x, 0.82, z);
-  caseFrame.scale.set(1, 0.72, 1);
-  scene.add(caseFrame);
-
-  const blade = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.035, 0.08), accentMat);
-  blade.position.set(x, 0.82, z);
-  blade.rotation.y = Math.PI / 5;
-  scene.add(blade);
-
-  animated.push({ type: "orb", mesh: caseFrame, speed: 0.2 + Math.random() * 0.12 });
-  addCollider(x, z, 1.65, 1.05);
-}
-
-function addLowTable(x, y, z, width) {
-  const top = new THREE.Mesh(new THREE.BoxGeometry(width, 0.18, 1.18), materials.darkWood);
-  top.position.set(x, y + 0.48, z);
-  scene.add(top);
-
-  [-width / 2 + 0.34, width / 2 - 0.34].forEach((offsetX) => {
-    [-0.38, 0.38].forEach((offsetZ) => {
-      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.72, 0.16), materials.wood);
-      leg.position.set(x + offsetX, y + 0.12, z + offsetZ);
-      scene.add(leg);
-    });
-  });
-  addCollider(x, z, width + 0.22, 1.38);
-}
-
-function addStoneLantern(x, y, z) {
-  const group = new THREE.Group();
-  const stack = [
-    new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.42, 0.18, 16), materials.stone),
-    new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.78, 16), materials.stone),
-    new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.42, 0.7), materials.stone),
-    new THREE.Mesh(new THREE.ConeGeometry(0.55, 0.32, 4), materials.stone),
-  ];
-
-  stack[0].position.y = 0.09;
-  stack[1].position.y = 0.55;
-  stack[2].position.y = 1.05;
-  stack[3].position.y = 1.43;
-  stack[3].rotation.y = Math.PI / 4;
-  stack.forEach((mesh) => group.add(mesh));
-
-  const glow = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.24, 0.38), materials.lanternGlow);
-  glow.position.y = 1.06;
-  group.add(glow);
-
-  group.position.set(x, y, z);
-  scene.add(group);
-  addCollider(x, z, 0.86, 0.86);
-}
-
-function addSakuraTree(x, y, z, scale) {
-  const group = new THREE.Group();
-  const trunkMat = materials.wood;
-  const trunk = cylinderBetween(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0.1, 2.55, -0.06), 0.18, trunkMat);
-  group.add(trunk);
-
-  [
-    [new THREE.Vector3(0.05, 1.35, 0), new THREE.Vector3(-0.9, 2.18, 0.2), 0.08],
-    [new THREE.Vector3(0.05, 1.55, 0), new THREE.Vector3(0.82, 2.36, 0.28), 0.075],
-    [new THREE.Vector3(0.08, 1.8, 0), new THREE.Vector3(0.22, 2.68, -0.82), 0.07],
-    [new THREE.Vector3(0.08, 1.92, 0), new THREE.Vector3(-0.35, 2.86, -0.48), 0.055],
-  ].forEach(([start, end, radius]) => group.add(cylinderBetween(start, end, radius, trunkMat)));
-
-  [
-    [-0.95, 2.34, 0.25, 0.76],
-    [0.82, 2.5, 0.34, 0.84],
-    [0.22, 2.88, -0.86, 0.72],
-    [-0.38, 3.02, -0.48, 0.62],
-    [0.08, 2.55, 0.05, 0.8],
-  ].forEach(([cx, cy, cz, r], index) => {
-    const blossom = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(r, 2),
-      index % 2 === 0 ? materials.blushSoft : materials.blush,
+  canopy.forEach(([ox, oy, oz, size], index) => {
+    block(
+      size * scale,
+      size * scale,
+      size * scale,
+      index % 2 === 0 ? materials.sakura : materials.sakuraDark,
+      x + ox * scale,
+      oy * scale,
+      z + oz * scale,
     );
-    blossom.position.set(cx, cy, cz);
-    group.add(blossom);
   });
-
-  group.position.set(x, y, z);
-  group.scale.setScalar(scale);
-  scene.add(group);
-  addCollider(x, z, 1.35 * scale, 1.35 * scale);
 }
 
-function cylinderBetween(start, end, radius, material) {
-  const direction = new THREE.Vector3().subVectors(end, start);
-  const length = direction.length();
-  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius * 1.12, length, 12), material);
-  mesh.position.copy(start).add(end).multiplyScalar(0.5);
-  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
-  return mesh;
-}
-
-function addSakuraPetals() {
+function addPetals() {
+  const petalMaterial = new THREE.MeshBasicMaterial({
+    color: "#ffd2d8",
+    transparent: true,
+    opacity: 0.72,
+    side: THREE.DoubleSide,
+  });
   const group = new THREE.Group();
-  const geometry = new THREE.CircleGeometry(0.035, 8);
-  for (let i = 0; i < 120; i += 1) {
-    const petal = new THREE.Mesh(geometry, materials.petal);
-    petal.position.set(random(-21, 21), random(1.2, 3.4), random(-21, 21));
-    petal.scale.set(random(0.7, 1.35), random(0.38, 0.82), 1);
+  const geometry = new THREE.PlaneGeometry(0.08, 0.04);
+  for (let i = 0; i < 90; i += 1) {
+    const petal = new THREE.Mesh(geometry, petalMaterial);
+    petal.position.set(random(-28, 28), random(1.2, 5.6), random(-28, 31));
     petal.rotation.set(random(0, Math.PI), random(0, Math.PI), random(0, Math.PI));
-    petal.userData.drift = random(0.16, 0.44);
+    petal.userData.speed = random(0.18, 0.5);
     group.add(petal);
   }
   scene.add(group);
   animated.push({ type: "petals", group });
 }
 
-function addTemplatePanel(card) {
-  const group = new THREE.Group();
-  const [x, y, z] = card.position;
-  const width = card.room === "Projects" ? 2.35 : 4.35;
-  const height = card.room === "Projects" ? 1.55 : 2.05;
-
-  const back = new THREE.Mesh(new THREE.BoxGeometry(width + 0.18, height + 0.18, 0.08), materials.darkWood);
-  back.position.z = -0.09;
-  group.add(back);
-
-  const plane = makeTextPlane(card.title, `${card.kicker}\n${card.summary}`, 900, 520);
-  plane.scale.set(width / 4.6, height / 2.25, 1);
-  plane.userData.card = card;
-  group.add(plane);
-  interactables.push(plane);
-
-  const accentMaterial = new THREE.MeshStandardMaterial({
-    color: card.accent ?? palette.blush,
-    roughness: 0.5,
-    metalness: 0.08,
-  });
-  const accent = new THREE.Mesh(new THREE.BoxGeometry(width + 0.42, 0.06, 0.12), accentMaterial);
-  accent.position.set(0, -height / 2 - 0.15, 0.02);
-  group.add(accent);
-
-  group.position.set(x, y, z);
-  group.rotation.y = card.rotation;
-  scene.add(group);
+function block(w, h, d, material, x, y, z, parent = scene) {
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+  mesh.position.set(x, y, z);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  parent.add(mesh);
+  return mesh;
 }
 
-function makeTextPlane(title, subtitle, width = 760, height = 420) {
-  const texture = makePanelTexture(title, subtitle, width, height);
-  const material = new THREE.MeshBasicMaterial({
-    map: texture,
-    transparent: true,
-    side: THREE.DoubleSide,
-  });
-  return new THREE.Mesh(new THREE.PlaneGeometry(4.6, 2.25), material);
-}
-
-function makePanelTexture(title, subtitle, width, height) {
-  const panelCanvas = document.createElement("canvas");
-  panelCanvas.width = width;
-  panelCanvas.height = height;
-  const ctx = panelCanvas.getContext("2d");
-
-  const gradient = ctx.createLinearGradient(0, 0, width, height);
-  gradient.addColorStop(0, "#fff4eb");
-  gradient.addColorStop(0.54, "#f4dfd4");
-  gradient.addColorStop(1, "#e8cbd0");
-  ctx.fillStyle = gradient;
-  roundRect(ctx, 0, 0, width, height, 24);
-  ctx.fill();
-
-  ctx.globalAlpha = 0.18;
-  ctx.fillStyle = "#c58c98";
-  for (let i = 0; i < 28; i += 1) {
-    ctx.beginPath();
-    ctx.ellipse(random(0, width), random(0, height), random(3, 12), random(2, 7), random(0, Math.PI), 0, Math.PI * 2);
-    ctx.fill();
+function blockMaterial(base, highlight) {
+  const texture = document.createElement("canvas");
+  texture.width = 128;
+  texture.height = 128;
+  const ctx = texture.getContext("2d");
+  ctx.fillStyle = base;
+  ctx.fillRect(0, 0, 128, 128);
+  ctx.globalAlpha = 0.28;
+  ctx.fillStyle = highlight;
+  for (let y = 0; y < 128; y += 16) {
+    ctx.fillRect(0, y, 128, 2);
   }
-  ctx.globalAlpha = 1;
-
-  ctx.strokeStyle = "rgba(74, 47, 39, 0.48)";
-  ctx.lineWidth = 5;
-  roundRect(ctx, 12, 12, width - 24, height - 24, 20);
-  ctx.stroke();
-
-  ctx.fillStyle = "#4a2f27";
-  ctx.font = "700 56px Georgia";
-  wrapText(ctx, title, 54, 104, width - 108, 62, 2);
-
-  ctx.fillStyle = "#6f5149";
-  ctx.font = "600 29px Segoe UI";
-  wrapText(ctx, subtitle, 56, 198, width - 112, 42, 5);
-
-  const texture = new THREE.CanvasTexture(panelCanvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = 4;
-  return texture;
-}
-
-function updateHover() {
-  raycaster.setFromCamera(screenCenter, camera);
-  const hits = raycaster.intersectObjects(interactables, false);
-  const hit = hits.find((item) => item.distance < 12 && item.object.userData.card);
-
-  hoveredPanel = hit?.object ?? null;
-  if (hoveredPanel) {
-    const card = hoveredPanel.userData.card;
-    interactionTitle.textContent = card.title;
-    interactionHint.hidden = false;
-    reticle.classList.add("is-active");
-  } else {
-    interactionHint.hidden = true;
-    reticle.classList.remove("is-active");
+  for (let x = 0; x < 128; x += 16) {
+    ctx.fillRect(x, 0, 2, 128);
   }
+  ctx.globalAlpha = 0.2;
+  for (let i = 0; i < 180; i += 1) {
+    ctx.fillRect(Math.random() * 128, Math.random() * 128, 1.2, 1.2);
+  }
+  const map = new THREE.CanvasTexture(texture);
+  map.colorSpace = THREE.SRGBColorSpace;
+  map.wrapS = THREE.RepeatWrapping;
+  map.wrapT = THREE.RepeatWrapping;
+  map.repeat.set(1, 1);
+  return new THREE.MeshStandardMaterial({ color: base, map, roughness: 0.78, metalness: 0.02 });
 }
 
-function openCard(card) {
-  document.exitPointerLock?.();
-  modalKicker.textContent = card.kicker;
-  modalTitle.textContent = card.title;
-  modalBody.textContent = card.body;
-  modalList.replaceChildren(
-    ...card.bullets.map((item) => {
-      const li = document.createElement("li");
-      li.textContent = item;
-      return li;
-    }),
-  );
-  modalPrimary.textContent = card.primary;
-  modalSecondary.textContent = card.secondary;
-  modalPrimary.href = "#";
-  modalSecondary.href = "#";
-  detailModal.hidden = false;
+function addPlayable(x, z, w, d) {
+  playable.push(box2D(x, z, w, d));
 }
 
-function closeCard() {
-  detailModal.hidden = true;
+function addCollider(x, z, w, d) {
+  colliders.push(box2D(x, z, w, d));
 }
 
-function teleportTo(roomName) {
-  const room = rooms[roomName];
-  if (!room) return;
-  intro.classList.add("is-hidden");
-  state.velocity.set(0, 0, 0);
-  camera.position.copy(room.center);
-  state.yaw = room.viewYaw;
-  state.targetYaw = room.viewYaw;
-  state.pitch = 0;
-  state.targetPitch = 0;
-  state.bobAmount = 0;
-  updateCamera(0.016);
-  updateRoomLabel();
+function box2D(x, z, w, d) {
+  return { minX: x - w / 2, maxX: x + w / 2, minZ: z - d / 2, maxZ: z + d / 2 };
+}
+
+function isPlayable(x, z) {
+  const r = 0.32;
+  return playable.some((box) => x + r > box.minX && x - r < box.maxX && z + r > box.minZ && z - r < box.maxZ);
+}
+
+function hitsCollider(x, z) {
+  const r = 0.34;
+  return colliders.some((box) => x + r > box.minX && x - r < box.maxX && z + r > box.minZ && z - r < box.maxZ);
 }
 
 function movePlayer(delta) {
@@ -968,7 +528,7 @@ function movePlayer(delta) {
     (state.keys.has("KeyD") || state.keys.has("ArrowRight") ? 1 : 0);
   state.targetYaw += turnInput * keyboardTurnSpeed * delta;
 
-  const speed = state.keys.has("ShiftLeft") || state.keys.has("ShiftRight") ? 5.55 : 3.1;
+  const speed = state.keys.has("ShiftLeft") || state.keys.has("ShiftRight") ? 5.8 : 3.15;
   const desired = new THREE.Vector3();
   if (input.lengthSq() > 0) {
     input.normalize().multiplyScalar(speed);
@@ -987,93 +547,138 @@ function movePlayer(delta) {
   const next = camera.position.clone();
   next.x += state.velocity.x * delta;
   next.z += state.velocity.z * delta;
-  if (!hitsWall(next.x, camera.position.z)) camera.position.x = next.x;
-  if (!hitsWall(camera.position.x, next.z)) camera.position.z = next.z;
+
+  if (isPlayable(next.x, camera.position.z) && !hitsCollider(next.x, camera.position.z)) {
+    camera.position.x = next.x;
+  } else {
+    state.velocity.x = 0;
+  }
+
+  if (isPlayable(camera.position.x, next.z) && !hitsCollider(camera.position.x, next.z)) {
+    camera.position.z = next.z;
+  } else {
+    state.velocity.z = 0;
+  }
 
   const planarSpeed = Math.hypot(state.velocity.x, state.velocity.z);
-  state.bobPhase += delta * planarSpeed * 6.7;
-  const bobTarget = THREE.MathUtils.clamp(planarSpeed / 3.1, 0, 1) * state.moveBlend;
+  state.bobPhase += delta * planarSpeed * 6.6;
+  const bobTarget = THREE.MathUtils.clamp(planarSpeed / 3.15, 0, 1) * state.moveBlend;
   state.bobAmount = damp(state.bobAmount, bobTarget, 8, delta);
-  const stepBob = Math.sin(state.bobPhase) * 0.033 * state.bobAmount;
-  const stepLift = Math.abs(Math.cos(state.bobPhase)) * 0.016 * state.bobAmount;
+  const stepBob = Math.sin(state.bobPhase) * 0.03 * state.bobAmount;
+  const stepLift = Math.abs(Math.cos(state.bobPhase)) * 0.015 * state.bobAmount;
   camera.position.y = EYE_HEIGHT + stepBob + stepLift;
 }
 
-function updateCamera(delta = 0.016) {
+function updateCamera(delta) {
   state.yaw = damp(state.yaw, state.targetYaw, lookEase, delta);
   state.pitch = damp(state.pitch, state.targetPitch, lookEase, delta);
-  const roll = state.sway * -0.028 + state.lookSway;
+  const roll = state.sway * -0.026 + state.lookSway;
   camera.quaternion.setFromEuler(new THREE.Euler(state.pitch, state.yaw, roll, "YXZ"));
   state.lookSway = damp(state.lookSway, 0, 9, delta);
 }
 
-function updateRoomLabel() {
-  let closest = "Lobby";
-  let distance = Infinity;
-  Object.entries(rooms).forEach(([name, room]) => {
-    const d = room.center.distanceTo(camera.position);
-    if (d < distance) {
-      closest = name;
-      distance = d;
-    }
-  });
-  roomLabel.textContent = rooms[closest].label;
-}
+function updateLighting(delta) {
+  state.dayTime = (state.dayTime + delta * 0.018) % 1;
+  const t = state.dayTime;
+  const angle = t * Math.PI * 2;
+  const sunHeight = Math.sin(angle) * 18;
+  const warm = new THREE.Color("#ffb07b");
+  const dusk = new THREE.Color("#8e5d91");
+  const night = new THREE.Color("#18213b");
+  const sky = new THREE.Color();
 
-function animate(now) {
-  const delta = Math.min((now - state.last) / 1000, 0.05);
-  state.last = now;
+  if (sunHeight > 6) {
+    sky.copy(warm).lerp(new THREE.Color("#f0a29a"), 0.35);
+    timeLabel.textContent = "Golden Hour";
+  } else if (sunHeight > -3) {
+    sky.copy(dusk).lerp(warm, Math.max(sunHeight, 0) / 6);
+    timeLabel.textContent = "Sunset";
+  } else {
+    sky.copy(night).lerp(dusk, Math.max(sunHeight + 18, 0) / 15);
+    timeLabel.textContent = "Lantern Night";
+  }
 
-  movePlayer(delta);
-  updateCamera(delta);
-  updateRoomLabel();
-  updateHover();
-  updateAnimated(delta, now);
-
-  renderer.render(scene, camera);
-  requestAnimationFrame(animate);
+  scene.background = sky;
+  scene.fog.color.copy(sky);
+  sun.position.set(Math.cos(angle) * 18, Math.max(3, sunHeight + 10), Math.sin(angle) * 18);
+  sun.intensity = THREE.MathUtils.clamp((sunHeight + 18) / 20, 0.28, 2.2);
+  hemiLight.intensity = THREE.MathUtils.clamp((sunHeight + 20) / 18, 0.58, 1.65);
 }
 
 function updateAnimated(delta, now) {
   animated.forEach((item) => {
-    if (item.type === "orb") {
-      item.mesh.rotation.y += delta * item.speed;
-      item.mesh.position.y += Math.sin(now * 0.0012 + item.speed * 7) * 0.0009;
-    }
-
     if (item.type === "water") {
-      item.mesh.rotation.z = Math.sin(now * 0.0007) * 0.018;
+      item.mesh.material.opacity = 0.76 + Math.sin(now * 0.001) * 0.04;
     }
-
+    if (item.type === "lantern") {
+      const flicker = 0.88 + Math.sin(now * 0.006 + item.mesh.position.x) * 0.12;
+      item.light.intensity = 1.15 * flicker;
+    }
     if (item.type === "petals") {
       item.group.children.forEach((petal) => {
-        petal.position.x += delta * petal.userData.drift * 0.22;
-        petal.position.y -= delta * petal.userData.drift * 0.24;
-        petal.position.z += Math.sin(now * 0.0007 + petal.position.x) * delta * 0.1;
-        petal.rotation.x += delta * 0.55;
-        petal.rotation.z += delta * 0.38;
-        if (petal.position.y < 0.35) {
-          petal.position.y = random(2.3, 3.6);
-          petal.position.x = random(-21, 21);
-          petal.position.z = random(-21, 21);
+        petal.position.x += delta * petal.userData.speed * 0.35;
+        petal.position.y -= delta * petal.userData.speed * 0.28;
+        petal.position.z += Math.sin(now * 0.0008 + petal.position.x) * delta * 0.18;
+        petal.rotation.x += delta * 0.6;
+        petal.rotation.z += delta * 0.42;
+        if (petal.position.y < 0.25) {
+          petal.position.set(random(-28, 28), random(3.0, 6.0), random(-28, 31));
         }
-        if (petal.position.x > 23) petal.position.x = -23;
       });
     }
   });
 }
 
-function hitsWall(x, z) {
-  const r = 0.34;
-  return colliders.some((box) => x + r > box.minX && x - r < box.maxX && z + r > box.minZ && z - r < box.maxZ);
+function updateSpotLabel() {
+  let closest = "Bridge";
+  let distance = Infinity;
+  Object.entries(spots).forEach(([name, spot]) => {
+    const d = spot.position.distanceTo(camera.position);
+    if (d < distance) {
+      closest = name;
+      distance = d;
+    }
+  });
+  spotLabel.textContent = spots[closest].label;
 }
 
-function addCollider(x, z, w, d) {
-  colliders.push(box2D(x, z, w, d));
+function animate(now) {
+  const delta = Math.min((now - state.last) / 1000, 0.05);
+  state.last = now;
+  movePlayer(delta);
+  updateCamera(delta);
+  updateLighting(delta);
+  updateAnimated(delta, now);
+  updateSpotLabel();
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
 }
 
-function box2D(x, z, w, d) {
-  return { minX: x - w / 2, maxX: x + w / 2, minZ: z - d / 2, maxZ: z + d / 2 };
+function teleportTo(name) {
+  const spot = spots[name];
+  if (!spot) return;
+  intro.classList.add("is-hidden");
+  state.velocity.set(0, 0, 0);
+  camera.position.copy(spot.position);
+  state.yaw = spot.yaw;
+  state.targetYaw = spot.yaw;
+  state.pitch = 0;
+  state.targetPitch = 0;
+  updateCamera(0.016);
+  updateSpotLabel();
+}
+
+function requestLookControl() {
+  try {
+    const request = canvas.requestPointerLock?.();
+    if (request && typeof request.catch === "function") {
+      request.catch(() => {
+        state.pointerLocked = false;
+      });
+    }
+  } catch {
+    state.pointerLocked = false;
+  }
 }
 
 function damp(current, target, lambda, delta) {
@@ -1082,100 +687,6 @@ function damp(current, target, lambda, delta) {
 
 function random(min, max) {
   return min + Math.random() * (max - min);
-}
-
-function makeTatamiTexture(base, line) {
-  const textureCanvas = document.createElement("canvas");
-  textureCanvas.width = 256;
-  textureCanvas.height = 256;
-  const ctx = textureCanvas.getContext("2d");
-  ctx.fillStyle = base;
-  ctx.fillRect(0, 0, 256, 256);
-  ctx.strokeStyle = line;
-  ctx.globalAlpha = 0.34;
-  for (let y = 8; y < 256; y += 8) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(256, y + Math.sin(y) * 0.7);
-    ctx.stroke();
-  }
-  ctx.globalAlpha = 0.28;
-  for (let x = 8; x < 256; x += 16) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x + Math.sin(x) * 0.5, 256);
-    ctx.stroke();
-  }
-  const texture = new THREE.CanvasTexture(textureCanvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(1.8, 1);
-  return texture;
-}
-
-function makeWoodTexture(base, grain) {
-  const textureCanvas = document.createElement("canvas");
-  textureCanvas.width = 256;
-  textureCanvas.height = 256;
-  const ctx = textureCanvas.getContext("2d");
-  ctx.fillStyle = base;
-  ctx.fillRect(0, 0, 256, 256);
-  for (let y = 0; y < 256; y += 5) {
-    ctx.strokeStyle = grain;
-    ctx.globalAlpha = 0.22 + Math.random() * 0.2;
-    ctx.beginPath();
-    ctx.moveTo(0, y + Math.sin(y * 0.16) * 4);
-    ctx.bezierCurveTo(70, y + 8, 140, y - 8, 256, y + Math.cos(y * 0.12) * 4);
-    ctx.stroke();
-  }
-  const texture = new THREE.CanvasTexture(textureCanvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(1.3, 1.3);
-  return texture;
-}
-
-function makeWashiTexture(base, fiber) {
-  const textureCanvas = document.createElement("canvas");
-  textureCanvas.width = 256;
-  textureCanvas.height = 256;
-  const ctx = textureCanvas.getContext("2d");
-  ctx.fillStyle = base;
-  ctx.fillRect(0, 0, 256, 256);
-  ctx.strokeStyle = fiber;
-  for (let i = 0; i < 320; i += 1) {
-    ctx.globalAlpha = random(0.08, 0.22);
-    ctx.beginPath();
-    const x = random(0, 256);
-    const y = random(0, 256);
-    ctx.moveTo(x, y);
-    ctx.lineTo(x + random(-16, 16), y + random(-3, 3));
-    ctx.stroke();
-  }
-  const texture = new THREE.CanvasTexture(textureCanvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
-}
-
-function makeStoneTexture() {
-  const textureCanvas = document.createElement("canvas");
-  textureCanvas.width = 256;
-  textureCanvas.height = 256;
-  const ctx = textureCanvas.getContext("2d");
-  ctx.fillStyle = "#9b958b";
-  ctx.fillRect(0, 0, 256, 256);
-  for (let i = 0; i < 460; i += 1) {
-    const v = Math.floor(random(120, 188));
-    ctx.fillStyle = `rgba(${v}, ${v - 4}, ${v - 12}, ${random(0.1, 0.28)})`;
-    ctx.fillRect(random(0, 256), random(0, 256), random(1, 4), random(1, 4));
-  }
-  const texture = new THREE.CanvasTexture(textureCanvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  return texture;
 }
 
 function roundRect(ctx, x, y, width, height, radius) {
@@ -1188,32 +699,12 @@ function roundRect(ctx, x, y, width, height, radius) {
   ctx.closePath();
 }
 
-function wrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines = 8) {
-  const lines = text.split("\n");
-  let drawn = 0;
-  for (const line of lines) {
-    const words = line.split(" ");
-    let current = "";
-    for (const word of words) {
-      const test = current ? `${current} ${word}` : word;
-      if (ctx.measureText(test).width > maxWidth && current) {
-        ctx.fillText(current, x, y);
-        y += lineHeight;
-        drawn += 1;
-        current = word;
-        if (drawn >= maxLines) return;
-      } else {
-        current = test;
-      }
-    }
-    ctx.fillText(current, x, y);
-    y += lineHeight;
-    drawn += 1;
-    if (drawn >= maxLines) return;
-  }
-}
-
 enterButton.addEventListener("click", () => {
+  intro.classList.add("is-hidden");
+  requestLookControl();
+});
+
+canvas.addEventListener("click", () => {
   intro.classList.add("is-hidden");
   requestLookControl();
 });
@@ -1222,48 +713,23 @@ canvas.addEventListener("mousedown", () => {
   state.dragLook = true;
 });
 
-canvas.addEventListener("click", () => {
-  intro.classList.add("is-hidden");
-  if (hoveredPanel) {
-    openCard(hoveredPanel.userData.card);
-    return;
-  }
-  requestLookControl();
-});
-
-closeModal.addEventListener("click", closeCard);
-detailModal.addEventListener("click", (event) => {
-  if (event.target === detailModal) closeCard();
-});
-
-document.addEventListener("pointerlockchange", () => {
-  state.pointerLocked = document.pointerLockElement === canvas;
-  if (state.pointerLocked) intro.classList.add("is-hidden");
-});
-
 document.addEventListener("mouseup", () => {
   state.dragLook = false;
 });
 
+document.addEventListener("pointerlockchange", () => {
+  state.pointerLocked = document.pointerLockElement === canvas;
+});
+
 document.addEventListener("mousemove", (event) => {
-  if ((!state.pointerLocked && !state.dragLook) || !detailModal.hidden) return;
+  if (!state.pointerLocked && !state.dragLook) return;
   state.targetYaw -= event.movementX * mouseSensitivity;
   state.targetPitch -= event.movementY * mouseSensitivity;
-  state.targetPitch = Math.max(-1.18, Math.min(1.02, state.targetPitch));
-  state.lookSway = THREE.MathUtils.clamp(event.movementX * -0.00016, -0.016, 0.016);
+  state.targetPitch = Math.max(-0.9, Math.min(0.72, state.targetPitch));
+  state.lookSway = THREE.MathUtils.clamp(event.movementX * -0.00014, -0.014, 0.014);
 });
 
 document.addEventListener("keydown", (event) => {
-  if (!detailModal.hidden && event.code === "Escape") {
-    closeCard();
-    return;
-  }
-
-  if (event.code === "KeyF" && hoveredPanel) {
-    openCard(hoveredPanel.userData.card);
-    return;
-  }
-
   state.keys.add(event.code);
   if (event.code === "Space") {
     intro.classList.add("is-hidden");
@@ -1275,8 +741,20 @@ document.addEventListener("keyup", (event) => {
   state.keys.delete(event.code);
 });
 
-document.querySelectorAll("[data-room]").forEach((button) => {
-  button.addEventListener("click", () => teleportTo(button.dataset.room));
+document.addEventListener("pointerdown", (event) => {
+  const button = event.target.closest?.("[data-spot]");
+  if (!button) return;
+  event.preventDefault();
+  event.stopPropagation();
+  teleportTo(button.dataset.spot);
+});
+
+document.addEventListener("click", (event) => {
+  const button = event.target.closest?.("[data-spot]");
+  if (!button) return;
+  event.preventDefault();
+  event.stopPropagation();
+  teleportTo(button.dataset.spot);
 });
 
 window.addEventListener("resize", () => {
@@ -1285,16 +763,3 @@ window.addEventListener("resize", () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.55));
 });
-
-function requestLookControl() {
-  try {
-    const lockRequest = canvas.requestPointerLock?.();
-    if (lockRequest && typeof lockRequest.catch === "function") {
-      lockRequest.catch(() => {
-        state.pointerLocked = false;
-      });
-    }
-  } catch {
-    state.pointerLocked = false;
-  }
-}

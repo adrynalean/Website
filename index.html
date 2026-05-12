@@ -3,57 +3,42 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sashi Vijay | Sakura Walkthrough Portfolio</title>
+    <title>Sashi Vijay | Sakura Estate Prototype</title>
     <link rel="stylesheet" href="./src/styles.css" />
   </head>
   <body>
-    <canvas id="scene" aria-label="First-person sakura portfolio walkthrough"></canvas>
+    <canvas id="scene" aria-label="Voxel-inspired sakura house walkthrough"></canvas>
 
     <main class="hud">
       <section class="intro" id="intro">
-        <p class="eyebrow">Sakura portfolio walkthrough</p>
-        <h1>Sashi Vijay</h1>
+        <p class="eyebrow">Environment prototype</p>
+        <h1>Sakura Estate</h1>
         <p class="summary">
-          A calm first-person gallery with template rooms for projects,
-          experience, skills, about, and contact.
+          A warm voxel-inspired Japanese house scene. Cross the bridge, enter
+          the house, and explore the rooms before portfolio content is added.
         </p>
-        <button id="enterButton" class="primary">Enter walkthrough</button>
+        <button id="enterButton" class="primary">Start exploring</button>
       </section>
 
-      <nav class="room-nav" aria-label="Room navigation">
-        <button data-room="Lobby">Lobby</button>
-        <button data-room="Projects">Projects</button>
-        <button data-room="Experience">Experience</button>
-        <button data-room="Skills">Skills</button>
-        <button data-room="Contact">Contact</button>
+      <nav class="quick-nav" aria-label="Quick navigation">
+        <button data-spot="Bridge">Bridge</button>
+        <button data-spot="Gate">Gate</button>
+        <button data-spot="Hall">Hall</button>
+        <button data-spot="West Room">West Room</button>
+        <button data-spot="East Room">East Room</button>
       </nav>
 
-      <div class="interaction-hint" id="interactionHint" hidden>
-        <span id="interactionTitle">Open panel</span>
-        <small>Click or press F</small>
-      </div>
-
       <div class="corner-panel">
-        <span id="roomLabel">Lobby</span>
-        <small>W/S move - A/D turn - Q/E strafe - Mouse or drag to look</small>
+        <span id="spotLabel">Bridge</span>
+        <small>W/S move - A/D turn - Q/E strafe - mouse or drag to look</small>
       </div>
 
-      <div class="reticle" id="reticle" aria-hidden="true"></div>
-    </main>
+      <div class="time-pill">
+        <span id="timeLabel">Golden Hour</span>
+      </div>
 
-    <section class="detail-modal" id="detailModal" hidden aria-modal="true" role="dialog">
-      <article class="detail-card">
-        <button class="close-button" id="closeModal" aria-label="Close detail panel">Close</button>
-        <p class="detail-kicker" id="modalKicker">Template</p>
-        <h2 id="modalTitle">Panel title</h2>
-        <p id="modalBody"></p>
-        <ul id="modalList"></ul>
-        <div class="detail-actions">
-          <a id="modalPrimary" href="#" target="_blank" rel="noreferrer">Primary link</a>
-          <a id="modalSecondary" href="#" target="_blank" rel="noreferrer">Secondary link</a>
-        </div>
-      </article>
-    </section>
+      <div class="reticle" aria-hidden="true"></div>
+    </main>
 
     <script type="module" src="./src/main.js"></script>
   </body>

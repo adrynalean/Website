@@ -1,6 +1,8 @@
-# Sakura Walkthrough Portfolio
+# Sakura Estate Prototype
 
-Static first-person portfolio prototype for Hostinger-style deployment.
+Static Three.js environment prototype for a voxel-inspired Japanese sakura
+house. This restart focuses only on modeling, mood, movement, and boundaries.
+Portfolio content can be assigned to rooms later.
 
 ## Run locally
 
@@ -16,39 +18,22 @@ http://localhost:5173
 
 ## Controls
 
-- Click **Enter walkthrough** to start.
-- Use `W/S` to move forward and backward.
-- Use `A/D` or the left/right arrow keys to turn the camera.
-- Use `Q/E` to strafe left and right.
-- Hold `Shift` to move faster.
-- Move the mouse to look. If pointer lock is blocked by an embedded browser,
-  click and drag to look around.
-- Center the reticle on a panel, then click or press `F` to open it.
-- Press `Esc` or click **Close** to close a detail panel.
+- `W/S`: move forward and backward
+- `A/D` or arrow keys: turn camera
+- `Q/E`: strafe left and right
+- `Shift`: move faster
+- Mouse / click-drag: look around
 
-## Where to fill in your content
+## Current Layout
 
-Most text lives in `src/main.js` inside the `cards` array.
+- Bridge approach over water
+- Gate and lantern entry
+- Warm voxel-inspired house exterior
+- Main hall
+- West room
+- East room
+- Rear room shell
+- Scenic water, sakura trees, horizon, and fast time-of-day cycle
 
-Replace each template card:
-
-- `About Sashi`
-- `Project One`
-- `Project Two`
-- `Project Three`
-- `Experience Timeline`
-- `Technical Stack`
-- `Contact`
-
-Each card has:
-
-- `title`
-- `kicker`
-- `summary`
-- `body`
-- `bullets`
-- `primary`
-- `secondary`
-
-The theme is intentionally narrow: sakura blush, warm paper, tatami, dark cedar,
-moss, stone, and soft gold accents.
+The playable boundary is intentionally restricted to the bridge, entry platform,
+and house interior. The scenery beyond that is decorative.
