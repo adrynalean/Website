@@ -22,6 +22,7 @@ http://localhost:5173
 - `A/D` or arrow keys: turn camera
 - `Q/E`: strafe left and right
 - `Shift`: move faster
+- `F`: open/close the front door when nearby
 - `Space`: jump
 - Mouse / click-drag: look around
 
@@ -41,6 +42,8 @@ http://localhost:5173
 - Brighter light-wood plank flooring throughout the interior
 - Continuous playable route from the starting bridge through the gate and into the house
 - Interior staircase and jump-ready vertical movement foundation
+- Second-floor studio, gallery, and archive rooms
+- More active water shader with stronger sine-wave motion
 - Scenic water, sakura trees, horizon, and fast time-of-day cycle
 - Lightweight gradient skydome with visible sun/moon movement
 - Continuous lake around the bridge and house, with shoreline tree rings
