@@ -125,11 +125,25 @@ const skyDome = new THREE.Mesh(
 );
 scene.add(skyDome);
 
-const sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({ color: "#ffd28d", transparent: true, opacity: 0.95 }));
+const sunSprite = new THREE.Sprite(
+  new THREE.SpriteMaterial({
+    map: makeRadialTexture("#fff4c6", "#ffd47f"),
+    transparent: true,
+    opacity: 0.95,
+    depthWrite: false,
+  }),
+);
 sunSprite.scale.set(5.8, 5.8, 1);
 scene.add(sunSprite);
 
-const moonSprite = new THREE.Sprite(new THREE.SpriteMaterial({ color: "#cdd5ff", transparent: true, opacity: 0.0 }));
+const moonSprite = new THREE.Sprite(
+  new THREE.SpriteMaterial({
+    map: makeRadialTexture("#eef2ff", "#b9c8ff"),
+    transparent: true,
+    opacity: 0.0,
+    depthWrite: false,
+  }),
+);
 moonSprite.scale.set(3.2, 3.2, 1);
 scene.add(moonSprite);
 
@@ -195,75 +209,75 @@ function buildWorld() {
 }
 
 function addWater() {
-  const water = new THREE.Mesh(new THREE.PlaneGeometry(120, 120, 1, 1), materials.water);
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(170, 170, 40, 40), materials.water);
   water.rotation.x = -Math.PI / 2;
-  water.position.y = -0.28;
+  water.position.y = -0.34;
   water.receiveShadow = true;
   scene.add(water);
   animated.push({ type: "water", mesh: water });
 
-  const riverGlow = new THREE.Mesh(
-    new THREE.PlaneGeometry(9, 70, 1, 1),
-    new THREE.MeshBasicMaterial({ color: "#31496f", transparent: true, opacity: 0.22 }),
-  );
-  riverGlow.rotation.x = -Math.PI / 2;
-  riverGlow.position.set(0, -0.265, 1);
-  scene.add(riverGlow);
+  const streakMaterial = new THREE.MeshBasicMaterial({
+    color: "#fff0c7",
+    transparent: true,
+    opacity: 0.12,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
+  for (let i = 0; i < 10; i += 1) {
+    const streak = new THREE.Mesh(new THREE.PlaneGeometry(random(4, 11), 0.055), streakMaterial.clone());
+    streak.rotation.x = -Math.PI / 2;
+    streak.rotation.z = random(-0.08, 0.08);
+    streak.position.set(random(-20, 20), -0.245, random(1, 32));
+    streak.userData.phase = random(0, Math.PI * 2);
+    scene.add(streak);
+    animated.push({ type: "waterStreak", mesh: streak });
+  }
 }
 
 function addDistantTerrain() {
-  const islands = [
-    [-22, -8, 16, 12],
-    [24, 3, 18, 15],
-    [-24, 24, 20, 14],
-    [22, 26, 18, 12],
-    [-10, -28, 20, 12],
+  const shoreline = [
+    [0, 43, 92, 6],
+    [0, -43, 92, 6],
+    [-46, 0, 6, 86],
+    [46, 0, 6, 86],
+    [-34, 34, 28, 7],
+    [34, 34, 28, 7],
+    [-34, -34, 28, 7],
+    [34, -34, 28, 7],
   ];
 
-  islands.forEach(([x, z, w, d]) => {
-    const land = block(w, 0.6, d, materials.grass, x, -0.08, z);
-    land.receiveShadow = true;
-    block(w + 1.4, 0.18, d + 1.4, materials.shore, x, -0.22, z);
-    addVoxelCluster(x, z, w, d);
+  shoreline.forEach(([x, z, w, d]) => {
+    block(w + 1.4, 0.18, d + 1.4, materials.shore, x, -0.26, z);
+    block(w, 0.5, d, materials.grass, x, -0.06, z);
   });
 
-  [
-    [-10, 33, 42, 4],
-    [22, -24, 28, 4],
-    [-29, 16, 4, 26],
-    [31, 18, 4, 28],
-    [-21, 38, 26, 5],
-    [21, 38, 26, 5],
-    [-38, -5, 5, 30],
-    [38, -3, 5, 32],
-  ].forEach(([x, z, w, d]) => block(w, 0.35, d, materials.shore, x, -0.12, z));
+  addLakeTreeRing();
 }
 
 function addMountainRing() {
   addRidgeRange({
-    z: -82,
-    baseY: -0.15,
-    width: 118,
-    peaks: [-1, 7, 3, 13, 6, 16, 8, 12, 5, 15, 7, 10, -1],
-    color: "#8c789d",
-    opacity: 0.62,
+    z: -92,
+    baseY: 0.7,
+    width: 150,
+    peaks: [-1, 4, 8, 6, 12, 9, 16, 11, 18, 12, 9, 14, 8, 12, 7, 9, 5, -1],
+    color: "#8e7ca0",
+    opacity: 0.5,
   });
   addRidgeRange({
-    z: -87,
-    baseY: -0.1,
-    width: 126,
-    peaks: [-1, 4, 9, 5, 12, 7, 11, 4, 9, 5, -1],
-    color: "#b19ab0",
-    opacity: 0.42,
+    z: -98,
+    baseY: 1.6,
+    width: 164,
+    peaks: [-1, 3, 5, 8, 6, 9, 7, 12, 8, 10, 7, 11, 6, 8, 5, 6, 3, -1],
+    color: "#b9a6bd",
+    opacity: 0.32,
   });
   addRidgeRange({
-    z: 58,
-    baseY: -0.2,
-    width: 120,
-    peaks: [-1, 4, 8, 5, 9, 3, 7, 4, -1],
-    color: "#927f93",
+    z: -105,
+    baseY: 2.1,
+    width: 176,
+    peaks: [-1, 2, 4, 6, 5, 7, 5, 8, 6, 7, 5, 6, 4, 5, 3, -1],
+    color: "#d2bdc9",
     opacity: 0.22,
-    rotationY: Math.PI,
   });
 }
 
@@ -275,7 +289,8 @@ function addRidgeRange({ z, baseY, width, peaks, color, opacity, rotationY = 0 }
 
   peaks.forEach((peak, index) => {
     const x = startX + index * step;
-    vertices.push(x, baseY, 0, x, baseY + peak, 0);
+    const shoulder = peak <= 0 ? peak : peak * (0.78 + Math.sin(index * 1.7) * 0.08);
+    vertices.push(x, baseY, 0, x, baseY + shoulder, 0);
   });
 
   for (let i = 0; i < peaks.length - 1; i += 1) {
@@ -466,6 +481,23 @@ function addSakuraForest() {
     [18, -18, 1.12],
   ];
   positions.forEach(([x, z, scale]) => addSakuraTree(x, z, scale));
+}
+
+function addLakeTreeRing() {
+  const ring = [];
+  for (let i = 0; i < 38; i += 1) {
+    const angle = (i / 38) * Math.PI * 2;
+    const jitter = Math.sin(i * 2.17) * 1.9;
+    const x = Math.cos(angle) * (40 + jitter);
+    const z = Math.sin(angle) * (38 + Math.cos(i * 1.31) * 2.4);
+    if (z > 30 || z < -30 || Math.abs(x) > 32) {
+      ring.push([x, z, 0.78 + ((i % 5) * 0.08)]);
+    }
+  }
+
+  ring.forEach(([x, z, scale]) => {
+    addSakuraTree(x, z, scale);
+  });
 }
 
 function addInteriorFloor(x, z, w, d) {
@@ -670,9 +702,16 @@ function createWaterMaterial() {
     vertexShader: `
       varying vec2 vUv;
       varying vec3 vWorldPosition;
+      varying float vWave;
+      uniform float time;
       void main() {
         vUv = uv;
         vec3 pos = position;
+        float waveA = sin(pos.x * 0.22 + time * 0.9) * 0.045;
+        float waveB = sin(pos.y * 0.17 - time * 0.65) * 0.035;
+        float waveC = sin((pos.x + pos.y) * 0.08 + time * 0.42) * 0.025;
+        vWave = waveA + waveB + waveC;
+        pos.z += vWave;
         vec4 worldPosition = modelMatrix * vec4(pos, 1.0);
         vWorldPosition = worldPosition.xyz;
         gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
@@ -685,17 +724,36 @@ function createWaterMaterial() {
       uniform vec3 glowColor;
       varying vec2 vUv;
       varying vec3 vWorldPosition;
+      varying float vWave;
       void main() {
         float rippleA = sin((vWorldPosition.x * 0.18 + time * 0.75) + sin(vWorldPosition.z * 0.08)) * 0.5 + 0.5;
         float rippleB = sin((vWorldPosition.z * 0.15 - time * 0.55) + cos(vWorldPosition.x * 0.06)) * 0.5 + 0.5;
         float band = smoothstep(0.15, 0.95, vUv.y);
+        float reflection = smoothstep(0.48, 0.52, vUv.x) * smoothstep(0.15, 0.92, vUv.y);
+        float sparkle = pow(max(0.0, rippleA * rippleB), 5.0) * 0.22;
         vec3 color = mix(shallowColor, deepColor, band * 0.72);
-        color += glowColor * (rippleA * 0.045 + rippleB * 0.035);
-        float alpha = 0.82 + rippleA * 0.04;
+        color += glowColor * (reflection * 0.18 + sparkle + abs(vWave) * 0.8);
+        float alpha = 0.8 + rippleA * 0.05;
         gl_FragColor = vec4(color, alpha);
       }
     `,
   });
+}
+
+function makeRadialTexture(inner, outer) {
+  const textureCanvas = document.createElement("canvas");
+  textureCanvas.width = 128;
+  textureCanvas.height = 128;
+  const ctx = textureCanvas.getContext("2d");
+  const gradient = ctx.createRadialGradient(64, 64, 8, 64, 64, 60);
+  gradient.addColorStop(0, inner);
+  gradient.addColorStop(0.58, outer);
+  gradient.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 128, 128);
+  const texture = new THREE.CanvasTexture(textureCanvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
 }
 
 function addPlayable(x, z, w, d) {
@@ -856,6 +914,10 @@ function updateAnimated(delta, now) {
   animated.forEach((item) => {
     if (item.type === "water") {
       item.mesh.material.uniforms.time.value = now * 0.001;
+    }
+    if (item.type === "waterStreak") {
+      item.mesh.material.opacity = 0.08 + Math.sin(now * 0.0015 + item.mesh.userData.phase) * 0.035;
+      item.mesh.position.x += Math.sin(now * 0.00045 + item.mesh.userData.phase) * delta * 0.12;
     }
     if (item.type === "lantern") {
       const flicker = 0.88 + Math.sin(now * 0.006 + item.mesh.position.x) * 0.12;
