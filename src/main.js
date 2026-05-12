@@ -33,14 +33,14 @@ const moveEase = 9.5;
 const stopEase = 12;
 
 const palette = {
-  cedar: "#7a3f29",
-  cedarDark: "#3a211a",
-  cedarLight: "#b5653c",
-  roof: "#c86432",
-  roofDark: "#843820",
-  roofHighlight: "#e4884a",
-  paper: "#fff0c9",
-  paperDim: "#ead0a5",
+  cedar: "#a66b3f",
+  cedarDark: "#5b3525",
+  cedarLight: "#c98b58",
+  roof: "#d5743d",
+  roofDark: "#994a2b",
+  roofHighlight: "#ef9b5d",
+  paper: "#fff5da",
+  paperDim: "#f2dfbf",
   stone: "#9c9588",
   water: "#5f8fb2",
   deepWater: "#355d87",
@@ -64,16 +64,17 @@ const waterUniforms = {
 };
 
 const materials = {
-  bridge: blockMaterial(palette.cedar, "#7e3c26"),
-  bridgeDark: blockMaterial(palette.cedarDark, "#402019"),
+  bridge: blockMaterial("#b98251", "#d8a66d"),
+  bridgeDark: blockMaterial(palette.cedarDark, "#75462f"),
   roof: blockMaterial(palette.roof, palette.roofHighlight),
   roofDark: blockMaterial(palette.roofDark, "#9b4526"),
   paper: blockMaterial(palette.paper, "#fff0ce"),
-  paperDim: blockMaterial(palette.paperDim, "#e6c99b"),
-  floor: blockMaterial("#734229", "#9b5e37"),
-  woodLight: blockMaterial("#9f653c", "#c98752"),
-  tatami: blockMaterial("#b9a86d", "#d3c38a"),
-  rug: blockMaterial("#d6b99a", "#f0d9b6"),
+  paperDim: blockMaterial(palette.paperDim, "#fff0ce"),
+  floor: blockMaterial("#c08a58", "#e2b77e"),
+  floorAlt: plankMaterial("#d6a66d", "#f1ca92", 10),
+  woodLight: blockMaterial("#bf8454", "#e0ad76"),
+  tatami: blockMaterial("#d8c98d", "#eee0a8"),
+  rug: blockMaterial("#ead0ae", "#fff0c9"),
   stone: blockMaterial(palette.stone, "#969085"),
   grass: blockMaterial(palette.grass, "#4d5f3f"),
   shore: blockMaterial(palette.shore, "#826650"),
@@ -365,25 +366,37 @@ function addRidgeRange({ x = 0, z, baseY, width, peaks, color, opacity, rotation
 
 function addBridge() {
   addPlayable(0, 20.5, 3.8, 15.5);
-  addPlayable(0, 9.2, 7.4, 4.8);
+  addPlayable(0, 8.2, 5.4, 5.8);
   addCollider(-2.25, 16.2, 0.55, 17.2);
   addCollider(2.25, 16.2, 0.55, 17.2);
 
-  for (let z = 10; z <= 25.5; z += 0.72) {
+  for (let z = 7.1; z <= 25.5; z += 0.72) {
     const plank = block(3.55, 0.16, 0.55, materials.bridge, 0, 0.05, z);
     plank.castShadow = true;
     plank.receiveShadow = true;
   }
 
   [-2.05, 2.05].forEach((x) => {
-    block(0.22, 0.45, 16.7, materials.bridgeDark, x, 0.38, 17.75);
-    for (let z = 10.2; z <= 25.3; z += 1.8) {
+    block(0.22, 0.45, 19.4, materials.bridgeDark, x, 0.38, 16.35);
+    for (let z = 7.4; z <= 25.3; z += 1.8) {
       block(0.34, 1.15, 0.34, materials.bridgeDark, x, 0.72, z);
       addLantern(x, z, 1.5, 0.36);
     }
   });
 
+  addEntryLanding();
   addToriiGate(0, 9.4, Math.PI);
+}
+
+function addEntryLanding() {
+  block(5.5, 0.22, 2.6, materials.floorAlt, 0, 0.22, 7.3);
+  block(4.7, 0.18, 0.75, materials.woodLight, 0, 0.42, 6.55);
+  block(4.1, 0.16, 0.62, materials.woodLight, 0, 0.28, 7.15);
+  block(3.7, 0.14, 0.58, materials.woodLight, 0, 0.16, 7.78);
+  for (let x = -2.45; x <= 2.45; x += 0.7) {
+    block(0.12, 0.62, 0.12, materials.bridgeDark, x, 0.78, 6.35);
+  }
+  block(5.2, 0.14, 0.14, materials.bridgeDark, 0, 1.08, 6.35);
 }
 
 function addHouse() {
@@ -400,6 +413,7 @@ function addHouse() {
   addInteriorFloor(0, 0, 14.2, 13.2);
   addInteriorFloor(0, -8.55, 9.2, 4.2);
   addHouseWalls();
+  addUpperStory();
   addRoofs();
   addRoomPartitions();
   addInteriorPosts();
@@ -438,6 +452,29 @@ function addHouseWalls() {
   addWindow(-5.28, -9.0, 1.7, "z");
   addWindow(5.28, -9.0, 1.7, "z");
   addWindow(0, -11.18, 2.0, "x");
+}
+
+function addUpperStory() {
+  const y = 4.22;
+  const h = 1.85;
+  const z = -0.8;
+  wallSegment(-3.2, 4.15, 3.2, h, "x", y);
+  wallSegment(3.2, 4.15, 3.2, h, "x", y);
+  wallSegment(0, -5.75, 10.6, h, "x", y);
+  wallSegment(-5.3, -0.8, 9.9, h, "z", y);
+  wallSegment(5.3, -0.8, 9.9, h, "z", y);
+
+  block(11.4, 0.24, 10.2, materials.floorAlt, 0, 3.3, z);
+  block(12.4, 0.22, 1.0, materials.bridge, 0, 3.46, 4.75);
+  for (let x = -5.6; x <= 5.6; x += 0.9) {
+    block(0.14, 0.74, 0.14, materials.bridgeDark, x, 3.86, 5.08);
+  }
+  block(11.8, 0.14, 0.14, materials.bridgeDark, 0, 4.18, 5.08);
+
+  addWindow(-3.2, 4.18, 1.45, "x", 4.34);
+  addWindow(3.2, 4.18, 1.45, "x", 4.34);
+  addWindow(-5.33, -2.0, 1.65, "z", 4.34);
+  addWindow(5.33, -2.0, 1.65, "z", 4.34);
 }
 
 function addRoomPartitions() {
@@ -631,14 +668,15 @@ function addShojiPanel(x, z, axis) {
 }
 
 function addRoofs() {
-  addLayeredRoof(0, 3.26, 0, 19.2, 18.2, 0.72, 5);
-  addLayeredRoof(0, 5.1, -1.0, 13.8, 12.0, 0.64, 4);
+  addLayeredRoof(0, 3.2, 0, 19.6, 18.4, 0.42, 3);
+  addLayeredRoof(0, 5.55, -0.85, 14.0, 11.8, 0.58, 4);
+  addLayeredRoof(0, 6.95, -0.9, 8.2, 6.4, 0.44, 3);
   addLayeredRoof(0, 3.08, -8.8, 12.4, 7.4, 0.5, 3);
 
-  block(1.0, 1.2, 11.4, materials.roofDark, -6.9, 4.0, -0.4);
-  block(1.0, 1.2, 11.4, materials.roofDark, 6.9, 4.0, -0.4);
-  block(12.5, 1.0, 0.92, materials.roofDark, 0, 4.1, -6.1);
-  block(12.5, 1.0, 0.92, materials.roofDark, 0, 4.1, 5.4);
+  block(1.0, 0.95, 11.0, materials.roofDark, -6.35, 5.72, -0.7);
+  block(1.0, 0.95, 11.0, materials.roofDark, 6.35, 5.72, -0.7);
+  block(12.1, 0.82, 0.9, materials.roofDark, 0, 5.82, -6.05);
+  block(12.1, 0.82, 0.9, materials.roofDark, 0, 5.82, 4.35);
 }
 
 function addLayeredRoof(x, y, z, w, d, stepY, layers) {
@@ -784,7 +822,7 @@ function addInteriorFloor(x, z, w, d) {
   const tileD = 1.0;
   for (let ix = -Math.floor(w / 2); ix <= Math.floor(w / 2); ix += 1) {
     for (let iz = -Math.floor(d / 2); iz <= Math.floor(d / 2); iz += 1) {
-      const mat = (ix + iz) % 2 === 0 ? materials.tatami : materials.floor;
+      const mat = (ix + iz) % 2 === 0 ? materials.floorAlt : materials.floor;
       block(tileW - 0.04, 0.035, tileD - 0.04, mat, x + ix * tileW, 0.72, z + iz * tileD);
     }
   }
@@ -816,14 +854,14 @@ function wallSegment(x, z, length, height, axis, y) {
   beams.forEach((beam) => (beam.castShadow = true));
 }
 
-function addWindow(x, z, width, axis) {
+function addWindow(x, z, width, axis, y = 2.05) {
   const glow = block(
     axis === "x" ? width : 0.08,
     0.72,
     axis === "z" ? width : 0.08,
     materials.lanternGlow,
     x,
-    2.05,
+    y,
     z,
   );
   glow.scale.y = 1;
@@ -983,6 +1021,35 @@ function blockMaterial(base, highlight) {
   map.wrapT = THREE.RepeatWrapping;
   map.repeat.set(1, 1);
   return new THREE.MeshStandardMaterial({ color: base, map, roughness: 0.78, metalness: 0.02 });
+}
+
+function plankMaterial(base, highlight, plankCount = 8) {
+  const texture = document.createElement("canvas");
+  texture.width = 128;
+  texture.height = 128;
+  const ctx = texture.getContext("2d");
+  ctx.fillStyle = base;
+  ctx.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < plankCount; i += 1) {
+    const y = Math.floor((i / plankCount) * 128);
+    ctx.globalAlpha = 0.38;
+    ctx.fillStyle = i % 2 === 0 ? highlight : base;
+    ctx.fillRect(0, y, 128, Math.ceil(128 / plankCount));
+    ctx.globalAlpha = 0.55;
+    ctx.fillStyle = "rgba(86, 50, 30, 0.22)";
+    ctx.fillRect(0, y, 128, 1.5);
+  }
+  ctx.globalAlpha = 0.22;
+  ctx.fillStyle = "#fff4d2";
+  for (let i = 0; i < 80; i += 1) {
+    ctx.fillRect(Math.random() * 128, Math.random() * 128, random(8, 22), 1);
+  }
+  const map = new THREE.CanvasTexture(texture);
+  map.colorSpace = THREE.SRGBColorSpace;
+  map.wrapS = THREE.RepeatWrapping;
+  map.wrapT = THREE.RepeatWrapping;
+  map.repeat.set(1.2, 2.5);
+  return new THREE.MeshStandardMaterial({ color: base, map, roughness: 0.72, metalness: 0.01 });
 }
 
 function createWaterMaterial() {

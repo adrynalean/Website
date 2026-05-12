@@ -35,6 +35,9 @@ http://localhost:5173
 - Rear room annex
 - Walkable interior doorways connecting the hall and rooms
 - Warm interior furnishings: lanterns, shelves, cabinets, planters, tables, cushions, books, and vases
+- Connected bridge landing that leads visually into the front gate and house entry
+- Taller two-story Japanese house silhouette with lighter wood and paper tones
+- Brighter light-wood plank flooring throughout the interior
 - Scenic water, sakura trees, horizon, and fast time-of-day cycle
 - Lightweight gradient skydome with visible sun/moon movement
 - Continuous lake around the bridge and house, with shoreline tree rings
