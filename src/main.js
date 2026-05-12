@@ -39,6 +39,7 @@ const palette = {
   roof: "#d5743d",
   roofDark: "#994a2b",
   roofHighlight: "#ef9b5d",
+  blossomPanel: "#f5b6bf",
   paper: "#fff5da",
   paperDim: "#f2dfbf",
   stone: "#9c9588",
@@ -68,6 +69,7 @@ const materials = {
   bridgeDark: blockMaterial(palette.cedarDark, "#75462f"),
   roof: blockMaterial(palette.roof, palette.roofHighlight),
   roofDark: blockMaterial(palette.roofDark, "#9b4526"),
+  blossomPanel: blockMaterial(palette.blossomPanel, "#ffd4da"),
   paper: blockMaterial(palette.paper, "#fff0ce"),
   paperDim: blockMaterial(palette.paperDim, "#fff0ce"),
   floor: blockMaterial("#c08a58", "#e2b77e"),
@@ -98,6 +100,13 @@ const materials = {
 const colliders = [];
 const playable = [];
 const animated = [];
+const frontGate = {
+  panels: [],
+  colliders: [],
+  open: true,
+  progress: 1,
+  target: 1,
+};
 
 const skyUniforms = {
   topColor: { value: new THREE.Color("#894e8c") },
@@ -393,10 +402,32 @@ function addEntryLanding() {
   block(4.7, 0.18, 0.75, materials.woodLight, 0, 0.42, 6.55);
   block(4.1, 0.16, 0.62, materials.woodLight, 0, 0.28, 7.15);
   block(3.7, 0.14, 0.58, materials.woodLight, 0, 0.16, 7.78);
-  for (let x = -2.45; x <= 2.45; x += 0.7) {
+  [-2.45, -1.75, 1.75, 2.45].forEach((x) => {
     block(0.12, 0.62, 0.12, materials.bridgeDark, x, 0.78, 6.35);
-  }
-  block(5.2, 0.14, 0.14, materials.bridgeDark, 0, 1.08, 6.35);
+  });
+  block(1.5, 0.14, 0.14, materials.bridgeDark, -2.1, 1.08, 6.35);
+  block(1.5, 0.14, 0.14, materials.bridgeDark, 2.1, 1.08, 6.35);
+  addFrontGate();
+}
+
+function addFrontGate() {
+  const z = 6.33;
+  [
+    { side: -1, closedX: -0.58, openX: -1.45 },
+    { side: 1, closedX: 0.58, openX: 1.45 },
+  ].forEach(({ side, closedX, openX }) => {
+    const group = new THREE.Group();
+    group.position.set(openX, 0, z);
+    block(0.12, 0.9, 0.12, materials.bridgeDark, side * -0.52, 0.78, 0, group);
+    block(0.12, 0.9, 0.12, materials.bridgeDark, side * 0.52, 0.78, 0, group);
+    block(1.05, 0.12, 0.12, materials.bridgeDark, 0, 1.14, 0, group);
+    block(1.05, 0.12, 0.12, materials.woodLight, 0, 0.72, 0, group);
+    block(0.22, 0.18, 0.14, materials.gold, side * -0.1, 0.96, -0.05, group);
+    scene.add(group);
+    const collider = addCollider(closedX, z, 1.05, 0.36, false);
+    frontGate.panels.push({ group, closedX, openX });
+    frontGate.colliders.push(collider);
+  });
 }
 
 function addHouse() {
@@ -414,6 +445,7 @@ function addHouse() {
   addInteriorFloor(0, -8.55, 9.2, 4.2);
   addHouseWalls();
   addUpperStory();
+  addFrontFacadeDetails();
   addRoofs();
   addRoomPartitions();
   addInteriorPosts();
@@ -477,6 +509,63 @@ function addUpperStory() {
   addWindow(5.33, -2.0, 1.65, "z", 4.34);
 }
 
+function addFrontFacadeDetails() {
+  const z = 6.98;
+
+  [-6.4, -3.25, 3.25, 6.4].forEach((x) => {
+    block(0.32, 2.6, 0.22, materials.bridgeDark, x, 1.82, z);
+  });
+  [-4.9, 4.9].forEach((x) => {
+    block(2.4, 1.35, 0.16, materials.blossomPanel, x, 1.9, z + 0.02);
+    addShojiGrid(x, z + 0.12, 2.0, 1.05, 1.9);
+  });
+  block(0.52, 2.05, 0.18, materials.paperWarm, -1.28, 1.92, z + 0.04);
+  block(0.52, 2.05, 0.18, materials.paperWarm, 1.28, 1.92, z + 0.04);
+  block(2.35, 0.18, 0.22, materials.bridgeDark, 0, 3.03, z + 0.05);
+  block(2.35, 0.18, 0.22, materials.bridgeDark, 0, 0.88, z + 0.05);
+  [-1.08, 1.08].forEach((x) => block(0.18, 2.2, 0.22, materials.bridgeDark, x, 1.95, z + 0.05));
+
+  [-3.2, 3.2].forEach((x) => {
+    block(2.0, 1.25, 0.16, materials.blossomPanel, x, 4.38, z - 2.62);
+    addShojiGrid(x, z - 2.5, 1.7, 0.95, 4.38);
+  });
+  [-5.4, -2.1, 2.1, 5.4].forEach((x) => {
+    block(0.24, 1.9, 0.18, materials.bridgeDark, x, 4.28, z - 2.55);
+  });
+
+  block(12.8, 0.28, 0.34, materials.bridgeDark, 0, 3.12, z + 0.08);
+  block(11.2, 0.24, 0.3, materials.bridgeDark, 0, 5.18, z - 2.56);
+  block(7.2, 0.22, 0.32, materials.roofDark, 0, 6.55, z - 2.65);
+  addSteppedGable(0, z - 2.7, 6.45);
+}
+
+function addShojiGrid(x, z, w, h, y) {
+  block(w, h, 0.06, materials.paperWarm, x, y, z);
+  block(w + 0.16, 0.08, 0.08, materials.bridgeDark, x, y + h / 2, z + 0.03);
+  block(w + 0.16, 0.08, 0.08, materials.bridgeDark, x, y - h / 2, z + 0.03);
+  for (let i = -1; i <= 1; i += 1) {
+    block(0.06, h + 0.12, 0.08, materials.bridgeDark, x + (i * w) / 3, y, z + 0.03);
+  }
+  block(w + 0.12, 0.06, 0.08, materials.bridgeDark, x, y, z + 0.03);
+}
+
+function addSteppedGable(x, z, y) {
+  const rows = [
+    [0, 2.6, 0.28],
+    [0, 2.0, 0.82],
+    [0, 1.35, 1.36],
+    [0, 0.72, 1.9],
+  ];
+  rows.forEach(([ox, w, oy]) => {
+    block(w, 0.34, 0.28, materials.blossomPanel, x + ox, y + oy, z);
+    block(w + 0.42, 0.22, 0.34, materials.bridgeDark, x + ox, y + oy + 0.26, z + 0.04);
+  });
+  [-1.65, 1.65].forEach((sx) => {
+    block(0.32, 2.4, 0.32, materials.bridgeDark, x + sx, y + 1.2, z + 0.04);
+    block(0.6, 0.32, 0.34, materials.bridgeDark, x + sx, y + 2.55, z + 0.04);
+  });
+}
+
 function addRoomPartitions() {
   partitionWithDoor(-3.0, -1.5, 5.7, "z", -1.15, 1.65);
   partitionWithDoor(3.0, -1.5, 5.7, "z", -1.15, 1.65);
@@ -537,10 +626,10 @@ function addInteriorDetails() {
   addInteriorLight(-5.4, -3.2, 2.05, 0.7, 8);
   addInteriorLight(5.4, -3.2, 2.05, 0.7, 8);
 
-  addLowTable(0, 2.2, 2.85, 1.45);
-  addFloorCushion(-1.85, 2.2, 0);
-  addFloorCushion(1.85, 2.2, 0);
-  addFloorCushion(0, 3.55, Math.PI / 2);
+  addLowTable(-2.4, 2.1, 2.0, 1.3);
+  addFloorCushion(-3.8, 2.1, 0);
+  addFloorCushion(-1.1, 2.1, 0);
+  addFloorCushion(-2.4, 3.35, Math.PI / 2);
 
   addCabinetWall(-6.95, 2.6, 0.55, 4.2, "z");
   addCabinetWall(6.95, 2.1, 0.55, 4.8, "z");
@@ -1130,8 +1219,11 @@ function addPlayable(x, z, w, d) {
   playable.push(box2D(x, z, w, d));
 }
 
-function addCollider(x, z, w, d) {
-  colliders.push(box2D(x, z, w, d));
+function addCollider(x, z, w, d, active = true) {
+  const collider = box2D(x, z, w, d);
+  collider.active = active;
+  colliders.push(collider);
+  return collider;
 }
 
 function box2D(x, z, w, d) {
@@ -1145,7 +1237,7 @@ function isPlayable(x, z) {
 
 function hitsCollider(x, z) {
   const r = 0.34;
-  return colliders.some((box) => x + r > box.minX && x - r < box.maxX && z + r > box.minZ && z - r < box.maxZ);
+  return colliders.some((box) => box.active !== false && x + r > box.minX && x - r < box.maxX && z + r > box.minZ && z - r < box.maxZ);
 }
 
 function movePlayer(delta) {
@@ -1281,6 +1373,14 @@ function updateLighting(delta) {
 }
 
 function updateAnimated(delta, now) {
+  frontGate.progress = damp(frontGate.progress, frontGate.target, 10, delta);
+  frontGate.panels.forEach((panel) => {
+    panel.group.position.x = THREE.MathUtils.lerp(panel.closedX, panel.openX, frontGate.progress);
+  });
+  frontGate.colliders.forEach((collider) => {
+    collider.active = frontGate.target < 0.5 && frontGate.progress < 0.18;
+  });
+
   animated.forEach((item) => {
     if (item.type === "water") {
       item.mesh.material.uniforms.time.value = now * 0.001;
@@ -1309,6 +1409,10 @@ function updateAnimated(delta, now) {
 }
 
 function updateSpotLabel() {
+  if (camera.position.distanceTo(new THREE.Vector3(0, camera.position.y, 6.6)) < 3.2) {
+    spotLabel.textContent = frontGate.open ? "Entry Gate - F to close" : "Entry Gate - F to open";
+    return;
+  }
   let closest = "Bridge";
   let distance = Infinity;
   Object.entries(spots).forEach(([name, spot]) => {
@@ -1319,6 +1423,13 @@ function updateSpotLabel() {
     }
   });
   spotLabel.textContent = spots[closest].label;
+}
+
+function toggleFrontGate() {
+  const nearGate = Math.abs(camera.position.x) < 3.4 && camera.position.z > 4.6 && camera.position.z < 9.2;
+  if (!nearGate) return;
+  frontGate.open = !frontGate.open;
+  frontGate.target = frontGate.open ? 1 : 0;
 }
 
 function animate(now) {
@@ -1410,6 +1521,9 @@ document.addEventListener("mousemove", (event) => {
 
 document.addEventListener("keydown", (event) => {
   state.keys.add(event.code);
+  if (event.code === "KeyF" && !event.repeat) {
+    toggleFrontGate();
+  }
   if (event.code === "Space") {
     intro.classList.add("is-hidden");
     requestLookControl();

@@ -38,6 +38,8 @@ http://localhost:5173
 - Connected bridge landing that leads visually into the front gate and house entry
 - Taller two-story Japanese house silhouette with lighter wood and paper tones
 - Brighter light-wood plank flooring throughout the interior
+- Openable front entry gate with `F` near the deck
+- Reference-inspired pink-and-dark-wood facade with taller upper gable details
 - Scenic water, sakura trees, horizon, and fast time-of-day cycle
 - Lightweight gradient skydome with visible sun/moon movement
 - Continuous lake around the bridge and house, with shoreline tree rings
