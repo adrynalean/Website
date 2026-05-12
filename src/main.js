@@ -81,6 +81,10 @@ const materials = {
   sakuraDark: blockMaterial(palette.sakuraDark, "#c8738a"),
   leaf: blockMaterial(palette.leaf, "#6f8457"),
   trunk: blockMaterial("#6a3928", "#8a5137"),
+  hedge: blockMaterial("#49663c", "#6b8454"),
+  flower: blockMaterial("#ef9fb9", "#ffd0dc"),
+  lily: new THREE.MeshBasicMaterial({ color: "#6f965c", side: THREE.DoubleSide }),
+  lotus: new THREE.MeshBasicMaterial({ color: "#ff96bd", side: THREE.DoubleSide }),
   lanternGlow: new THREE.MeshBasicMaterial({ color: palette.lantern }),
   water: createWaterMaterial(),
 };
@@ -205,6 +209,8 @@ function buildWorld() {
   addHouse();
   addExteriorDetails();
   addSakuraForest();
+  addForegroundBlossoms();
+  addLakeDetails();
   addPetals();
 }
 
@@ -440,6 +446,19 @@ function addExteriorDetails() {
   addSakuraTree(9.4, 8.6, 1.05);
   addSakuraTree(-10.7, -5.5, 1.1);
   addSakuraTree(11.0, -5.2, 1.0);
+
+  addGardenBed(-5.8, 7.4, 3.8, 0.62);
+  addGardenBed(5.8, 7.4, 3.8, 0.62);
+  addGardenBed(-8.4, 2.2, 0.62, 5.0);
+  addGardenBed(8.4, 2.2, 0.62, 5.0);
+}
+
+function addGardenBed(x, z, w, d) {
+  block(w, 0.34, d, materials.hedge, x, 0.9, z);
+  const count = Math.max(3, Math.floor((w + d) * 1.1));
+  for (let i = 0; i < count; i += 1) {
+    block(0.18, 0.16, 0.18, materials.flower, x + random(-w * 0.42, w * 0.42), 1.15, z + random(-d * 0.42, d * 0.42));
+  }
 }
 
 function addSakuraForest() {
@@ -485,18 +504,73 @@ function addSakuraForest() {
 
 function addLakeTreeRing() {
   const ring = [];
-  for (let i = 0; i < 38; i += 1) {
-    const angle = (i / 38) * Math.PI * 2;
+  for (let i = 0; i < 56; i += 1) {
+    const angle = (i / 56) * Math.PI * 2;
     const jitter = Math.sin(i * 2.17) * 1.9;
-    const x = Math.cos(angle) * (40 + jitter);
-    const z = Math.sin(angle) * (38 + Math.cos(i * 1.31) * 2.4);
-    if (z > 30 || z < -30 || Math.abs(x) > 32) {
-      ring.push([x, z, 0.78 + ((i % 5) * 0.08)]);
+    const x = Math.cos(angle) * (42 + jitter);
+    const z = Math.sin(angle) * (39 + Math.cos(i * 1.31) * 2.4);
+    if (z > 27 || z < -28 || Math.abs(x) > 30) {
+      ring.push([x, z, 0.72 + ((i % 5) * 0.08)]);
     }
   }
 
   ring.forEach(([x, z, scale]) => {
     addSakuraTree(x, z, scale);
+  });
+}
+
+function addForegroundBlossoms() {
+  addBranchingCanopy(-16.0, 20.5, 0.82, 1);
+  addBranchingCanopy(16.0, 20.0, 0.74, -1);
+}
+
+function addBranchingCanopy(x, z, scale, side) {
+  const root = new THREE.Vector3(x, 1.1, z);
+  const trunkTop = new THREE.Vector3(x + side * 0.8, 5.6 * scale, z - 1.8);
+  cylinderBetween(root, trunkTop, 0.18 * scale, materials.trunk);
+
+  const branches = [
+    [trunkTop, new THREE.Vector3(x + side * 3.2, 6.6 * scale, z - 5.2), 0.08],
+    [trunkTop, new THREE.Vector3(x + side * 1.6, 6.9 * scale, z - 7.4), 0.07],
+    [trunkTop, new THREE.Vector3(x + side * 4.8, 5.8 * scale, z - 2.4), 0.06],
+  ];
+  branches.forEach(([start, end, radius]) => cylinderBetween(start, end, radius * scale, materials.trunk));
+
+  [
+    [side * 3.2, 6.9, -5.4, 1.0],
+    [side * 1.4, 7.2, -7.2, 0.92],
+    [side * 4.8, 6.1, -2.5, 0.86],
+    [side * 2.7, 6.3, -3.5, 0.78],
+  ].forEach(([ox, oy, oz, size], index) => {
+    block(size * scale, size * 0.68 * scale, size * scale, index % 2 ? materials.sakuraDark : materials.sakura, x + ox * scale, oy * scale, z + oz * scale);
+  });
+}
+
+function addLakeDetails() {
+  const pads = [
+    [-12, 15, 0.72],
+    [-15, 9, 0.58],
+    [13, 13, 0.62],
+    [16, 5, 0.7],
+    [-8, -15, 0.55],
+    [9, -17, 0.68],
+    [20, -9, 0.54],
+    [-21, -8, 0.6],
+  ];
+
+  pads.forEach(([x, z, scale], index) => {
+    const pad = new THREE.Mesh(new THREE.CircleGeometry(scale, 16), materials.lily);
+    pad.rotation.x = -Math.PI / 2;
+    pad.rotation.z = index * 0.8;
+    pad.position.set(x, -0.18, z);
+    scene.add(pad);
+
+    if (index % 2 === 0) {
+      const flower = new THREE.Mesh(new THREE.CircleGeometry(scale * 0.22, 8), materials.lotus);
+      flower.rotation.x = -Math.PI / 2;
+      flower.position.set(x + scale * 0.22, -0.165, z - scale * 0.12);
+      scene.add(flower);
+    }
   });
 }
 
@@ -664,6 +738,18 @@ function block(w, h, d, material, x, y, z, parent = scene) {
   mesh.castShadow = false;
   mesh.receiveShadow = true;
   parent.add(mesh);
+  return mesh;
+}
+
+function cylinderBetween(start, end, radius, material) {
+  const direction = new THREE.Vector3().subVectors(end, start);
+  const length = direction.length();
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius * 1.08, length, 8), material);
+  mesh.position.copy(start).add(end).multiplyScalar(0.5);
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+  mesh.castShadow = false;
+  mesh.receiveShadow = true;
+  scene.add(mesh);
   return mesh;
 }
 
