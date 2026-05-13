@@ -38,16 +38,14 @@ http://localhost:5173
 - Walkable interior doorways connecting the hall and rooms
 - Warm interior furnishings: lanterns, shelves, cabinets, planters, tables, cushions, books, and vases
 - Connected bridge landing that leads visually into the front gate and house entry
-- Taller two-story Japanese house silhouette with lighter wood and paper tones
+- Single-floor Japanese house layout with lighter wood and paper tones
 - Brighter light-wood plank flooring throughout the interior
 - Continuous playable route from the starting bridge through the gate and into the house
-- Interior staircase and jump-ready vertical movement foundation
-- Second-floor studio, gallery, and archive rooms
+- Accessible back garden with a central sakura tree and fallen petals
 - More active water shader with stronger sine-wave motion
-- Clear first/second-floor visual separation with a stairwell opening
 - Front entry rail removed so the door and bridge path stay unobstructed
-- Small lightweight rear garden with a center sakura tree and fallen petals
-- Brighter interior lighting on both floors
+- Brighter interior lighting on the first floor
+- Lower scene density, capped pixel ratio, and shared box geometry for smoother movement
 - Scenic water, sakura trees, horizon, and fast time-of-day cycle
 - Lightweight gradient skydome with visible sun/moon movement
 - Continuous lake around the bridge and house, with shoreline tree rings
