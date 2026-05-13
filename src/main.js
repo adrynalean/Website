@@ -62,9 +62,14 @@ const palette = {
 
 const waterUniforms = {
   time: { value: 0 },
-  shallowColor: { value: new THREE.Color("#6fa8c9") },
-  deepColor: { value: new THREE.Color("#365e91") },
-  glowColor: { value: new THREE.Color("#ffd0b0") },
+  shallowColor: { value: new THREE.Color("#4d7a88") },
+  deepColor: { value: new THREE.Color("#152634") },
+  horizonColor: { value: new THREE.Color("#d8b8b4") },
+  sunColor: { value: new THREE.Color("#fff0c8") },
+  sunDir: { value: new THREE.Vector3(0.35, 0.78, 0.5).normalize() },
+  fogColor: { value: new THREE.Color("#d58b82") },
+  fogNear: { value: 36 },
+  fogFar: { value: 108 },
 };
 
 const materials = {
@@ -97,7 +102,21 @@ const materials = {
   lily: new THREE.MeshBasicMaterial({ color: "#6f965c", side: THREE.DoubleSide }),
   lotus: new THREE.MeshBasicMaterial({ color: "#ff96bd", side: THREE.DoubleSide }),
   lanternGlow: new THREE.MeshBasicMaterial({ color: palette.lantern }),
+  lanternWarm: new THREE.MeshBasicMaterial({ color: "#ffdba6" }),
   water: createWaterMaterial(),
+  tatamiWeave: tatamiMaterial(1, 1),
+  scrollMountain: scrollMaterial("mountain"),
+  scrollSakura: scrollMaterial("sakura"),
+  scrollBamboo: scrollMaterial("bamboo"),
+  scrollCalligraphy: scrollMaterial("calligraphy"),
+  scrollCrane: scrollMaterial("crane"),
+  charcoal: blockMaterial("#352822", "#48362d"),
+  jade: blockMaterial("#5c7a5e", "#86a78a"),
+  blackLacquer: blockMaterial("#1d1612", "#2a1f1a"),
+  gold: blockMaterial(palette.gold, "#fff5da"),
+  cedarDark: blockMaterial(palette.cedarDark, "#75462f"),
+  vermillion: blockMaterial("#b53a2b", "#d04937"),
+  toriiBlack: blockMaterial("#1a1410", "#2a201a"),
 };
 
 const colliders = [];
@@ -238,28 +257,57 @@ function buildWorld() {
 }
 
 function addWater() {
-  const water = new THREE.Mesh(new THREE.PlaneGeometry(170, 170, 64, 64), materials.water);
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(170, 170, 96, 96), materials.water);
   water.rotation.x = -Math.PI / 2;
   water.position.y = -0.34;
-  water.receiveShadow = true;
   scene.add(water);
   animated.push({ type: "water", mesh: water });
 
-  const streakMaterial = new THREE.MeshBasicMaterial({
-    color: "#fff0c7",
+  const ringMat = new THREE.MeshBasicMaterial({
+    color: "#cfe0e6",
     transparent: true,
-    opacity: 0.12,
+    opacity: 0,
     depthWrite: false,
     side: THREE.DoubleSide,
   });
-  for (let i = 0; i < 10; i += 1) {
-    const streak = new THREE.Mesh(new THREE.PlaneGeometry(random(4, 11), 0.055), streakMaterial.clone());
-    streak.rotation.x = -Math.PI / 2;
-    streak.rotation.z = random(-0.08, 0.08);
-    streak.position.set(random(-20, 20), -0.245, random(1, 32));
-    streak.userData.phase = random(0, Math.PI * 2);
-    scene.add(streak);
-    animated.push({ type: "waterStreak", mesh: streak });
+  for (let i = 0; i < 7; i += 1) {
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.5, 0.62, 28), ringMat.clone());
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(random(-22, 22), -0.27, random(-22, 32));
+    ring.userData.phase = random(0, Math.PI * 2);
+    ring.userData.origin = ring.position.clone();
+    ring.userData.period = random(4.5, 7.5);
+    scene.add(ring);
+    animated.push({ type: "ripple", mesh: ring });
+  }
+
+  addFloatingPetals();
+}
+
+function addFloatingPetals() {
+  const baseMat = new THREE.MeshBasicMaterial({
+    color: "#ffc5d0",
+    transparent: true,
+    opacity: 0.85,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+  });
+  const geo = new THREE.CircleGeometry(0.075, 6);
+  for (let i = 0; i < 48; i += 1) {
+    const mat = baseMat.clone();
+    mat.color = new THREE.Color(i % 3 === 0 ? "#ffd6dc" : i % 3 === 1 ? "#f7a4bc" : "#ffe2e7");
+    const petal = new THREE.Mesh(geo, mat);
+    petal.rotation.x = -Math.PI / 2;
+    petal.rotation.z = random(0, Math.PI * 2);
+    petal.position.set(random(-26, 26), -0.215, random(-26, 32));
+    petal.userData = {
+      phase: random(0, Math.PI * 2),
+      driftX: random(0.015, 0.075),
+      origY: -0.215 + random(-0.005, 0.015),
+      spin: random(-0.08, 0.08),
+    };
+    scene.add(petal);
+    animated.push({ type: "floatPetal", mesh: petal });
   }
 }
 
@@ -432,6 +480,7 @@ function addHouse() {
   addHouseWalls();
   addFrontDoor();
   addUpperStory();
+  addFloorSeparation();
   addUpperRooms();
   addRoofs();
   addRoomPartitions();
@@ -476,6 +525,12 @@ function addHouseWalls() {
 
 function addFrontDoor() {
   const z = 6.86;
+  block(0.24, 2.3, 0.18, materials.bridgeDark, -1.28, 1.86, z + 0.02);
+  block(0.24, 2.3, 0.18, materials.bridgeDark, 1.28, 1.86, z + 0.02);
+  block(2.85, 0.2, 0.2, materials.bridgeDark, 0, 2.98, z + 0.02);
+  block(2.65, 0.12, 0.18, materials.gold, 0, 2.78, z + 0.04);
+  block(2.5, 0.12, 0.42, materials.woodLight, 0, 0.82, z - 0.04);
+
   [
     { side: -1, closedX: -0.52, openX: -1.42 },
     { side: 1, closedX: 0.52, openX: 1.42 },
@@ -503,9 +558,11 @@ function addUpperStory() {
   wallSegment(3.2, 4.15, 3.2, h, "x", y);
   wallSegment(0, -5.75, 10.6, h, "x", y);
   wallSegment(-5.3, -0.8, 9.9, h, "z", y);
-  wallSegment(5.3, -0.8, 9.9, h, "z", y);
+  wallSegment(5.3, 1.4, 5.5, h, "z", y);
+  wallSegment(5.3, -4.275, 2.95, h, "z", y);
 
   block(11.4, 0.24, 10.2, materials.floorAlt, 0, 3.3, z);
+  block(11.4, 0.24, 2.5, materials.floorAlt, 0, 3.3, -7.0);
   block(12.4, 0.22, 1.0, materials.bridge, 0, 3.46, 4.75);
   for (let x = -5.6; x <= 5.6; x += 0.9) {
     block(0.14, 0.74, 0.14, materials.bridgeDark, x, 3.86, 5.08);
@@ -515,7 +572,35 @@ function addUpperStory() {
   addWindow(-3.2, 4.18, 1.45, "x", 4.34);
   addWindow(3.2, 4.18, 1.45, "x", 4.34);
   addWindow(-5.33, -2.0, 1.65, "z", 4.34);
-  addWindow(5.33, -2.0, 1.65, "z", 4.34);
+
+  const upperMinY = UPPER_FLOOR_Y - 0.4;
+  const upperMaxY = UPPER_FLOOR_Y + 2.0;
+  addCollider(-3.2, 4.15, 3.7, 0.42, true, upperMinY, upperMaxY);
+  addCollider(3.2, 4.15, 3.7, 0.42, true, upperMinY, upperMaxY);
+  addCollider(0, -5.75, 10.7, 0.42, true, upperMinY, upperMaxY);
+  addCollider(-5.3, -0.8, 0.42, 10.0, true, upperMinY, upperMaxY);
+  addCollider(5.3, 1.4, 0.42, 5.5, true, upperMinY, upperMaxY);
+  addCollider(5.3, -4.275, 0.42, 2.95, true, upperMinY, upperMaxY);
+  addCollider(0, 5.15, 11.2, 0.42, true, upperMinY, upperMaxY);
+}
+
+function addFloorSeparation() {
+  const ceilingY = UPPER_FLOOR_Y - 0.28;
+  block(9.25, 0.12, 10.2, materials.paperDim, -0.95, ceilingY, -0.8);
+  block(2.0, 0.12, 3.0, materials.paperDim, 5.1, ceilingY, -4.25);
+  block(2.0, 0.12, 0.55, materials.paperDim, 5.1, ceilingY, 4.18);
+
+  [-5.1, -2.55, 0, 2.55].forEach((x) => {
+    block(0.18, 0.18, 10.0, materials.bridgeDark, x, ceilingY + 0.02, -0.8);
+  });
+  [-5.5, -2.6, 0, 2.6, 4.45].forEach((z) => {
+    block(9.0, 0.16, 0.18, materials.bridgeDark, -0.95, ceilingY + 0.04, z);
+  });
+
+  block(0.16, 0.74, 6.4, materials.bridgeDark, 3.88, UPPER_FLOOR_Y + 0.38, 0.62);
+  block(0.16, 0.74, 6.4, materials.bridgeDark, 6.22, UPPER_FLOOR_Y + 0.38, 0.62);
+  block(2.5, 0.16, 0.16, materials.bridgeDark, 5.05, UPPER_FLOOR_Y + 0.76, 3.88);
+  block(2.5, 0.16, 0.16, materials.bridgeDark, 5.05, UPPER_FLOOR_Y + 0.76, -2.62);
 }
 
 function addUpperRooms() {
@@ -668,19 +753,25 @@ function addInteriorPosts() {
 
 function addStaircase() {
   const x = 5.05;
-  const startZ = 3.6;
   const stepCount = 10;
+  const zoneStart = 3.9;
+  const zoneEnd = -1.7;
+  const zoneRange = zoneStart - zoneEnd;
+  const stepDz = (zoneStart - zoneEnd - 0.6) / stepCount;
   for (let i = 0; i < stepCount; i += 1) {
-    const t = i / (stepCount - 1);
-    const z = startZ - i * 0.55;
-    const y = 0.82 + t * (UPPER_FLOOR_Y - 0.62);
-    block(1.55, 0.18, 0.52, materials.woodLight, x, y, z);
-    block(0.12, 0.42 + t * 0.18, 0.12, materials.bridgeDark, x - 0.9, y + 0.28, z);
-    block(0.12, 0.42 + t * 0.18, 0.12, materials.bridgeDark, x + 0.9, y + 0.28, z);
+    const zTop = zoneStart - 0.3 - i * stepDz;
+    const stepTop = ((zoneStart - zTop) / zoneRange) * UPPER_FLOOR_Y;
+    const stepCenter = stepTop - 0.09;
+    block(1.55, 0.18, stepDz + 0.08, materials.woodLight, x, stepCenter, zTop);
+    block(1.55, stepTop * 0.6, 0.04, materials.bridgeDark, x, stepCenter - stepTop * 0.3 + 0.09, zTop + stepDz * 0.5);
   }
-  block(0.14, 0.14, 5.7, materials.bridgeDark, x - 0.95, 2.35, 1.1);
-  block(0.14, 0.14, 5.7, materials.bridgeDark, x + 0.95, 2.35, 1.1);
-  block(2.2, 0.18, 1.0, materials.floorAlt, x, UPPER_FLOOR_Y + 0.08, -2.1);
+  block(0.14, 1.05, 0.14, materials.bridgeDark, x - 0.95, 0.55, zoneStart - 0.3);
+  block(0.14, 1.45, 0.14, materials.bridgeDark, x + 0.95, 0.75, zoneStart - 0.3);
+  block(0.14, 2.4, 0.14, materials.bridgeDark, x - 0.95, 2.55, zoneEnd + 0.3);
+  block(0.14, 2.4, 0.14, materials.bridgeDark, x + 0.95, 2.55, zoneEnd + 0.3);
+  block(0.14, 0.14, zoneRange - 0.6, materials.bridgeDark, x - 0.95, UPPER_FLOOR_Y * 0.55, (zoneStart + zoneEnd) / 2);
+  block(0.14, 0.14, zoneRange - 0.6, materials.bridgeDark, x + 0.95, UPPER_FLOOR_Y * 0.55, (zoneStart + zoneEnd) / 2);
+  block(2.4, 0.2, 1.4, materials.floorAlt, x, UPPER_FLOOR_Y - 0.1, -2.3);
 }
 
 function addInteriorDetails() {
@@ -694,43 +785,88 @@ function addInteriorDetails() {
     [5.5, -3.0, 2.55, 0.34],
   ].forEach(([x, z, y, size]) => addLantern(x, z, y, size));
 
-  addInteriorLight(0, 2.2, 2.25, 1.1, 13);
-  addInteriorLight(0, -5.8, 2.15, 0.9, 11);
-  addInteriorLight(-5.4, -3.2, 2.05, 0.7, 8);
-  addInteriorLight(5.4, -3.2, 2.05, 0.7, 8);
+  addInteriorLight(0, 2.2, 2.25, 0.85, 13);
+  addInteriorLight(0, -5.8, 2.15, 0.7, 11);
+  addInteriorLight(-5.4, -3.2, 2.05, 0.5, 8);
+  addInteriorLight(5.4, -3.2, 2.05, 0.5, 8);
+  addInteriorLight(0, -9.4, 2.2, 0.6, 10);
 
-  addLowTable(-2.4, 2.1, 2.0, 1.3);
-  addFloorCushion(-3.8, 2.1, 0);
-  addFloorCushion(-1.1, 2.1, 0);
-  addFloorCushion(-2.4, 3.35, Math.PI / 2);
+  // --- Main Hall ---
+  addTatamiArea(-2.4, 1.6, 3, 3);
+  addLowTable(-2.4, 1.6, 2.2, 1.3);
+  addFloorCushion(-3.8, 1.6, 0);
+  addFloorCushion(-1.0, 1.6, 0);
+  addFloorCushion(-2.4, 2.85, Math.PI / 2);
+  addFloorCushion(-2.4, 0.35, Math.PI / 2);
+  addTeaSet(-2.4, 1.07, 1.6);
+
+  addTokonoma(-3.6, -5.95, "+z", "mountain");
+
+  addPaperLantern(-2.4, 2.45, 1.6);
+  addPaperLantern(2.4, 2.55, 2.4);
 
   addCabinetWall(-6.95, 2.6, 0.55, 4.2, "z");
   addCabinetWall(6.95, 2.1, 0.55, 4.8, "z");
   addShelf(-4.7, 5.85, 3.2, "x");
   addShelf(4.7, 5.85, 3.2, "x");
 
-  addPlanter(-6.8, -2.9, 1.0, 3.2, "z");
-  addPlanter(6.8, -3.2, 1.0, 3.0, "z");
-  addIvyPanel(-6.88, -3.1, 2.3, 1.7, "z");
-  addIvyPanel(6.88, -3.2, 2.3, 1.7, "z");
+  addBonsai(6.95, 1.68, 0.5);
+  addBonsai(-6.95, 1.68, 4.4);
 
-  addLowTable(-5.45, -3.25, 2.1, 1.25);
-  addLowTable(5.45, -3.25, 2.1, 1.25);
-  addVase(-5.45, -3.25, 1.0);
-  addVase(5.45, -3.25, 0.92);
-  addBookStack(-4.25, -4.75);
-  addBookStack(4.25, -4.75);
+  addHangingScroll(-4.7, 1.85, 6.6, "crane", "-z", 0.85);
+  addHangingScroll(4.7, 1.85, 6.6, "sakura", "-z", 0.85);
+  addHangingScroll(3.6, 1.78, -6.58, "calligraphy", "+z", 0.85);
 
+  addFloorLantern(-6.3, 5.5, 1.2);
+  addFloorLantern(6.3, 5.5, 1.2);
+
+  // --- Room A (West) ---
+  addTatamiArea(-5.4, -2.9, 2, 2);
+  addPlanter(-6.8, -1.4, 1.0, 2.4, "z");
+  addIvyPanel(-6.88, -1.6, 2.3, 1.7, "z");
+  addLowTable(-5.45, -2.5, 1.9, 1.15);
+  addBonsai(-5.45, 1.07, -2.5);
+  addHangingScroll(-7.38, 1.85, -3.1, "bamboo", "+x", 0.95);
+  addHangingScroll(-7.38, 1.85, -4.5, "calligraphy", "+x", 0.7);
+  addFloorLantern(-6.7, -4.7, 1.15);
+
+  // --- Room B (East) ---
+  addTatamiArea(5.4, -2.9, 2, 2);
+  addPlanter(6.8, -1.4, 1.0, 2.4, "z");
+  addIvyPanel(6.88, -1.6, 2.3, 1.7, "z");
+  addLowTable(5.45, -2.5, 1.9, 1.15);
+  addIkebana(5.45, 1.07, -2.5);
+  addHangingScroll(7.38, 1.85, -3.1, "sakura", "-x", 0.95);
+  addHangingScroll(7.38, 1.85, -4.5, "crane", "-x", 0.7);
+  addFloorLantern(6.7, -4.7, 1.15);
+
+  // --- Corridor between Main Hall and Rear Room ---
   addShojiPanel(-6.85, -5.1, "z");
   addShojiPanel(6.85, -5.1, "z");
   addShojiPanel(-1.9, -6.65, "x");
   addShojiPanel(1.9, -6.65, "x");
-  addLowTable(0, -9.1, 2.2, 1.25);
-  addVase(0, -9.1, 0.88);
-  addShelf(-2.7, -10.95, 2.4, "x");
-  addShelf(2.7, -10.95, 2.4, "x");
-  addPlanter(-4.55, -9.2, 0.9, 2.2, "z");
-  addPlanter(4.55, -9.2, 0.9, 2.2, "z");
+
+  // --- Rear Room ---
+  addTatamiArea(0, -8.85, 4, 2);
+  addLowTable(0, -9.0, 2.4, 1.4);
+  addTeaSet(0, 1.07, -9.0);
+  addFloorCushion(-1.7, -9.0, Math.PI / 2);
+  addFloorCushion(1.7, -9.0, Math.PI / 2);
+  addFloorCushion(0, -10.05, 0);
+  addFloorCushion(0, -7.95, 0);
+
+  addHangingScroll(0, 1.95, -10.93, "calligraphy", "+z", 1.15);
+  addHangingScroll(-5.03, 1.85, -8.4, "crane", "+x", 0.85);
+  addHangingScroll(5.03, 1.85, -8.4, "bamboo", "-x", 0.85);
+
+  addBambooStalk(-4.2, -10.4, 1.95, 3);
+  addBambooStalk(4.2, -10.4, 1.95, 3);
+  addBonsai(-3.5, 0.72, -10.6);
+  addBonsai(3.5, 0.72, -10.6);
+
+  addFloorLantern(-3.6, -7.55, 1.1);
+  addFloorLantern(3.6, -7.55, 1.1);
+  addPaperLantern(0, 2.4, -9.0);
 }
 
 function addInteriorLight(x, z, y, intensity, distance) {
@@ -827,6 +963,237 @@ function addShojiPanel(x, z, axis) {
   block(axis === "x" ? 1.4 : 0.08, 1.45, axis === "z" ? 1.4 : 0.08, materials.paperWarm, x, 1.7, z);
   block(axis === "x" ? 1.56 : 0.12, 0.12, axis === "z" ? 1.56 : 0.12, materials.bridgeDark, x, 2.42, z);
   block(axis === "x" ? 1.56 : 0.12, 0.12, axis === "z" ? 1.56 : 0.12, materials.bridgeDark, x, 0.98, z);
+  const gridColor = materials.bridgeDark;
+  if (axis === "x") {
+    for (let i = -1; i <= 1; i += 1) {
+      block(0.05, 1.35, 0.06, gridColor, x + i * 0.46, 1.7, z);
+    }
+    for (let j = -1; j <= 1; j += 1) {
+      block(1.4, 0.05, 0.06, gridColor, x, 1.7 + j * 0.4, z);
+    }
+  } else {
+    for (let i = -1; i <= 1; i += 1) {
+      block(0.06, 1.35, 0.05, gridColor, x, 1.7, z + i * 0.46);
+    }
+    for (let j = -1; j <= 1; j += 1) {
+      block(0.06, 0.05, 1.4, gridColor, x, 1.7 + j * 0.4, z);
+    }
+  }
+}
+
+function addHangingScroll(x, y, z, theme, facing, scale = 1) {
+  const facingRot = { "+z": 0, "-z": Math.PI, "+x": Math.PI / 2, "-x": -Math.PI / 2 };
+  const w = 0.55 * scale;
+  const h = 1.5 * scale;
+  const group = new THREE.Group();
+
+  const matKey = `scroll${theme.charAt(0).toUpperCase()}${theme.slice(1)}`;
+  const scrollMat = materials[matKey] || materials.scrollMountain;
+
+  const paper = new THREE.Mesh(new THREE.PlaneGeometry(w, h), scrollMat);
+  paper.position.set(0, 0, 0.01);
+  group.add(paper);
+
+  const topRod = new THREE.Mesh(
+    new THREE.BoxGeometry(w + 0.16, 0.07, 0.06),
+    materials.bridgeDark,
+  );
+  topRod.position.set(0, h / 2 + 0.035, 0);
+  group.add(topRod);
+
+  const botRod = new THREE.Mesh(
+    new THREE.BoxGeometry(w + 0.14, 0.055, 0.07),
+    materials.bridgeDark,
+  );
+  botRod.position.set(0, -h / 2 - 0.028, 0);
+  group.add(botRod);
+
+  const finialL = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.04, 0.04, 0.09, 8),
+    materials.gold,
+  );
+  finialL.rotation.z = Math.PI / 2;
+  finialL.position.set(-(w / 2 + 0.12), -h / 2 - 0.028, 0);
+  group.add(finialL);
+
+  const finialR = finialL.clone();
+  finialR.position.x = (w / 2 + 0.12);
+  group.add(finialR);
+
+  const cord = new THREE.Mesh(
+    new THREE.BoxGeometry(0.022, 0.16, 0.022),
+    materials.bridgeDark,
+  );
+  cord.position.set(0, h / 2 + 0.12, 0);
+  group.add(cord);
+
+  group.position.set(x, y, z);
+  group.rotation.y = facingRot[facing] ?? 0;
+  scene.add(group);
+}
+
+function addIkebana(x, y, z) {
+  block(0.3, 0.12, 0.3, materials.blackLacquer, x, y + 0.06, z);
+  block(0.24, 0.16, 0.24, materials.ceramic, x, y + 0.2, z);
+  block(0.2, 0.04, 0.2, materials.charcoal, x, y + 0.3, z);
+
+  block(0.04, 0.68, 0.04, materials.trunk, x - 0.05, y + 0.64, z + 0.03);
+  block(0.04, 0.42, 0.04, materials.trunk, x + 0.07, y + 0.51, z - 0.03);
+  block(0.04, 0.05, 0.18, materials.trunk, x - 0.1, y + 0.78, z + 0.08);
+  block(0.18, 0.05, 0.04, materials.trunk, x + 0.13, y + 0.66, z - 0.05);
+
+  block(0.18, 0.06, 0.06, materials.leafBright, x + 0.04, y + 0.4, z + 0.1);
+  block(0.06, 0.06, 0.16, materials.hedge, x - 0.08, y + 0.36, z - 0.06);
+
+  block(0.1, 0.1, 0.1, materials.flower, x - 0.05, y + 0.96, z + 0.02);
+  block(0.08, 0.08, 0.08, materials.sakuraDark, x + 0.1, y + 0.82, z - 0.04);
+  block(0.07, 0.07, 0.07, materials.flower, x - 0.12, y + 0.74, z + 0.1);
+}
+
+function addBonsai(x, y, z) {
+  block(0.5, 0.06, 0.4, materials.blackLacquer, x, y + 0.03, z);
+  block(0.46, 0.04, 0.36, materials.bridgeDark, x, y + 0.08, z);
+  block(0.42, 0.05, 0.32, materials.cedarDark, x, y + 0.125, z);
+
+  block(0.08, 0.28, 0.08, materials.trunk, x, y + 0.29, z);
+  block(0.16, 0.06, 0.07, materials.trunk, x + 0.06, y + 0.38, z);
+  block(0.07, 0.06, 0.16, materials.trunk, x - 0.04, y + 0.44, z - 0.06);
+  block(0.06, 0.18, 0.06, materials.trunk, x + 0.1, y + 0.5, z);
+
+  block(0.34, 0.16, 0.3, materials.jade, x + 0.06, y + 0.52, z);
+  block(0.24, 0.14, 0.22, materials.hedge, x - 0.08, y + 0.6, z - 0.06);
+  block(0.18, 0.12, 0.18, materials.leafBright, x + 0.1, y + 0.66, z + 0.02);
+  block(0.12, 0.1, 0.12, materials.jade, x - 0.04, y + 0.7, z + 0.06);
+}
+
+function addFloorLantern(x, z, height = 1.25, baseY = 0.72) {
+  block(0.32, 0.08, 0.32, materials.blackLacquer, x, baseY + 0.04, z);
+  block(0.26, 0.04, 0.26, materials.bridgeDark, x, baseY + 0.1, z);
+  for (const ox of [-1, 1]) {
+    for (const oz of [-1, 1]) {
+      block(0.04, height - 0.22, 0.04, materials.bridgeDark, x + ox * 0.1, baseY + 0.12 + (height - 0.22) / 2, z + oz * 0.1);
+    }
+  }
+  const shade = block(0.22, height - 0.34, 0.22, materials.lanternWarm, x, baseY + 0.16 + (height - 0.34) / 2, z);
+  block(0.34, 0.06, 0.34, materials.bridgeDark, x, baseY + height + 0.02, z);
+  block(0.22, 0.04, 0.22, materials.bridgeDark, x, baseY + height + 0.07, z);
+  const light = new THREE.PointLight("#ffc285", 1.2, 5.2, 2);
+  light.position.set(x, baseY + height * 0.55, z);
+  scene.add(light);
+  shade.userData.baseIntensity = 1;
+  animated.push({ type: "lantern", mesh: shade, light });
+}
+
+function addBambooStalk(x, z, height = 2.0, count = 3) {
+  const baseY = 0.72;
+  for (let i = 0; i < count; i += 1) {
+    const ox = (i - (count - 1) / 2) * 0.18;
+    const oz = i % 2 ? 0.08 : -0.06;
+    const h = height + random(-0.25, 0.25);
+    block(0.08, h, 0.08, materials.leafBright, x + ox, baseY + h / 2, z + oz);
+    for (let j = 0; j < 5; j += 1) {
+      block(0.1, 0.03, 0.1, materials.hedge, x + ox, baseY + 0.3 + j * (h / 6), z + oz);
+    }
+    block(0.22, 0.04, 0.1, materials.leafBright, x + ox - 0.1, baseY + h * 0.85, z + oz);
+    block(0.1, 0.04, 0.22, materials.hedge, x + ox + 0.08, baseY + h * 0.7, z + oz + 0.04);
+  }
+}
+
+function addTeaSet(x, y, z) {
+  block(0.66, 0.025, 0.36, materials.blackLacquer, x, y + 0.012, z);
+  block(0.22, 0.13, 0.2, materials.ceramic, x, y + 0.09, z);
+  block(0.08, 0.04, 0.08, materials.ceramic, x, y + 0.17, z);
+  block(0.06, 0.03, 0.04, materials.ceramic, x - 0.16, y + 0.07, z);
+  block(0.04, 0.03, 0.12, materials.ceramic, x + 0.14, y + 0.09, z + 0.02);
+  block(0.085, 0.05, 0.085, materials.ceramic, x - 0.22, y + 0.04, z + 0.1);
+  block(0.085, 0.05, 0.085, materials.ceramic, x - 0.22, y + 0.04, z - 0.1);
+  block(0.085, 0.05, 0.085, materials.ceramic, x + 0.22, y + 0.04, z + 0.1);
+}
+
+function addTatamiArea(x, z, cols, rows, y = 0.78) {
+  const tw = 0.95;
+  const td = 1.85;
+  for (let i = 0; i < cols; i += 1) {
+    for (let j = 0; j < rows; j += 1) {
+      const px = x + (i - (cols - 1) / 2) * tw;
+      const pz = z + (j - (rows - 1) / 2) * td;
+      block(tw - 0.04, 0.03, td - 0.04, materials.tatamiWeave, px, y, pz);
+    }
+  }
+}
+
+function addTokonoma(x, z, facing, theme = "mountain") {
+  const facingZ = facing === "+z" ? 1 : facing === "-z" ? -1 : 0;
+  const facingX = facing === "+x" ? 1 : facing === "-x" ? -1 : 0;
+  const isZAxis = facingZ !== 0;
+
+  const platformW = 1.7;
+  const platformD = 0.85;
+  const w = isZAxis ? platformW : platformD;
+  const d = isZAxis ? platformD : platformW;
+
+  block(w, 0.16, d, materials.woodLight, x, 0.84, z);
+  block(isZAxis ? w + 0.06 : 0.07, 0.07, isZAxis ? 0.07 : d + 0.06, materials.blackLacquer, x + facingX * (d / 2), 0.78, z + facingZ * (d / 2));
+
+  const backOffsetX = -facingX * (platformD / 2);
+  const backOffsetZ = -facingZ * (platformD / 2);
+  const panelW = isZAxis ? platformW + 0.2 : 0.08;
+  const panelD = isZAxis ? 0.08 : platformW + 0.2;
+  block(panelW, 1.95, panelD, materials.paperWarm, x + backOffsetX, 1.88, z + backOffsetZ);
+
+  const sideW = isZAxis ? 0.1 : platformD;
+  const sideD = isZAxis ? platformD : 0.1;
+  block(sideW, 1.95, sideD, materials.bridgeDark, x - (isZAxis ? (platformW / 2 + 0.04) : 0), 1.88, z + (isZAxis ? 0 : -(platformW / 2 + 0.04)));
+  block(sideW, 1.95, sideD, materials.bridgeDark, x + (isZAxis ? (platformW / 2 + 0.04) : 0), 1.88, z + (isZAxis ? 0 : (platformW / 2 + 0.04)));
+
+  const beamW = isZAxis ? platformW + 0.3 : 0.18;
+  const beamD = isZAxis ? 0.18 : platformW + 0.3;
+  block(beamW, 0.18, beamD, materials.bridgeDark, x, 2.82, z);
+
+  const scrollX = x + backOffsetX + facingX * 0.07;
+  const scrollZ = z + backOffsetZ + facingZ * 0.07;
+  addHangingScroll(scrollX, 1.85, scrollZ, theme, facing, 1.05);
+
+  const ikebanaX = x + facingX * 0.05 - (isZAxis ? platformW * 0.3 : 0);
+  const ikebanaZ = z + facingZ * 0.05 - (isZAxis ? 0 : platformW * 0.3);
+  addIkebana(ikebanaX, 0.92, ikebanaZ);
+
+  const bowlX = x + facingX * 0.05 + (isZAxis ? platformW * 0.28 : 0);
+  const bowlZ = z + facingZ * 0.05 + (isZAxis ? 0 : platformW * 0.28);
+  block(0.22, 0.04, 0.22, materials.blackLacquer, bowlX, 0.94, bowlZ);
+  block(0.18, 0.08, 0.18, materials.ceramic, bowlX, 1.0, bowlZ);
+  block(0.06, 0.05, 0.06, materials.flower, bowlX, 1.06, bowlZ);
+
+  const light = new THREE.PointLight("#ffd2a0", 1.1, 4.4, 2);
+  light.position.set(x + facingX * 0.3, 2.05, z + facingZ * 0.3);
+  scene.add(light);
+  addCollider(x, z, w + 0.1, d + 0.1);
+}
+
+function addWallShelf(x, y, z, width, axis, facing) {
+  const isZ = axis === "z";
+  block(isZ ? 0.22 : width, 0.05, isZ ? width : 0.22, materials.bridgeDark, x, y, z);
+  block(isZ ? 0.18 : width * 0.94, 0.02, isZ ? width * 0.94 : 0.18, materials.gold, x, y + 0.035, z);
+  const bracketOff = width * 0.4;
+  if (isZ) {
+    block(0.18, 0.18, 0.05, materials.bridgeDark, x + (facing === "+x" ? -0.06 : 0.06), y - 0.1, z - bracketOff);
+    block(0.18, 0.18, 0.05, materials.bridgeDark, x + (facing === "+x" ? -0.06 : 0.06), y - 0.1, z + bracketOff);
+  } else {
+    block(0.05, 0.18, 0.18, materials.bridgeDark, x - bracketOff, y - 0.1, z + (facing === "+z" ? -0.06 : 0.06));
+    block(0.05, 0.18, 0.18, materials.bridgeDark, x + bracketOff, y - 0.1, z + (facing === "+z" ? -0.06 : 0.06));
+  }
+}
+
+function addPaperLantern(x, y, z) {
+  block(0.28, 0.04, 0.28, materials.bridgeDark, x, y + 0.5, z);
+  const shade = block(0.34, 0.42, 0.34, materials.lanternWarm, x, y + 0.22, z);
+  block(0.06, 0.5, 0.06, materials.bridgeDark, x, y + 0.74, z);
+  block(0.22, 0.04, 0.22, materials.bridgeDark, x, y + 0.005, z);
+  const light = new THREE.PointLight("#ffc89a", 0.9, 4.6, 2);
+  light.position.set(x, y + 0.22, z);
+  scene.add(light);
+  shade.userData.baseIntensity = 1;
+  animated.push({ type: "lantern", mesh: shade, light });
 }
 
 function addRoofs() {
@@ -858,13 +1225,6 @@ function addExteriorDetails() {
   addLantern(4.6, 7.1, 2.1, 0.52);
   addLantern(-6.9, 5.4, 2.0, 0.42);
   addLantern(6.9, 5.4, 2.0, 0.42);
-
-  for (let x = -6.6; x <= 6.6; x += 1.2) {
-    if (Math.abs(x) < 1.45) continue;
-    block(0.18, 0.58, 0.18, materials.bridgeDark, x, 1.05, 7.12);
-  }
-  block(5.15, 0.18, 0.18, materials.bridgeDark, -4.0, 1.34, 7.12);
-  block(5.15, 0.18, 0.18, materials.bridgeDark, 4.0, 1.34, 7.12);
 
   addSakuraTree(-9.3, 7.7, 0.95);
   addSakuraTree(9.2, 7.9, 0.9);
@@ -1067,18 +1427,34 @@ function addVoxelCluster(x, z, w, d) {
 
 function addToriiGate(x, z, rotationY) {
   const group = new THREE.Group();
-  [-1.9, 1.9].forEach((offset) => {
-    const post = block(0.38, 3.2, 0.38, materials.roofDark, offset, 1.6, 0, group);
-    post.castShadow = true;
+
+  [-1.95, 1.95].forEach((offset) => {
+    block(0.6, 0.18, 0.6, materials.toriiBlack, offset, 0.09, 0, group);
+    block(0.5, 0.08, 0.5, materials.toriiBlack, offset, 0.22, 0, group);
+    block(0.42, 2.95, 0.42, materials.vermillion, offset, 1.74, 0, group);
+    block(0.48, 0.08, 0.48, materials.toriiBlack, offset, 3.18, 0, group);
   });
-  block(4.8, 0.42, 0.42, materials.roof, 0, 3.02, 0, group);
-  block(5.5, 0.3, 0.6, materials.roofDark, 0, 3.36, 0, group);
-  block(3.6, 0.28, 0.38, materials.roofDark, 0, 2.55, 0, group);
-  group.position.set(x, 0.05, z);
+
+  block(4.7, 0.32, 0.38, materials.vermillion, 0, 2.55, 0, group);
+  block(0.34, 0.55, 0.16, materials.toriiBlack, 0, 2.99, 0.12, group);
+
+  block(5.2, 0.18, 0.5, materials.toriiBlack, 0, 3.32, 0, group);
+  block(6.0, 0.34, 0.62, materials.vermillion, 0, 3.6, 0, group);
+
+  const leftCap = block(0.55, 0.32, 0.62, materials.vermillion, -3.05, 3.71, 0, group);
+  leftCap.rotation.z = 0.22;
+  const rightCap = block(0.55, 0.32, 0.62, materials.vermillion, 3.05, 3.71, 0, group);
+  rightCap.rotation.z = -0.22;
+
+  block(5.8, 0.06, 0.5, materials.toriiBlack, 0, 3.81, 0, group);
+
+  block(0.22, 0.12, 0.22, materials.toriiBlack, 0, 3.79, 0, group);
+
+  group.position.set(x, 0.0, z);
   group.rotation.y = rotationY;
   scene.add(group);
-  addCollider(x - 1.9, z, 0.62, 0.62);
-  addCollider(x + 1.9, z, 0.62, 0.62);
+  addCollider(x - 1.95, z, 0.7, 0.7);
+  addCollider(x + 1.95, z, 0.7, 0.7);
 }
 
 function addLantern(x, z, y, size) {
@@ -1222,56 +1598,352 @@ function createWaterMaterial() {
     transparent: true,
     depthWrite: false,
     vertexShader: `
-      varying vec2 vUv;
-      varying vec3 vWorldPosition;
+      varying vec3 vWorldPos;
+      varying vec3 vNormal;
       varying float vWave;
-      varying float vRipple;
+      varying float vFogDepth;
       uniform float time;
-      float sineWave(vec2 point, float frequency, float speed, float amplitude, float phase) {
-        return sin(point.x * frequency + point.y * frequency * 0.62 + time * speed + phase) * amplitude;
+
+      float wv(vec2 p, vec2 d, float f, float s, float a, float ph) {
+        return sin(dot(p, d) * f + time * s + ph) * a;
       }
+      float dwv(vec2 p, vec2 d, float f, float s, float a, float ph) {
+        return cos(dot(p, d) * f + time * s + ph) * a * f;
+      }
+
       void main() {
-        vUv = uv;
         vec3 pos = position;
-        float waveA = sineWave(pos.xy, 0.32, 1.85, 0.12, 0.0);
-        float waveB = sineWave(pos.yx, 0.22, -1.35, 0.085, 1.7);
-        float waveC = sineWave(pos.xy + vec2(8.0, -3.0), 0.12, 0.82, 0.055, 2.4);
-        vWave = waveA + waveB + waveC;
-        vRipple = sin(pos.x * 0.62 + time * 2.6) * sin(pos.y * 0.44 - time * 1.95);
-        pos.z += vWave;
-        vec4 worldPosition = modelMatrix * vec4(pos, 1.0);
-        vWorldPosition = worldPosition.xyz;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+        vec2 p = pos.xy;
+
+        vec2 d1 = vec2(0.92, 0.38);
+        vec2 d2 = vec2(-0.45, 0.89);
+        vec2 d3 = vec2(0.67, -0.74);
+        vec2 d4 = vec2(-0.83, -0.55);
+        vec2 d5 = vec2(0.32, 0.95);
+
+        float h = 0.0;
+        h += wv(p, d1, 0.34, 1.55, 0.092, 0.0);
+        h += wv(p, d2, 0.28, -1.24, 0.068, 1.7);
+        h += wv(p, d3, 0.48, 1.85, 0.04, 2.3);
+        h += wv(p, d4, 0.68, 0.98, 0.026, 3.4);
+        h += wv(p, d5, 0.92, -1.42, 0.018, 4.2);
+
+        pos.z += h;
+        vWave = h;
+
+        vec2 grad = vec2(0.0);
+        grad += d1 * dwv(p, d1, 0.34, 1.55, 0.092, 0.0);
+        grad += d2 * dwv(p, d2, 0.28, -1.24, 0.068, 1.7);
+        grad += d3 * dwv(p, d3, 0.48, 1.85, 0.04, 2.3);
+        grad += d4 * dwv(p, d4, 0.68, 0.98, 0.026, 3.4);
+        grad += d5 * dwv(p, d5, 0.92, -1.42, 0.018, 4.2);
+
+        vec3 localNormal = normalize(vec3(-grad.x, -grad.y, 1.0));
+        vNormal = normalize(normalMatrix * localNormal);
+
+        vec4 worldPos = modelMatrix * vec4(pos, 1.0);
+        vWorldPos = worldPos.xyz;
+
+        vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);
+        vFogDepth = -mvPos.z;
+        gl_Position = projectionMatrix * mvPos;
       }
     `,
     fragmentShader: `
       uniform float time;
       uniform vec3 shallowColor;
       uniform vec3 deepColor;
-      uniform vec3 glowColor;
-      varying vec2 vUv;
-      varying vec3 vWorldPosition;
+      uniform vec3 horizonColor;
+      uniform vec3 sunColor;
+      uniform vec3 sunDir;
+      uniform vec3 fogColor;
+      uniform float fogNear;
+      uniform float fogFar;
+      varying vec3 vWorldPos;
+      varying vec3 vNormal;
       varying float vWave;
-      varying float vRipple;
-      float sineLine(float value, float frequency, float speed, float phase) {
-        return sin(value * frequency + time * speed + phase) * 0.5 + 0.5;
+      varying float vFogDepth;
+
+      float hash(vec2 p) {
+        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
       }
+      float vnoise(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        vec2 u = f * f * (3.0 - 2.0 * f);
+        return mix(
+          mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
+          mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x),
+          u.y
+        );
+      }
+
       void main() {
-        float rippleA = sineLine(vWorldPosition.x + vWorldPosition.z * 0.35, 0.34, 1.72, 0.0);
-        float rippleB = sineLine(vWorldPosition.z - vWorldPosition.x * 0.24, 0.26, -1.18, 1.3);
-        float rippleC = sineLine(vWorldPosition.x + vWorldPosition.z, 0.13, 0.68, 2.1);
-        float band = smoothstep(0.15, 0.95, vUv.y);
-        float reflection = smoothstep(0.48, 0.52, vUv.x) * smoothstep(0.15, 0.92, vUv.y);
-        float waveCrest = smoothstep(0.72, 0.97, rippleA * 0.58 + rippleB * 0.32 + rippleC * 0.1);
-        float sparkle = pow(max(0.0, rippleA * rippleB), 3.7) * 0.26;
-        vec3 color = mix(shallowColor, deepColor, band * 0.72);
-        color += glowColor * (reflection * 0.2 + sparkle + waveCrest * 0.18 + abs(vWave) * 1.1);
-        color += vec3(0.10, 0.16, 0.19) * (vRipple * 0.055);
-        float alpha = 0.8 + rippleA * 0.075;
-        gl_FragColor = vec4(color, alpha);
+        vec3 viewDir = normalize(cameraPosition - vWorldPos);
+        vec3 n = normalize(vNormal);
+        if (n.y < 0.0) n = -n;
+
+        float NdotV = clamp(dot(n, viewDir), 0.0, 1.0);
+        float fresnel = pow(1.0 - NdotV, 4.0);
+        fresnel = clamp(fresnel * 0.95 + 0.05, 0.0, 1.0);
+
+        float dist = length(cameraPosition.xz - vWorldPos.xz);
+        float depthMix = smoothstep(2.0, 26.0, dist);
+        vec3 baseColor = mix(shallowColor, deepColor, depthMix);
+
+        vec3 skyTint = mix(horizonColor * 0.95, vec3(1.0, 0.97, 0.94), 0.16);
+        vec3 color = mix(baseColor, skyTint, fresnel * 0.85);
+
+        vec3 sd = normalize(sunDir);
+        vec3 halfDir = normalize(sd + viewDir);
+        float spec = pow(max(dot(n, halfDir), 0.0), 110.0);
+        color += sunColor * spec * 0.65;
+
+        float caustic = vnoise(vWorldPos.xz * 0.38 + vec2(time * 0.13, time * 0.09));
+        caustic += vnoise(vWorldPos.xz * 0.72 - vec2(time * 0.08, time * 0.11)) * 0.55;
+        caustic = pow(caustic / 1.5, 1.7);
+        color += vec3(0.05, 0.10, 0.12) * caustic * 0.45;
+
+        float crest = smoothstep(0.035, 0.12, vWave);
+        color += skyTint * crest * 0.18;
+
+        color *= mix(1.0, 0.82, depthMix * 0.55);
+
+        float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
+        color = mix(color, fogColor, fogFactor);
+
+        gl_FragColor = vec4(color, 0.95);
       }
     `,
   });
+}
+
+function scrollMaterial(theme) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 640;
+  const ctx = canvas.getContext("2d");
+
+  const grad = ctx.createLinearGradient(0, 0, 0, 640);
+  grad.addColorStop(0, "#f5e2bf");
+  grad.addColorStop(0.5, "#ecd09c");
+  grad.addColorStop(1, "#dbb47a");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 256, 640);
+
+  for (let i = 0; i < 700; i += 1) {
+    ctx.globalAlpha = 0.04 + Math.random() * 0.06;
+    ctx.fillStyle = Math.random() > 0.5 ? "#fff6d6" : "#7a4f24";
+    ctx.fillRect(Math.random() * 256, Math.random() * 640, 1.4, 1.4);
+  }
+  ctx.globalAlpha = 1;
+
+  ctx.fillStyle = "#3a201a";
+  ctx.fillRect(0, 0, 256, 36);
+  ctx.fillRect(0, 604, 256, 36);
+  ctx.fillStyle = "#8a5a35";
+  ctx.fillRect(0, 30, 256, 8);
+  ctx.fillRect(0, 596, 256, 8);
+
+  if (theme === "mountain") {
+    ctx.fillStyle = "rgba(48, 32, 28, 0.85)";
+    ctx.beginPath();
+    ctx.moveTo(20, 330);
+    ctx.lineTo(70, 215);
+    ctx.lineTo(110, 270);
+    ctx.lineTo(150, 190);
+    ctx.lineTo(190, 246);
+    ctx.lineTo(236, 305);
+    ctx.lineTo(236, 380);
+    ctx.lineTo(20, 380);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "rgba(78, 60, 52, 0.55)";
+    ctx.beginPath();
+    ctx.moveTo(20, 365);
+    ctx.lineTo(60, 320);
+    ctx.lineTo(120, 350);
+    ctx.lineTo(170, 305);
+    ctx.lineTo(220, 348);
+    ctx.lineTo(236, 380);
+    ctx.lineTo(20, 380);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "rgba(255, 244, 218, 0.92)";
+    ctx.beginPath();
+    ctx.arc(196, 142, 22, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "rgba(255, 244, 218, 0.18)";
+    ctx.beginPath();
+    ctx.arc(196, 142, 34, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#1c0f08";
+    drawKanjiStroke(ctx, 48, 440, 28, 60);
+    drawKanjiStroke(ctx, 48, 510, 24, 58);
+  } else if (theme === "sakura") {
+    ctx.strokeStyle = "#2a1810";
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(220, 130);
+    ctx.bezierCurveTo(170, 200, 130, 230, 60, 290);
+    ctx.stroke();
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(160, 200);
+    ctx.bezierCurveTo(180, 170, 200, 165, 230, 175);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(110, 250);
+    ctx.bezierCurveTo(90, 230, 75, 240, 50, 220);
+    ctx.stroke();
+    for (let i = 0; i < 24; i += 1) {
+      const px = 50 + Math.random() * 180;
+      const py = 130 + Math.random() * 180;
+      drawCherryBlossom(ctx, px, py, 7 + Math.random() * 4);
+    }
+    ctx.fillStyle = "#1c0f08";
+    drawKanjiStroke(ctx, 56, 440, 26, 50);
+    drawKanjiStroke(ctx, 56, 500, 24, 56);
+  } else if (theme === "bamboo") {
+    for (let i = 0; i < 3; i += 1) {
+      const bx = 70 + i * 60;
+      ctx.fillStyle = "#3e6e36";
+      ctx.fillRect(bx - 8, 80, 16, 460);
+      ctx.fillStyle = "#5a8c4a";
+      ctx.fillRect(bx - 5, 80, 4, 460);
+      ctx.fillStyle = "#1f3618";
+      for (let j = 0; j < 9; j += 1) {
+        ctx.fillRect(bx - 11, 100 + j * 50, 22, 4);
+      }
+      ctx.fillStyle = "#456f2c";
+      for (let j = 0; j < 3; j += 1) {
+        const ly = 130 + j * 130;
+        ctx.beginPath();
+        ctx.ellipse(bx + 12 + j * 4, ly, 22, 6, 0.3 + j * 0.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(bx - 16 - j * 3, ly + 25, 20, 5, -0.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  } else if (theme === "calligraphy") {
+    ctx.fillStyle = "#1c0f08";
+    drawKanjiStroke(ctx, 90, 110, 70, 90);
+    drawKanjiStroke(ctx, 90, 235, 70, 90);
+    drawKanjiStroke(ctx, 90, 360, 70, 90);
+    drawKanjiStroke(ctx, 90, 485, 70, 90);
+    ctx.fillStyle = "#9a2018";
+    ctx.fillRect(180, 540, 30, 30);
+    ctx.fillStyle = "#fbe2bf";
+    ctx.font = "bold 18px Georgia";
+    ctx.textAlign = "center";
+    ctx.fillText("印", 195, 562);
+  } else if (theme === "crane") {
+    ctx.fillStyle = "rgba(48, 32, 28, 0.55)";
+    ctx.beginPath();
+    ctx.moveTo(20, 380);
+    ctx.bezierCurveTo(60, 360, 110, 366, 140, 374);
+    ctx.bezierCurveTo(170, 380, 210, 372, 236, 378);
+    ctx.lineTo(236, 396);
+    ctx.lineTo(20, 396);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "rgba(40, 30, 26, 0.85)";
+    ctx.fillStyle = "rgba(252, 246, 232, 0.95)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(140, 280, 38, 18, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(170, 270);
+    ctx.lineTo(202, 220);
+    ctx.lineTo(208, 226);
+    ctx.lineTo(178, 280);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#9a2018";
+    ctx.beginPath();
+    ctx.arc(205, 222, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#1c1410";
+    ctx.fillRect(100, 290, 8, 56);
+    ctx.fillRect(155, 290, 8, 56);
+    ctx.fillStyle = "#1c0f08";
+    drawKanjiStroke(ctx, 56, 460, 28, 60);
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide });
+}
+
+function drawKanjiStroke(ctx, x, y, w, h) {
+  ctx.fillRect(x, y, w, h * 0.16);
+  ctx.fillRect(x + w * 0.4, y + h * 0.16, w * 0.18, h * 0.6);
+  ctx.fillRect(x - w * 0.05, y + h * 0.55, w + w * 0.1, h * 0.16);
+  ctx.fillRect(x + w * 0.15, y + h * 0.16, w * 0.12, h * 0.55);
+  ctx.fillRect(x + w * 0.72, y + h * 0.18, w * 0.12, h * 0.55);
+}
+
+function drawCherryBlossom(ctx, cx, cy, r) {
+  const colors = ["#f7a4bc", "#ffd6dd", "#ffbed1"];
+  ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+  for (let p = 0; p < 5; p += 1) {
+    const a = (p / 5) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.ellipse(cx + Math.cos(a) * r * 0.55, cy + Math.sin(a) * r * 0.55, r * 0.45, r * 0.7, a, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = "#7c2c4a";
+  ctx.beginPath();
+  ctx.arc(cx, cy, r * 0.24, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function tatamiMaterial(repeatX = 1, repeatZ = 1) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 128;
+  canvas.height = 256;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#c8bd86";
+  ctx.fillRect(0, 0, 128, 256);
+
+  ctx.strokeStyle = "rgba(110, 95, 50, 0.32)";
+  ctx.lineWidth = 1;
+  for (let x = 0; x < 128; x += 2) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, 256);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = "rgba(240, 220, 160, 0.28)";
+  for (let x = 1; x < 128; x += 4) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, 256);
+    ctx.stroke();
+  }
+  for (let i = 0; i < 280; i += 1) {
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = Math.random() > 0.5 ? "#fff5d2" : "#5a4a1e";
+    ctx.fillRect(Math.random() * 128, Math.random() * 256, 1, 1);
+  }
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = "#3a2418";
+  ctx.fillRect(0, 0, 6, 256);
+  ctx.fillRect(122, 0, 6, 256);
+  ctx.fillStyle = "#5a3924";
+  ctx.fillRect(2, 0, 2, 256);
+  ctx.fillRect(124, 0, 2, 256);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(repeatX, repeatZ);
+  return new THREE.MeshStandardMaterial({ color: "#c8bd86", map: tex, roughness: 0.92 });
 }
 
 function makeRadialTexture(inner, outer) {
@@ -1313,13 +1985,15 @@ function isPlayable(x, z) {
 }
 
 function getFloorHeight(x, z) {
-  if (x > 4.0 && x < 6.15 && z > -2.35 && z < 3.75) {
-    const t = THREE.MathUtils.clamp((3.75 - z) / 6.1, 0, 1);
-    return THREE.MathUtils.smoothstep(t, 0, 1) * UPPER_FLOOR_Y;
+  const inStairX = x > 4.05 && x < 6.05;
+  const inStairZ = z > -2.6 && z < 3.95;
+  if (inStairX && inStairZ) {
+    const t = THREE.MathUtils.clamp((3.9 - z) / 5.6, 0, 1);
+    return t * UPPER_FLOOR_Y;
   }
 
-  const onUpperFootprint = x > -5.65 && x < 5.65 && z > -5.8 && z < 4.5;
-  if (onUpperFootprint && state.floorY > UPPER_FLOOR_Y * 0.62) {
+  const onUpperFootprint = x > -5.65 && x < 6.2 && z > -5.8 && z < 4.45;
+  if (onUpperFootprint && state.floorY > UPPER_FLOOR_Y * 0.45) {
     return UPPER_FLOOR_Y;
   }
 
@@ -1462,6 +2136,23 @@ function updateLighting(delta) {
   scene.background.copy(horizon);
   scene.fog.color.copy(horizon);
 
+  waterUniforms.horizonColor.value.copy(horizon).lerp(top, 0.35);
+  waterUniforms.fogColor.value.copy(horizon);
+  waterUniforms.fogNear.value = scene.fog.near;
+  waterUniforms.fogFar.value = scene.fog.far;
+  const sunIntensityFactor = THREE.MathUtils.clamp(daylight + evening * 0.5, 0.0, 1.0);
+  waterUniforms.sunColor.value
+    .copy(new THREE.Color("#fff0c8"))
+    .lerp(new THREE.Color("#b9c8ff"), 1 - sunIntensityFactor);
+  waterUniforms.sunDir.value
+    .copy(sun.position)
+    .normalize();
+  const shallow = new THREE.Color("#4d7a88");
+  const shallowNight = new THREE.Color("#2d3a4a");
+  waterUniforms.shallowColor.value
+    .copy(shallow)
+    .lerp(shallowNight, 1 - sunIntensityFactor);
+
   const sunX = -Math.cos(angle) * 54;
   const sunY = sunHeight + 18;
   sun.position.set(-Math.cos(angle) * 22, Math.max(4, sunHeight + 12), -28);
@@ -1500,9 +2191,19 @@ function updateAnimated(delta, now) {
     if (item.type === "water") {
       item.mesh.material.uniforms.time.value = now * 0.00145;
     }
-    if (item.type === "waterStreak") {
-      item.mesh.material.opacity = 0.11 + Math.sin(now * 0.0024 + item.mesh.userData.phase) * 0.055;
-      item.mesh.position.x += Math.sin(now * 0.00085 + item.mesh.userData.phase) * delta * 0.32;
+    if (item.type === "ripple") {
+      const t = ((now * 0.001 + item.mesh.userData.phase) % item.mesh.userData.period) / item.mesh.userData.period;
+      const scale = 0.4 + t * 4.2;
+      item.mesh.scale.set(scale, scale, 1);
+      item.mesh.material.opacity = Math.max(0, (1 - t) * 0.18);
+    }
+    if (item.type === "floatPetal") {
+      const t = now * 0.0008;
+      item.mesh.position.x += item.mesh.userData.driftX * delta;
+      item.mesh.position.z += Math.sin(t * 1.4 + item.mesh.userData.phase) * delta * 0.08;
+      item.mesh.position.y = item.mesh.userData.origY + Math.sin(t * 2.2 + item.mesh.userData.phase) * 0.012;
+      item.mesh.rotation.z += delta * item.mesh.userData.spin;
+      if (item.mesh.position.x > 30) item.mesh.position.x = -30;
     }
     if (item.type === "lantern") {
       const flicker = 0.88 + Math.sin(now * 0.006 + item.mesh.position.x) * 0.12;
@@ -1566,7 +2267,11 @@ function teleportTo(name) {
   intro.classList.add("is-hidden");
   state.velocity.set(0, 0, 0);
   camera.position.copy(spot.position);
-  state.floorY = getFloorHeight(camera.position.x, camera.position.z);
+  state.floorY = Math.max(0, spot.position.y - EYE_HEIGHT);
+  const measuredFloor = getFloorHeight(camera.position.x, camera.position.z);
+  if (measuredFloor > 0 || state.floorY < UPPER_FLOOR_Y * 0.5) {
+    state.floorY = measuredFloor;
+  }
   state.jumpOffset = 0;
   state.verticalVelocity = 0;
   state.grounded = true;
