@@ -46,6 +46,8 @@ http://localhost:5173
 - More active water shader with stronger sine-wave motion
 - Clear first/second-floor visual separation with a stairwell opening
 - Front entry rail removed so the door and bridge path stay unobstructed
+- Small lightweight rear garden with a center sakura tree and fallen petals
+- Brighter interior lighting on both floors
 - Scenic water, sakura trees, horizon, and fast time-of-day cycle
 - Lightweight gradient skydome with visible sun/moon movement
 - Continuous lake around the bridge and house, with shoreline tree rings

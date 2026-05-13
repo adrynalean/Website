@@ -119,6 +119,12 @@ const materials = {
   toriiBlack: blockMaterial("#1a1410", "#2a201a"),
 };
 
+[materials.paperDim, materials.paperWarm, materials.tatamiWeave].forEach((material) => {
+  material.polygonOffset = true;
+  material.polygonOffsetFactor = 1;
+  material.polygonOffsetUnits = 1;
+});
+
 const colliders = [];
 const playable = [];
 const animated = [];
@@ -532,16 +538,17 @@ function addFrontDoor() {
   block(2.5, 0.12, 0.42, materials.woodLight, 0, 0.82, z - 0.04);
 
   [
-    { side: -1, closedX: -0.52, openX: -1.42 },
-    { side: 1, closedX: 0.52, openX: 1.42 },
+    { side: -1, closedX: -0.45, openX: -1.46 },
+    { side: 1, closedX: 0.45, openX: 1.46 },
   ].forEach(({ side, closedX, openX }) => {
     const group = new THREE.Group();
     group.position.set(openX, 0, z);
-    block(0.86, 1.75, 0.08, materials.paperWarm, 0, 1.75, 0, group);
-    block(0.94, 0.1, 0.12, materials.bridgeDark, 0, 2.64, 0, group);
-    block(0.94, 0.1, 0.12, materials.bridgeDark, 0, 0.86, 0, group);
-    block(0.08, 1.8, 0.12, materials.bridgeDark, side * -0.43, 1.75, 0, group);
-    block(0.08, 1.8, 0.12, materials.bridgeDark, side * 0.43, 1.75, 0, group);
+    block(0.96, 1.76, 0.08, materials.paperWarm, 0, 1.75, side * 0.018, group);
+    block(1.04, 0.1, 0.12, materials.bridgeDark, 0, 2.64, side * 0.018, group);
+    block(1.04, 0.1, 0.12, materials.bridgeDark, 0, 0.86, side * 0.018, group);
+    block(0.08, 1.8, 0.12, materials.bridgeDark, side * -0.48, 1.75, side * 0.018, group);
+    block(0.08, 1.8, 0.12, materials.bridgeDark, side * 0.48, 1.75, side * 0.018, group);
+    block(0.08, 1.7, 0.14, materials.bridgeDark, side * -0.5, 1.74, side * 0.018, group);
     block(0.18, 0.18, 0.12, materials.gold, side * -0.18, 1.72, 0.02, group);
     scene.add(group);
     const collider = addCollider(closedX, z, 0.88, 0.32, false, -0.5, 2.9);
@@ -561,7 +568,9 @@ function addUpperStory() {
   wallSegment(5.3, 1.4, 5.5, h, "z", y);
   wallSegment(5.3, -4.275, 2.95, h, "z", y);
 
-  block(11.4, 0.24, 10.2, materials.floorAlt, 0, 3.3, z);
+  block(9.05, 0.24, 10.2, materials.floorAlt, -1.18, 3.3, z);
+  block(2.05, 0.24, 3.0, materials.floorAlt, 5.15, 3.3, -4.25);
+  block(2.05, 0.24, 0.68, materials.floorAlt, 5.15, 3.3, 4.08);
   block(11.4, 0.24, 2.5, materials.floorAlt, 0, 3.3, -7.0);
   block(12.4, 0.22, 1.0, materials.bridge, 0, 3.46, 4.75);
   for (let x = -5.6; x <= 5.6; x += 0.9) {
@@ -753,17 +762,20 @@ function addInteriorPosts() {
 
 function addStaircase() {
   const x = 5.05;
-  const stepCount = 10;
+  const stepCount = 12;
   const zoneStart = 3.9;
   const zoneEnd = -1.7;
   const zoneRange = zoneStart - zoneEnd;
   const stepDz = (zoneStart - zoneEnd - 0.6) / stepCount;
   for (let i = 0; i < stepCount; i += 1) {
     const zTop = zoneStart - 0.3 - i * stepDz;
-    const stepTop = ((zoneStart - zTop) / zoneRange) * UPPER_FLOOR_Y;
-    const stepCenter = stepTop - 0.09;
-    block(1.55, 0.18, stepDz + 0.08, materials.woodLight, x, stepCenter, zTop);
-    block(1.55, stepTop * 0.6, 0.04, materials.bridgeDark, x, stepCenter - stepTop * 0.3 + 0.09, zTop + stepDz * 0.5);
+    const stepFront = zTop - stepDz * 0.5;
+    const stepBack = zTop + stepDz * 0.5;
+    const stepTop = ((zoneStart - stepFront) / zoneRange) * UPPER_FLOOR_Y;
+    const riserHeight = Math.max(stepTop, 0.12);
+    block(1.66, riserHeight, stepDz + 0.08, materials.woodLight, x, riserHeight / 2, zTop);
+    block(1.7, 0.045, stepDz + 0.1, materials.floorAlt, x, stepTop + 0.025, zTop);
+    block(1.68, 0.12, 0.05, materials.bridgeDark, x, stepTop - 0.045, stepBack);
   }
   block(0.14, 1.05, 0.14, materials.bridgeDark, x - 0.95, 0.55, zoneStart - 0.3);
   block(0.14, 1.45, 0.14, materials.bridgeDark, x + 0.95, 0.75, zoneStart - 0.3);
@@ -785,11 +797,15 @@ function addInteriorDetails() {
     [5.5, -3.0, 2.55, 0.34],
   ].forEach(([x, z, y, size]) => addLantern(x, z, y, size));
 
-  addInteriorLight(0, 2.2, 2.25, 0.85, 13);
-  addInteriorLight(0, -5.8, 2.15, 0.7, 11);
-  addInteriorLight(-5.4, -3.2, 2.05, 0.5, 8);
-  addInteriorLight(5.4, -3.2, 2.05, 0.5, 8);
-  addInteriorLight(0, -9.4, 2.2, 0.6, 10);
+  addInteriorLight(0, 2.2, 2.35, 1.25, 14);
+  addInteriorLight(0, -5.8, 2.2, 1.0, 12);
+  addInteriorLight(-5.4, -3.2, 2.1, 0.75, 9);
+  addInteriorLight(5.4, -3.2, 2.1, 0.75, 9);
+  addInteriorLight(0, -9.4, 2.25, 0.9, 10);
+  addInteriorLight(5.0, 0.8, 2.8, 0.85, 8);
+  addInteriorLight(0, -1.0, UPPER_FLOOR_Y + 1.35, 0.85, 9);
+  addInteriorLight(-3.5, 1.8, UPPER_FLOOR_Y + 1.25, 0.55, 7);
+  addInteriorLight(3.5, 1.8, UPPER_FLOOR_Y + 1.25, 0.55, 7);
 
   // --- Main Hall ---
   addTatamiArea(-2.4, 1.6, 3, 3);
@@ -1235,6 +1251,21 @@ function addExteriorDetails() {
   addGardenBed(5.8, 7.4, 3.8, 0.62);
   addGardenBed(-8.4, 2.2, 0.62, 5.0);
   addGardenBed(8.4, 2.2, 0.62, 5.0);
+  addBackGarden();
+}
+
+function addBackGarden() {
+  block(12.2, 0.18, 6.4, materials.shore, 0, -0.2, -14.1);
+  block(11.4, 0.3, 5.6, materials.grass, 0, -0.06, -14.1);
+  block(10.8, 0.12, 0.28, materials.hedge, 0, 0.22, -16.95);
+  block(0.28, 0.12, 4.7, materials.hedge, -5.55, 0.22, -14.1);
+  block(0.28, 0.12, 4.7, materials.hedge, 5.55, 0.22, -14.1);
+  addSakuraTree(0, -14.2, 0.92);
+
+  for (let i = 0; i < 34; i += 1) {
+    const petal = block(random(0.08, 0.18), 0.012, random(0.05, 0.13), i % 3 ? materials.flower : materials.sakura, random(-4.7, 4.7), 0.11, random(-16.2, -12.15));
+    petal.rotation.y = random(0, Math.PI);
+  }
 }
 
 function addGardenBed(x, z, w, d) {
@@ -1988,7 +2019,7 @@ function getFloorHeight(x, z) {
   const inStairX = x > 4.05 && x < 6.05;
   const inStairZ = z > -2.6 && z < 3.95;
   if (inStairX && inStairZ) {
-    const t = THREE.MathUtils.clamp((3.9 - z) / 5.6, 0, 1);
+    const t = THREE.MathUtils.clamp((3.9 - z + 0.24) / 5.6, 0, 1);
     return t * UPPER_FLOOR_Y;
   }
 
