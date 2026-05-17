@@ -5,6 +5,12 @@ const enterButton = document.querySelector("#enterButton");
 const intro = document.querySelector("#intro");
 const spotLabel = document.querySelector("#spotLabel");
 const timeLabel = document.querySelector("#timeLabel");
+const portfolioPanel = document.querySelector("#portfolioPanel");
+const portfolioTitle = document.querySelector("#portfolioTitle");
+const portfolioEyebrow = document.querySelector("#portfolioEyebrow");
+const portfolioBody = document.querySelector("#portfolioBody");
+const portfolioClose = document.querySelector("#portfolioClose");
+const interactionHint = document.querySelector("#interactionHint");
 
 const renderer = new THREE.WebGLRenderer({
   canvas,
@@ -24,6 +30,8 @@ scene.background = new THREE.Color("#d58b82");
 scene.fog = new THREE.Fog("#d58b82", 30, 92);
 
 const camera = new THREE.PerspectiveCamera(68, window.innerWidth / window.innerHeight, 0.08, 140);
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
 
 const EYE_HEIGHT = 1.7;
 const GRAVITY = 11.5;
@@ -33,11 +41,24 @@ const keyboardTurnSpeed = 1.7;
 const lookEase = 18;
 const moveEase = 9.5;
 const stopEase = 12;
+const WORLD_SCALE = 0.65;
+
+function sx(value) {
+  return value * WORLD_SCALE;
+}
+
+function sz(value) {
+  return value * WORLD_SCALE;
+}
+
+function scaledVector(x, y, z) {
+  return new THREE.Vector3(sx(x), y, sz(z));
+}
 
 const palette = {
   cedar: "#a66b3f",
-  cedarDark: "#5b3525",
-  cedarLight: "#c98b58",
+  cedarDark: "#d4b68a",
+  cedarLight: "#efd6ad",
   roof: "#d5743d",
   roofDark: "#994a2b",
   roofHighlight: "#ef9b5d",
@@ -51,7 +72,7 @@ const palette = {
   sakuraLight: "#ffd6de",
   sakuraDark: "#c5748c",
   leaf: "#6f8658",
-  grass: "#536a45",
+  grass: "#77945f",
   shore: "#9b8063",
   mountain: "#8b7898",
   mountainSnow: "#f1e3dc",
@@ -73,19 +94,19 @@ const waterUniforms = {
 
 const materials = {
   bridge: blockMaterial("#b98251", "#d8a66d"),
-  bridgeDark: blockMaterial(palette.cedarDark, "#75462f"),
+  bridgeDark: blockMaterial("#d6bb91", "#f2dfbd"),
   roof: blockMaterial(palette.roof, palette.roofHighlight),
   roofDark: blockMaterial(palette.roofDark, "#9b4526"),
   blossomPanel: blockMaterial(palette.blossomPanel, "#ffd4da"),
   paper: blockMaterial(palette.paper, "#fff0ce"),
   paperDim: blockMaterial(palette.paperDim, "#fff0ce"),
-  floor: blockMaterial("#c08a58", "#e2b77e"),
-  floorAlt: plankMaterial("#d6a66d", "#f1ca92", 10),
-  woodLight: blockMaterial("#bf8454", "#e0ad76"),
+  floor: blockMaterial("#d8b982", "#f1d6a7"),
+  floorAlt: plankMaterial("#e7c894", "#fff0c7", 10),
+  woodLight: blockMaterial("#d8b98a", "#f2d9ac"),
   tatami: blockMaterial("#d8c98d", "#eee0a8"),
   rug: blockMaterial("#ead0ae", "#fff0c9"),
   stone: blockMaterial(palette.stone, "#969085"),
-  grass: blockMaterial(palette.grass, "#4d5f3f"),
+  grass: createGrassMaterial(),
   shore: blockMaterial(palette.shore, "#826650"),
   mountain: blockMaterial(palette.mountain, "#68516e"),
   mountainSnow: blockMaterial(palette.mountainSnow, "#f0e0d6"),
@@ -98,6 +119,7 @@ const materials = {
   flower: blockMaterial("#ef9fb9", "#ffd0dc"),
   ceramic: blockMaterial("#e4d7bf", "#fff1cf"),
   paperWarm: blockMaterial("#ffe2bc", "#fff3ce"),
+  ceiling: new THREE.MeshBasicMaterial({ color: "#f4dfbd" }),
   lily: new THREE.MeshBasicMaterial({ color: "#6f965c", side: THREE.DoubleSide }),
   lotus: new THREE.MeshBasicMaterial({ color: "#ff96bd", side: THREE.DoubleSide }),
   lanternGlow: new THREE.MeshBasicMaterial({ color: palette.lantern }),
@@ -106,9 +128,9 @@ const materials = {
   tatamiWeave: tatamiMaterial(1, 1),
   charcoal: blockMaterial("#352822", "#48362d"),
   jade: blockMaterial("#5c7a5e", "#86a78a"),
-  blackLacquer: blockMaterial("#1d1612", "#2a1f1a"),
+  blackLacquer: blockMaterial("#5f4a38", "#8a7057"),
   gold: blockMaterial(palette.gold, "#fff5da"),
-  cedarDark: blockMaterial(palette.cedarDark, "#75462f"),
+  cedarDark: blockMaterial("#d4b68a", "#f0d8b0"),
   vermillion: blockMaterial("#b53a2b", "#d04937"),
   toriiBlack: blockMaterial("#1a1410", "#2a201a"),
 };
@@ -123,13 +145,9 @@ const colliders = [];
 const playable = [];
 const animated = [];
 const boxGeometryCache = new Map();
-const frontDoor = {
-  panels: [],
-  colliders: [],
-  open: true,
-  progress: 1,
-  target: 1,
-};
+const doors = [];
+const interactables = [];
+const frontDoor = createDoorController("Front Door", true);
 
 const skyUniforms = {
   topColor: { value: new THREE.Color("#894e8c") },
@@ -190,13 +208,183 @@ moonSprite.scale.set(3.2, 3.2, 1);
 scene.add(moonSprite);
 
 const spots = {
-  Bridge: { position: new THREE.Vector3(0, EYE_HEIGHT, 23), yaw: 0, label: "Bridge Approach" },
-  Gate: { position: new THREE.Vector3(0, EYE_HEIGHT, 8.4), yaw: 0, label: "Lantern Gate" },
-  Hall: { position: new THREE.Vector3(0, EYE_HEIGHT, -2.4), yaw: 0, label: "Main Hall" },
-  "West Room": { position: new THREE.Vector3(-5.2, EYE_HEIGHT, -3.1), yaw: -Math.PI / 2, label: "West Room" },
-  "East Room": { position: new THREE.Vector3(5.2, EYE_HEIGHT, -3.1), yaw: Math.PI / 2, label: "East Room" },
-  "Rear Room": { position: new THREE.Vector3(0, EYE_HEIGHT, -8.8), yaw: Math.PI, label: "Rear Room" },
-  Garden: { position: new THREE.Vector3(0, EYE_HEIGHT, -12.7), yaw: 0, label: "Back Garden" },
+  Bridge: { position: scaledVector(0, EYE_HEIGHT, 23), yaw: 0, label: "Bridge Approach" },
+  Gate: { position: scaledVector(0, EYE_HEIGHT, 8.4), yaw: 0, label: "Lantern Gate" },
+  Map: { position: scaledVector(0, EYE_HEIGHT, 0.15), yaw: 0, label: "Portfolio Map Table" },
+  Hall: { position: scaledVector(-14.15, EYE_HEIGHT, 1.65), yaw: -Math.PI / 2, label: "Main Hall" },
+  Tech: { position: scaledVector(14.4, EYE_HEIGHT, 2.35), yaw: Math.PI / 2, label: "Tool Wall" },
+  "West Room": { position: scaledVector(-14.4, EYE_HEIGHT, -5.45), yaw: -Math.PI / 2, label: "West Room" },
+  "East Room": { position: scaledVector(14.0, EYE_HEIGHT, -4.3), yaw: Math.PI / 2, label: "East Room" },
+  "Rear Room": { position: scaledVector(-14.0, EYE_HEIGHT, -19.2), yaw: -Math.PI / 2, label: "Rear Room" },
+  Garden: { position: scaledVector(0, EYE_HEIGHT, -34.1), yaw: 0, label: "Back Garden" },
+};
+
+const portfolioSections = {
+  map: {
+    title: "House Map",
+    eyebrow: "Foyer Floor Plan",
+    lead:
+      "This house is the portfolio: each room is a section, and each wall exhibit opens a focused detail panel.",
+    groups: [
+      {
+        heading: "Route",
+        items: [
+          "Main Hall - mission and personal direction.",
+          "Tool Wall - languages, frameworks, and technical fields.",
+          "West Room - education and awards.",
+          "East Room - featured projects.",
+          "Rear Room - experience timeline.",
+          "Garden - contact links and resume.",
+        ],
+      },
+    ],
+  },
+  mission: {
+    title: "Mission Statement",
+    eyebrow: "Main Hall Scroll",
+    lead:
+      "I'm Sashit Vijay, a computer science graduate focused on full-stack development, machine learning, and practical systems that make technology feel useful, approachable, and a little more human.",
+    groups: [
+      {
+        heading: "What I Care About",
+        items: [
+          "Simplifying complex workflows with clean software and thoughtful interfaces.",
+          "Combining strong engineering fundamentals with practical machine learning.",
+          "Creating tools that connect people, improve access, and solve real problems.",
+        ],
+      },
+    ],
+  },
+  education: {
+    title: "Education",
+    eyebrow: "West Study Room",
+    lead: "Arizona State University, Ira A. Fulton School of Engineering - B.S. in Computer Science, May 2025.",
+    groups: [
+      {
+        heading: "ASU Highlights",
+        items: [
+          "GPA: 4.0/4.0 with Dean's List recognition for 8 consecutive semesters.",
+          "Moeur Award recipient, Summa Cum Laude, Class of 2025.",
+          "NAMU Scholar, IEEE Scholar, Kaplan Scholar, and ASU Men's Ultimate Frisbee captain.",
+        ],
+      },
+      {
+        heading: "Earlier Foundation",
+        items: [
+          "St. Paul's High School, Kota, India - GPA: 4.0/4.0.",
+          "Class valedictorian and school representative in marathon and ultra-marathon events.",
+        ],
+      },
+    ],
+  },
+  experience: {
+    title: "Experience",
+    eyebrow: "Rear Workroom",
+    lead: "A mix of software engineering, research, teaching, tutoring, and operations leadership.",
+    groups: [
+      {
+        heading: "Recent Roles",
+        cards: [
+          {
+            title: "High School Physics and Mathematics Teacher",
+            meta: "Great Hearts Veritas Prep - July 2025 to Present",
+            body: "Designs engaging lessons for 100+ students while reinforcing quantitative reasoning and adapting explanations to varied learning needs.",
+          },
+          {
+            title: "Research Assistant",
+            meta: "Laboratory for Learning Evaluation of autonomous Systems Lab, ASU - Oct. 2024 to July 2025",
+            body: "Worked on a Unitree Go2 robotic dog assistant with diffusion-based navigation and LLM-powered command processing for visually impaired users.",
+          },
+          {
+            title: "Fullstack Developer Co-op",
+            meta: "Tnect Validation API, Bytewerx LLC - Aug. 2024 to May 2025",
+            body: "Built API key management, RBAC, token-based recovery, Redis-backed rate limiting, and real-time usage analytics.",
+          },
+          {
+            title: "Software Engineer Intern",
+            meta: "PI Academy - May 2024 to July 2024",
+            body: "Built image-analysis tooling to classify 400+ food waste types and improved model accuracy through ensemble learning.",
+          },
+        ],
+      },
+    ],
+  },
+  projects: {
+    title: "Projects",
+    eyebrow: "East Project Room",
+    lead: "Selected projects from the latest resume, staged here as lightweight project cards.",
+    groups: [
+      {
+        heading: "Featured Builds",
+        cards: [
+          {
+            title: "Thred",
+            meta: "React, CSS, JavaScript, Axios, Node.js, OpenAI Integration",
+            body: "Responsive full-screen chatbot interface inspired by ChatGPT, focused on interface fluidity and usability.",
+            href: "https://github.com/adrynalean/Thred",
+          },
+          {
+            title: "SoccerSense",
+            meta: "Python, OpenCV, YOLO, PyTorch, KMeans, Pandas, Numpy",
+            body: "Live soccer analysis with tracking, interpolation, perspective transforms, clustering, and player statistics.",
+            href: "https://github.com/adrynalean/SoccerSense",
+          },
+          {
+            title: "SyncLink",
+            meta: "C, Shell Scripting, Operating Systems, Networking, Socket Programming",
+            body: "Network file system supporting seamless file operations and optimized server response handling.",
+            href: "https://github.com/adrynalean/SyncLink",
+          },
+          {
+            title: "ThreadIt",
+            meta: "MongoDB, Express, React, Node, Docker",
+            body: "Reddit-inspired social platform with fuzzy search, reporting, user registration, and Docker deployment.",
+            href: "https://github.com/adrynalean/ThreadIt",
+          },
+        ],
+      },
+    ],
+  },
+  tech: {
+    title: "Tech Stack",
+    eyebrow: "Tool Cabinet",
+    lead: "A compact view of the languages, libraries, and fields from the current resume.",
+    tags: [
+      "Python",
+      "Java",
+      "C++",
+      "C",
+      "CSS",
+      "Ubuntu",
+      "MySQL",
+      "MATLAB",
+      "Django",
+      "Flask",
+      "JavaFX",
+      "PyTorch",
+      "React",
+      "MongoDB",
+      "OpenCV",
+      "scikit-learn",
+      "NumPy",
+      "Pandas",
+      "Machine Learning",
+      "Computer Vision",
+      "Digital ASIC",
+    ],
+  },
+  contact: {
+    title: "Contact",
+    eyebrow: "Garden Ema Board",
+    lead: "The calm little end point: ways to reach me and a copy of the current resume.",
+    actions: [
+      { label: "Email", href: "mailto:sashitvijay@gmail.com" },
+      { label: "LinkedIn", href: "https://www.linkedin.com/in/sashit-vijay-443b18194/" },
+      { label: "GitHub", href: "https://github.com/adrynalean" },
+      { label: "Website", href: "https://sashitvijay.com" },
+      { label: "Resume PDF", href: "./assets/SV_CV_26.pdf" },
+    ],
+  },
 };
 
 const state = {
@@ -206,6 +394,8 @@ const state = {
   targetYaw: 0,
   targetPitch: 0,
   velocity: new THREE.Vector3(),
+  activeInteractable: null,
+  mapFocus: null,
   last: performance.now(),
   pointerLocked: false,
   dragLook: false,
@@ -249,18 +439,18 @@ function buildWorld() {
   addWater();
   addDistantTerrain();
   addMountainRing();
+  addSakuraForest();
   addBridge();
   addHouse();
   addExteriorDetails();
-  addSakuraForest();
-  addLakeDetails();
   addPetals();
 }
 
 function addWater() {
-  const water = new THREE.Mesh(new THREE.PlaneGeometry(170, 170, 56, 56), materials.water);
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(sx(64), sz(76), 28, 32), materials.water);
   water.rotation.x = -Math.PI / 2;
   water.position.y = -0.34;
+  water.position.z = sz(4);
   scene.add(water);
   animated.push({ type: "water", mesh: water });
 
@@ -274,7 +464,7 @@ function addWater() {
   for (let i = 0; i < 4; i += 1) {
     const ring = new THREE.Mesh(new THREE.RingGeometry(0.5, 0.62, 28), ringMat.clone());
     ring.rotation.x = -Math.PI / 2;
-    ring.position.set(random(-22, 22), -0.27, random(-22, 32));
+    ring.position.set(sx(random(-22, 22)), -0.27, sz(random(-22, 32)));
     ring.userData.phase = random(0, Math.PI * 2);
     ring.userData.origin = ring.position.clone();
     ring.userData.period = random(4.5, 7.5);
@@ -300,7 +490,7 @@ function addFloatingPetals() {
     const petal = new THREE.Mesh(geo, mat);
     petal.rotation.x = -Math.PI / 2;
     petal.rotation.z = random(0, Math.PI * 2);
-    petal.position.set(random(-26, 26), -0.215, random(-26, 32));
+    petal.position.set(sx(random(-26, 26)), -0.215, sz(random(-26, 32)));
     petal.userData = {
       phase: random(0, Math.PI * 2),
       driftX: random(0.015, 0.075),
@@ -328,8 +518,6 @@ function addDistantTerrain() {
     block(w + 1.4, 0.18, d + 1.4, materials.shore, x, -0.26, z);
     block(w, 0.5, d, materials.grass, x, -0.06, z);
   });
-
-  addLakeTreeRing();
 }
 
 function addMountainRing() {
@@ -392,6 +580,85 @@ function addMountainRing() {
   });
 }
 
+function addSakuraForestBackdrop() {
+  const texture = createSakuraForestTexture();
+  const material = new THREE.MeshBasicMaterial({
+    map: texture,
+    transparent: true,
+    depthWrite: false,
+    fog: false,
+  });
+  const panels = [
+    { x: 0, z: -57, w: 128, h: 24, r: 0 },
+    { x: -56, z: 0, w: 106, h: 22, r: Math.PI / 2 },
+    { x: 56, z: 0, w: 106, h: 22, r: -Math.PI / 2 },
+  ];
+
+  panels.forEach(({ x, z, w, h, r }) => {
+    const forest = new THREE.Mesh(new THREE.PlaneGeometry(w, h), material);
+    forest.position.set(sx(x), h / 2 - 1.6, sz(z));
+    forest.rotation.y = r;
+    scene.add(forest);
+  });
+}
+
+function createSakuraForestTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 2048;
+  canvas.height = 512;
+  const ctx = canvas.getContext("2d");
+
+  const skyFade = ctx.createLinearGradient(0, 0, 0, 512);
+  skyFade.addColorStop(0, "rgba(255, 230, 220, 0)");
+  skyFade.addColorStop(0.28, "rgba(255, 222, 216, 0.28)");
+  skyFade.addColorStop(1, "rgba(96, 66, 72, 0.62)");
+  ctx.fillStyle = skyFade;
+  ctx.fillRect(0, 0, 2048, 512);
+
+  for (let layer = 0; layer < 3; layer += 1) {
+    const count = [34, 42, 56][layer];
+    const yBase = [355, 392, 430][layer];
+    const alpha = [0.38, 0.55, 0.82][layer];
+    const scale = [0.72, 0.92, 1.14][layer];
+    for (let i = 0; i < count; i += 1) {
+      const x = ((i + Math.random() * 0.9) / count) * 2048;
+      const trunkH = random(74, 132) * scale;
+      const trunkW = random(8, 18) * scale;
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = layer === 2 ? "#3f241f" : "#67413a";
+      ctx.fillRect(x - trunkW / 2, yBase - trunkH, trunkW, trunkH + 50);
+
+      const blobCount = 5 + layer * 2;
+      for (let b = 0; b < blobCount; b += 1) {
+        const radius = random(34, 78) * scale;
+        const cx = x + random(-56, 56) * scale;
+        const cy = yBase - trunkH + random(-42, 26) * scale;
+        const grad = ctx.createRadialGradient(cx, cy, radius * 0.1, cx, cy, radius);
+        grad.addColorStop(0, layer === 2 ? "rgba(255, 196, 209, 0.95)" : "rgba(238, 166, 185, 0.7)");
+        grad.addColorStop(0.7, layer === 2 ? "rgba(210, 92, 124, 0.78)" : "rgba(185, 96, 126, 0.48)");
+        grad.addColorStop(1, "rgba(120, 48, 76, 0)");
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+
+  ctx.globalAlpha = 1;
+  const groundFade = ctx.createLinearGradient(0, 360, 0, 512);
+  groundFade.addColorStop(0, "rgba(80, 82, 48, 0)");
+  groundFade.addColorStop(1, "rgba(50, 66, 34, 0.9)");
+  ctx.fillStyle = groundFade;
+  ctx.fillRect(0, 340, 2048, 172);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  return texture;
+}
+
 function addRidgeRange({ x = 0, z, baseY, width, peaks, color, opacity, rotationY = 0 }) {
   const vertices = [];
   const indices = [];
@@ -425,7 +692,7 @@ function addRidgeRange({ x = 0, z, baseY, width, peaks, color, opacity, rotation
     side: THREE.DoubleSide,
   });
   const ridge = new THREE.Mesh(geometry, material);
-  ridge.position.set(x, 0, z);
+  ridge.position.set(sx(x), 0, sz(z));
   ridge.rotation.y = rotationY;
   scene.add(ridge);
 }
@@ -434,20 +701,22 @@ function addBridge() {
   addPlayable(0, 16.4, 5.4, 23.8);
   addCollider(-2.25, 16.2, 0.55, 17.2);
   addCollider(2.25, 16.2, 0.55, 17.2);
+  addCollider(0, 26.0, 4.7, 0.55);
 
+  const planks = [];
   for (let z = 7.1; z <= 25.5; z += 0.72) {
-    const plank = block(3.55, 0.16, 0.55, materials.bridge, 0, 0.05, z);
-    plank.castShadow = true;
-    plank.receiveShadow = true;
+    planks.push({ w: 3.55, h: 0.16, d: 0.55, x: 0, y: 0.05, z });
   }
+  addInstancedBoxes(planks, materials.bridge);
 
   [-2.05, 2.05].forEach((x) => {
     block(0.22, 0.45, 19.4, materials.bridgeDark, x, 0.38, 16.35);
-    for (let z = 7.4; z <= 25.3; z += 1.8) {
+    for (let z = 7.4; z <= 25.3; z += 3.6) {
       block(0.34, 1.15, 0.34, materials.bridgeDark, x, 0.72, z);
       addLantern(x, z, 1.5, 0.36);
     }
   });
+  addBoundaryFence(0, 26.0, 4.8, "x");
 
   addEntryLanding();
   addToriiGate(0, 9.4, Math.PI);
@@ -466,105 +735,155 @@ function addEntryLanding() {
 }
 
 function addHouse() {
-  addPlayable(0, 0.3, 15.2, 14.8);
-  addPlayable(-5.3, -3.0, 6.2, 7.4);
-  addPlayable(5.3, -3.0, 6.2, 7.4);
-  addPlayable(0, -8.5, 9.8, 5.5);
-  addPlayable(0, -14.1, 10.6, 6.2);
+  addPlayable(0, -9.6, 33.9, 33.3);
+  addPlayable(0, -38.0, 42.0, 24.0);
 
-  block(16.5, 0.8, 15.5, materials.stone, 0, 0, 0);
-  block(15.2, 0.28, 14.2, materials.floor, 0, 0.54, 0);
-  block(11.1, 0.72, 5.6, materials.stone, 0, 0, -8.55);
-  block(9.9, 0.24, 4.9, materials.floor, 0, 0.56, -8.55);
+  block(35.4, 0.8, 34.5, materials.stone, 0, 0, -9.6);
+  block(34.1, 0.28, 33.2, materials.floor, 0, 0.54, -9.6);
 
-  addInteriorFloor(0, 0, 14.2, 13.2);
-  addInteriorFloor(0, -8.55, 9.2, 4.2);
+  addInteriorFloor(0, -9.6, 32.4, 31.5);
   addHouseWalls();
   addFrontDoor();
   addRoofs();
   addRoomPartitions();
-  addInteriorPosts();
   addInteriorDetails();
 }
 
 function addHouseWalls() {
-  const wallY = 1.8;
-  const h = 2.25;
+  const wallY = 2.95;
+  const h = 4.6;
   const zFront = 6.8;
-  const zBack = -6.8;
-  const xLeft = -7.6;
-  const xRight = 7.6;
+  const zBack = -26.05;
+  const xLeft = -17.1;
+  const xRight = 17.1;
+  const zMid = (zFront + zBack) / 2;
 
-  wallSegment(-5.1, zFront, 3.7, h, "x", wallY);
-  wallSegment(5.1, zFront, 3.7, h, "x", wallY);
-  wallSegment(xLeft, 0, 13.6, h, "z", wallY);
-  wallSegment(xRight, 0, 13.6, h, "z", wallY);
-  partitionWithDoor(0, zBack, 10.6, "x", 0, 2.1);
-  wallSegment(-5.25, -8.9, 4.5, h, "z", wallY);
-  wallSegment(5.25, -8.9, 4.5, h, "z", wallY);
-  wallSegment(-3.65, -11.15, 3.2, h, "x", wallY);
-  wallSegment(3.65, -11.15, 3.2, h, "x", wallY);
+  wallSegment(-9.15, zFront, 15.75, h, "x", wallY);
+  wallSegment(9.15, zFront, 15.75, h, "x", wallY);
+  wallSegment(xLeft, zMid, 32.85, h, "z", wallY);
+  wallSegment(xRight, zMid, 32.85, h, "z", wallY);
+  wallSegment(-9.4, zBack, 14.85, h, "x", wallY);
+  wallSegment(9.4, zBack, 14.85, h, "x", wallY);
 
-  addCollider(-5.1, zFront, 3.7, 0.5);
-  addCollider(5.1, zFront, 3.7, 0.5);
-  addCollider(xLeft, 0, 0.5, 13.6);
-  addCollider(xRight, 0, 0.5, 13.6);
-  addCollider(-5.25, -8.9, 0.5, 4.5);
-  addCollider(5.25, -8.9, 0.5, 4.5);
-  addCollider(-3.65, -11.15, 3.2, 0.5);
-  addCollider(3.65, -11.15, 3.2, 0.5);
+  addCollider(-9.15, zFront, 15.75, 0.5);
+  addCollider(9.15, zFront, 15.75, 0.5);
+  addCollider(xLeft, zMid, 0.5, 32.85);
+  addCollider(xRight, zMid, 0.5, 32.85);
+  addCollider(-9.4, zBack, 14.85, 0.5);
+  addCollider(9.4, zBack, 14.85, 0.5);
 
-  addWindow(-5.1, zFront + 0.03, 2.2, "x");
-  addWindow(5.1, zFront + 0.03, 2.2, "x");
-  addWindow(-7.63, -2.6, 2.2, "z");
-  addWindow(7.63, -2.6, 2.2, "z");
-  addWindow(-5.28, -9.0, 1.7, "z");
-  addWindow(5.28, -9.0, 1.7, "z");
-  addBackDoorFrame(0, -11.16);
+  addWindow(-7.9, zFront + 0.03, 2.6, "x", 2.6);
+  addWindow(7.9, zFront + 0.03, 2.6, "x", 2.6);
+  addWindow(-17.13, -2.4, 2.8, "z", 2.6);
+  addWindow(17.13, -2.4, 2.8, "z", 2.6);
+  addWindow(-17.13, -14.8, 2.8, "z", 2.6);
+  addWindow(17.13, -14.8, 2.8, "z", 2.6);
+  addBackDoorFrame(0, zBack - 0.01);
 }
 
 function addBackDoorFrame(x, z) {
-  block(0.24, 2.2, 0.18, materials.bridgeDark, x - 1.25, 1.82, z);
-  block(0.24, 2.2, 0.18, materials.bridgeDark, x + 1.25, 1.82, z);
-  block(2.75, 0.2, 0.2, materials.bridgeDark, x, 2.96, z);
+  block(0.24, 3.1, 0.18, materials.bridgeDark, x - 1.25, 2.27, z);
+  block(0.24, 3.1, 0.18, materials.bridgeDark, x + 1.25, 2.27, z);
+  block(2.75, 0.2, 0.2, materials.bridgeDark, x, 3.86, z);
+  block(2.35, 1.55, 0.16, materials.paperDim, x, 4.6, z);
   block(2.25, 0.12, 0.56, materials.woodLight, x, 0.82, z + 0.1);
 }
 
 function addFrontDoor() {
   const z = 6.86;
-  block(0.24, 2.3, 0.18, materials.bridgeDark, -1.28, 1.86, z + 0.02);
-  block(0.24, 2.3, 0.18, materials.bridgeDark, 1.28, 1.86, z + 0.02);
-  block(2.85, 0.2, 0.2, materials.bridgeDark, 0, 2.98, z + 0.02);
-  block(2.65, 0.12, 0.18, materials.gold, 0, 2.78, z + 0.04);
-  block(2.5, 0.12, 0.42, materials.woodLight, 0, 0.82, z - 0.04);
+  block(0.28, 2.3, 0.18, materials.bridgeDark, -1.62, 1.86, z + 0.08);
+  block(0.28, 2.3, 0.18, materials.bridgeDark, 1.62, 1.86, z + 0.08);
+  block(3.55, 0.2, 0.2, materials.bridgeDark, 0, 2.98, z + 0.08);
+  block(3.2, 0.12, 0.18, materials.gold, 0, 2.78, z + 0.12);
+  block(3.25, 2.25, 0.16, materials.paperDim, 0, 4.16, z + 0.1);
+  block(3.45, 0.18, 0.22, materials.bridgeDark, 0, 5.28, z + 0.1);
+  block(3.0, 0.12, 0.42, materials.woodLight, 0, 0.82, z - 0.04);
+  frontDoor.center.set(0, z);
 
   [
-    { side: -1, closedX: -0.45, openX: -1.46 },
-    { side: 1, closedX: 0.45, openX: 1.46 },
+    { side: -1, closedX: -0.58, openX: -1.78 },
+    { side: 1, closedX: 0.58, openX: 1.78 },
   ].forEach(({ side, closedX, openX }) => {
     const group = new THREE.Group();
-    group.position.set(openX, 0, z);
-    block(0.96, 1.76, 0.08, materials.paperWarm, 0, 1.75, side * 0.018, group);
-    block(1.04, 0.1, 0.12, materials.bridgeDark, 0, 2.64, side * 0.018, group);
-    block(1.04, 0.1, 0.12, materials.bridgeDark, 0, 0.86, side * 0.018, group);
-    block(0.08, 1.8, 0.12, materials.bridgeDark, side * -0.48, 1.75, side * 0.018, group);
-    block(0.08, 1.8, 0.12, materials.bridgeDark, side * 0.48, 1.75, side * 0.018, group);
-    block(0.08, 1.7, 0.14, materials.bridgeDark, side * -0.5, 1.74, side * 0.018, group);
-    block(0.18, 0.18, 0.12, materials.gold, side * -0.18, 1.72, 0.02, group);
+    const panelZ = 0.16;
+    group.position.set(sx(openX), 0, sz(z));
+    block(1.2, 2.36, 0.08, materials.paperWarm, 0, 2.05, panelZ, group);
+    block(1.28, 0.1, 0.12, materials.bridgeDark, 0, 3.24, panelZ, group);
+    block(1.28, 0.1, 0.12, materials.bridgeDark, 0, 0.86, panelZ, group);
+    block(0.08, 2.4, 0.12, materials.bridgeDark, side * -0.6, 2.05, panelZ, group);
+    block(0.08, 2.4, 0.12, materials.bridgeDark, side * 0.6, 2.05, panelZ, group);
+    block(0.08, 2.25, 0.14, materials.bridgeDark, side * -0.62, 2.03, panelZ, group);
+    block(0.18, 0.18, 0.12, materials.gold, side * -0.22, 1.9, panelZ + 0.04, group);
     scene.add(group);
-    const collider = addCollider(closedX, z, 0.88, 0.32, false, -0.5, 2.9);
-    frontDoor.panels.push({ group, closedX, openX });
+    const collider = addCollider(closedX, z, 1.08, 0.32, false, -0.5, 2.9);
+    frontDoor.panels.push({ group, closedX: sx(closedX), closedZ: sz(z), openX: sx(openX), openZ: sz(z) });
     frontDoor.colliders.push(collider);
   });
+  frontDoor.solidCollider = addCollider(0, z, 2.8, 0.52, false, -0.5, 3.0);
+}
+
+function createDoorController(label, initiallyOpen = false) {
+  const door = {
+    label,
+    panels: [],
+    colliders: [],
+    center: new THREE.Vector2(999, 999),
+    open: initiallyOpen,
+    progress: initiallyOpen ? 1 : 0,
+    target: initiallyOpen ? 1 : 0,
+    solidCollider: null,
+  };
+  doors.push(door);
+  return door;
+}
+
+function addSlidingDoor(label, x, z, axis, width, initiallyOpen = false) {
+  const door = createDoorController(label, initiallyOpen);
+  door.center.set(x, z);
+  const isHorizontal = axis === "x";
+  const panelWidth = width * 0.52;
+  const openOffset = width * 0.45;
+  const closedOffset = width * 0.24;
+
+  block(isHorizontal ? width + 0.42 : 0.42, 0.18, isHorizontal ? 0.16 : width + 0.42, materials.bridgeDark, x, 0.92, z);
+  block(isHorizontal ? width + 0.5 : 0.5, 0.16, isHorizontal ? 0.18 : width + 0.5, materials.bridgeDark, x, 3.15, z);
+
+  [-1, 1].forEach((side) => {
+    const group = new THREE.Group();
+    const closedX = isHorizontal ? x + side * closedOffset : x;
+    const closedZ = isHorizontal ? z : z + side * closedOffset;
+    const openX = isHorizontal ? x + side * openOffset : x;
+    const openZ = isHorizontal ? z : z + side * openOffset;
+    group.position.set(sx(initiallyOpen ? openX : closedX), 0, sz(initiallyOpen ? openZ : closedZ));
+
+    block(isHorizontal ? panelWidth : 0.08, 2.35, isHorizontal ? 0.08 : panelWidth, materials.paperWarm, 0, 2.16, 0, group);
+    block(isHorizontal ? panelWidth + 0.08 : 0.12, 0.08, isHorizontal ? 0.12 : panelWidth + 0.08, materials.bridgeDark, 0, 3.36, 0, group);
+    block(isHorizontal ? panelWidth + 0.08 : 0.12, 0.08, isHorizontal ? 0.12 : panelWidth + 0.08, materials.bridgeDark, 0, 0.98, 0, group);
+
+    for (let i = -1; i <= 1; i += 1) {
+      const offset = i * panelWidth * 0.24;
+      block(isHorizontal ? 0.045 : 0.08, 2.2, isHorizontal ? 0.08 : 0.045, materials.bridgeDark, isHorizontal ? offset : 0, 2.16, isHorizontal ? 0 : offset, group);
+    }
+    for (let i = -1; i <= 1; i += 1) {
+      block(isHorizontal ? panelWidth : 0.08, 0.045, isHorizontal ? 0.08 : panelWidth, materials.bridgeDark, 0, 1.65 + i * 0.55, 0, group);
+    }
+
+    scene.add(group);
+    const collider = addCollider(closedX, closedZ, isHorizontal ? panelWidth : 0.34, isHorizontal ? 0.34 : panelWidth, !initiallyOpen, -0.5, 2.8);
+    door.panels.push({ group, closedX: sx(closedX), closedZ: sz(closedZ), openX: sx(openX), openZ: sz(openZ) });
+    door.colliders.push(collider);
+  });
+  door.solidCollider = addCollider(x, z, isHorizontal ? width : 0.56, isHorizontal ? 0.56 : width, !initiallyOpen, -0.5, 3.2);
 }
 
 function addRoomPartitions() {
-  partitionWithDoor(-3.0, -1.5, 5.7, "z", -1.15, 1.65);
-  partitionWithDoor(3.0, -1.5, 5.7, "z", -1.15, 1.65);
-  partitionWithDoor(0, -5.5, 4.8, "x", 0, 1.9);
+  partitionWithDoor(-5.4, -9.6, 31.65, "z", 8.0, 2.4, "West Room Door", false);
+  partitionWithDoor(5.4, -9.6, 31.65, "z", 8.0, 2.4, "East Room Door", false);
+  partitionWithDoor(0, -13.45, 32.4, "x", 0, 2.7, "Rear Room Door", false);
+  addSlidingDoor("Garden Door", 0, -26.05, "x", 2.8, true);
 }
 
-function partitionWithDoor(x, z, length, axis, gapCenter, gapSize) {
+function partitionWithDoor(x, z, length, axis, gapCenter, gapSize, doorLabel = "", initiallyOpen = true) {
   const start = -length / 2;
   const end = length / 2;
   const gapStart = gapCenter - gapSize / 2;
@@ -580,113 +899,621 @@ function partitionWithDoor(x, z, length, axis, gapCenter, gapSize) {
     const centerOffset = (a + b) / 2;
     const sx = axis === "x" ? x + centerOffset : x;
     const sz = axis === "z" ? z + centerOffset : z;
-    wallSegment(sx, sz, segmentLength, 1.9, axis, 1.64);
+    wallSegment(sx, sz, segmentLength, 3.4, axis, 2.35);
     addCollider(sx, sz, axis === "x" ? segmentLength : 0.42, axis === "z" ? segmentLength : 0.42);
   });
 
   const headerX = axis === "x" ? x + gapCenter : x;
   const headerZ = axis === "z" ? z + gapCenter : z;
-  block(axis === "x" ? gapSize : 0.42, 0.18, axis === "z" ? gapSize : 0.42, materials.bridgeDark, headerX, 2.48, headerZ);
-}
-
-function addInteriorPosts() {
-  [-6.5, -3.1, 3.1, 6.5].forEach((x) => {
-    [-5.8, 5.8].forEach((z) => {
-      block(0.42, 3.0, 0.42, materials.bridgeDark, x, 1.88, z);
-      addCollider(x, z, 0.55, 0.55);
-    });
-  });
+  block(axis === "x" ? gapSize : 0.34, 1.35, axis === "z" ? gapSize : 0.34, materials.paperDim, headerX, 4.45, headerZ);
+  block(axis === "x" ? gapSize : 0.42, 0.18, axis === "z" ? gapSize : 0.42, materials.bridgeDark, headerX, 3.55, headerZ);
+  block(axis === "x" ? gapSize : 0.42, 0.14, axis === "z" ? gapSize : 0.42, materials.bridgeDark, headerX, 5.15, headerZ);
+  if (doorLabel) {
+    addSlidingDoor(doorLabel, headerX, headerZ, axis, gapSize, initiallyOpen);
+  }
 }
 
 function addInteriorDetails() {
   addCeilingBeams();
 
   [
-    [0, 4.2, 2.74, 0.42],
-    [0, -1.6, 2.68, 0.38],
-    [0, -8.8, 2.56, 0.34],
-    [-5.5, -3.0, 2.55, 0.34],
-    [5.5, -3.0, 2.55, 0.34],
+    [0, 4.85, 4.9, 0.42],
+    [0, -4.3, 4.85, 0.38],
+    [0, -17.65, 4.75, 0.34],
+    [-11.6, -3.5, 4.72, 0.34],
+    [11.6, -3.5, 4.72, 0.34],
   ].forEach(([x, z, y, size]) => addLantern(x, z, y, size));
 
-  addInteriorLight(0, 2.2, 2.35, 1.25, 14);
-  addInteriorLight(0, -5.8, 2.2, 1.0, 12);
-  addInteriorLight(-5.4, -3.2, 2.1, 0.75, 9);
-  addInteriorLight(5.4, -3.2, 2.1, 0.75, 9);
-  addInteriorLight(0, -9.4, 2.25, 0.9, 10);
-  addInteriorLight(0, -1.2, 2.3, 0.8, 10);
+  addInteriorLight(0, 2.2, 4.4, 1.55, 18);
+  addInteriorLight(0, -4.3, 4.2, 1.35, 18);
+  addInteriorLight(-11.55, -4.4, 4.15, 1.1, 15);
+  addInteriorLight(11.55, -4.4, 4.15, 1.1, 15);
+  addInteriorLight(0, -19.5, 4.3, 1.25, 18);
+  addInteriorLight(0, -11.3, 4.25, 1.0, 16);
 
   // --- Main Hall ---
-  addTatamiArea(-2.4, 1.6, 3, 3);
-  addLowTable(-2.4, 1.6, 2.2, 1.3);
-  addFloorCushion(-3.8, 1.6, 0);
-  addFloorCushion(-1.0, 1.6, 0);
-  addFloorCushion(-2.4, 2.85, Math.PI / 2);
-  addFloorCushion(-2.4, 0.35, Math.PI / 2);
-  addTeaSet(-2.4, 1.07, 1.6);
+  addTatamiArea(0, -2.05, 5, 5);
+  addLowTable(0, -2.05, 2.5, 1.3);
+  addFloorCushion(-1.55, -2.05, 0);
+  addFloorCushion(1.55, -2.05, 0);
+  addFloorCushion(0, -0.85, Math.PI / 2);
+  addFloorCushion(0, -3.25, Math.PI / 2);
 
-  addPaperLantern(-2.4, 2.45, 1.6);
-  addPaperLantern(2.4, 2.55, 2.4);
+  addPaperLantern(-2.4, 4.65, 1.0);
+  addPaperLantern(2.4, 4.75, 1.0);
 
-  addCabinetWall(-6.95, 2.6, 0.55, 4.2, "z");
-  addCabinetWall(6.95, 2.1, 0.55, 4.8, "z");
-  addBonsai(6.95, 1.68, 0.5);
-  addBonsai(-6.95, 1.68, 4.4);
+  addCabinetWall(-4.8, 2.75, 0.55, 3.9, "z");
+  addCabinetWall(4.8, 2.75, 0.55, 3.9, "z");
+  addBonsai(4.35, 1.68, 4.85);
+  addBonsai(-4.35, 1.68, 4.85);
 
-  addFloorLantern(-6.3, 5.5, 1.2);
-  addFloorLantern(6.3, 5.5, 1.2);
-  addBonsai(-3.6, 0.72, -5.7);
-  addIkebana(3.6, 0.72, -5.7);
+  addFloorLantern(-4.35, 5.45, 1.2);
+  addFloorLantern(4.35, 5.45, 1.2);
+  addBonsai(-3.3, 0.72, -10.45);
+  addIkebana(3.3, 0.72, -10.45);
 
   // --- Room A (West) ---
-  addTatamiArea(-5.4, -2.9, 2, 2);
-  addPlanter(-6.8, -1.4, 1.0, 2.4, "z");
-  addLowTable(-5.45, -2.5, 1.9, 1.15);
-  addBonsai(-5.45, 1.07, -2.5);
-  addFloorLantern(-6.7, -4.7, 1.15);
+  addTatamiArea(-11.25, -4.3, 5, 5);
+  addPlanter(-15.75, -4.6, 1.0, 4.0, "z");
+  addLowTable(-11.25, -4.3, 2.4, 1.3);
+  addBonsai(-11.25, 1.07, -4.3);
+  addFloorLantern(-15.4, -11.2, 1.15);
 
   // --- Room B (East) ---
-  addTatamiArea(5.4, -2.9, 2, 2);
-  addPlanter(6.8, -1.4, 1.0, 2.4, "z");
-  addLowTable(5.45, -2.5, 1.9, 1.15);
-  addIkebana(5.45, 1.07, -2.5);
-  addFloorLantern(6.7, -4.7, 1.15);
+  addTatamiArea(11.25, -4.3, 5, 5);
+  addPlanter(15.75, -4.6, 1.0, 4.0, "z");
+  addLowTable(11.25, -4.3, 2.4, 1.3);
+  addIkebana(11.25, 1.07, -4.3);
+  addFloorLantern(15.4, -11.2, 1.15);
 
   // --- Corridor between Main Hall and Rear Room ---
-  addFloorLantern(-2.2, -6.35, 1.05);
-  addFloorLantern(2.2, -6.35, 1.05);
+  addFloorLantern(-4.1, -12.2, 1.05);
+  addFloorLantern(4.1, -12.2, 1.05);
 
   // --- Rear Room ---
-  addTatamiArea(0, -8.85, 4, 2);
-  addLowTable(0, -9.0, 2.4, 1.4);
-  addTeaSet(0, 1.07, -9.0);
-  addFloorCushion(-1.7, -9.0, Math.PI / 2);
-  addFloorCushion(1.7, -9.0, Math.PI / 2);
-  addFloorCushion(0, -10.05, 0);
-  addFloorCushion(0, -7.95, 0);
+  addTatamiArea(0, -19.2, 7, 4);
+  addLowTable(0, -19.2, 2.65, 1.4);
+  addTeaSet(0, 1.07, -19.2);
+  addFloorCushion(-1.8, -19.2, Math.PI / 2);
+  addFloorCushion(1.8, -19.2, Math.PI / 2);
+  addFloorCushion(0, -20.25, 0);
+  addFloorCushion(0, -18.15, 0);
 
-  addBambooStalk(-4.2, -10.4, 1.95, 3);
-  addBambooStalk(4.2, -10.4, 1.95, 3);
-  addBonsai(-3.5, 0.72, -10.6);
-  addBonsai(3.5, 0.72, -10.6);
+  addBambooStalk(-13.8, -23.3, 1.95, 3);
+  addBambooStalk(13.8, -23.3, 1.95, 3);
+  addBonsai(-9.0, 0.72, -23.45);
+  addBonsai(9.0, 0.72, -23.45);
 
-  addFloorLantern(-3.6, -7.55, 1.1);
-  addFloorLantern(3.6, -7.55, 1.1);
-  addPaperLantern(0, 2.4, -9.0);
+  addFloorLantern(-13.5, -15.1, 1.1);
+  addFloorLantern(13.5, -15.1, 1.1);
+  addPaperLantern(0, 4.65, -19.2);
+
+  addPortfolioInstallations();
+}
+
+function addPortfolioInstallations() {
+  addTableMap();
+  addPortfolioDisplay({
+    id: "mission",
+    x: -16.92,
+    z: 1.65,
+    facing: "+x",
+    title: "Mission",
+    subtitle: "Sashit Vijay",
+    accent: "#c76576",
+    width: 4.4,
+    height: 1.8,
+  });
+  addPortfolioDisplay({
+    id: "education",
+    x: -16.92,
+    z: -5.4,
+    facing: "+x",
+    title: "Education",
+    subtitle: "ASU CS, 4.0",
+    accent: "#7f93a7",
+    width: 5.6,
+    height: 2.15,
+  });
+  addPortfolioDisplay({
+    id: "projects",
+    x: 16.92,
+    z: -4.3,
+    facing: "-x",
+    title: "Projects",
+    subtitle: "Thred, SoccerSense",
+    accent: "#6f9b82",
+    width: 4.9,
+    height: 1.9,
+  });
+  addPortfolioDisplay({
+    id: "tech",
+    x: 16.92,
+    z: 2.35,
+    facing: "-x",
+    title: "Tech Stack",
+    subtitle: "Languages + tools",
+    accent: "#d0a45f",
+    width: 4.7,
+    height: 2.0,
+  });
+  addPortfolioDisplay({
+    id: "experience",
+    x: -16.92,
+    z: -19.2,
+    facing: "+x",
+    title: "Experience",
+    subtitle: "Engineering + teaching",
+    accent: "#b46b51",
+    width: 4.9,
+    height: 1.9,
+  });
+  addPortfolioDisplay({
+    id: "contact",
+    x: 0,
+    z: -35.7,
+    facing: "+z",
+    title: "Contact",
+    subtitle: "Links + resume",
+    accent: "#d6889a",
+    garden: true,
+    width: 4.8,
+    height: 2.05,
+  });
+}
+
+function addTableMap() {
+  const x = 0;
+  const z = -2.05;
+  const group = new THREE.Group();
+  group.position.set(sx(x), 0, sz(z));
+
+  block(2.38, 0.045, 1.26, materials.paperWarm, 0, 1.095, 0, group);
+  block(2.5, 0.055, 0.08, materials.bridgeDark, 0, 1.13, -0.67, group);
+  block(2.5, 0.055, 0.08, materials.bridgeDark, 0, 1.13, 0.67, group);
+  block(0.08, 0.055, 1.3, materials.bridgeDark, -1.27, 1.13, 0, group);
+  block(0.08, 0.055, 1.3, materials.bridgeDark, 1.27, 1.13, 0, group);
+
+  const panel = new THREE.Mesh(
+    new THREE.PlaneGeometry(sx(2.2), 1.12),
+    new THREE.MeshBasicMaterial({
+      map: makeHouseMapTexture(),
+      transparent: true,
+      side: THREE.DoubleSide,
+    }),
+  );
+  panel.rotation.x = -Math.PI / 2;
+  panel.position.set(0, 1.162, 0);
+  panel.userData.interactableId = "map";
+  group.add(panel);
+
+  scene.add(group);
+  const item = {
+    id: "map",
+    label: "House Map",
+    center: new THREE.Vector2(sx(x), sz(z)),
+    group,
+    panel,
+    radius: sx(2.65),
+    isTableMap: true,
+  };
+  interactables.push(item);
+  animated.push({ type: "portfolioDisplay", item });
+}
+
+function addPortfolioDisplay({
+  id,
+  x,
+  z,
+  facing,
+  title,
+  subtitle,
+  accent,
+  width = 4.6,
+  height = 1.9,
+  garden = false,
+  map = false,
+}) {
+  const group = new THREE.Group();
+  group.position.set(sx(x), 0, sz(z));
+  group.rotation.y = facingToRotation(facing);
+
+  const centerY = garden ? 2.1 : 2.55;
+  const baseY = centerY - height / 2 - 0.22;
+  const baseMaterial = garden ? materials.stone : materials.paperDim;
+  block(width + 0.58, height + 0.42, 0.13, baseMaterial, 0, centerY, -0.035, group);
+  block(width + 0.82, 0.16, 0.2, materials.bridgeDark, 0, centerY + height / 2 + 0.16, 0.02, group);
+  block(width + 0.72, 0.14, 0.2, materials.bridgeDark, 0, centerY - height / 2 - 0.16, 0.02, group);
+  block(0.16, height + 0.36, 0.2, materials.bridgeDark, -width / 2 - 0.18, centerY, 0.02, group);
+  block(0.16, height + 0.36, 0.2, materials.bridgeDark, width / 2 + 0.18, centerY, 0.02, group);
+  block(width + 0.2, 0.08, 0.12, materials.gold, 0, centerY - height / 2 + 0.18, 0.08, group);
+
+  if (!garden) {
+    block(width + 1.0, 0.12, 0.28, materials.woodLight, 0, baseY, 0, group);
+  } else {
+    block(width + 0.7, 0.22, 0.42, materials.stone, 0, baseY, 0, group);
+  }
+
+  const panel = new THREE.Mesh(
+    new THREE.PlaneGeometry(sx(width), height),
+    new THREE.MeshBasicMaterial({
+      map: map ? makeHouseMapTexture() : makePortfolioTexture(title, subtitle, accent, width, height),
+      transparent: true,
+      side: THREE.DoubleSide,
+    }),
+  );
+  panel.position.set(0, centerY, 0.09);
+  panel.userData.interactableId = id;
+  group.add(panel);
+
+  const charmCount = map ? 5 : 3;
+  for (let i = 0; i < charmCount; i += 1) {
+    const offset = (i - (charmCount - 1) / 2) * (width / (charmCount + 0.6));
+    block(0.09, 0.26, 0.06, materials.lanternGlow, offset, centerY - height / 2 - 0.02, 0.14, group);
+  }
+
+  scene.add(group);
+  const item = {
+    id,
+    label: title,
+    center: new THREE.Vector2(sx(x), sz(z)),
+    group,
+    panel,
+    radius: sx(map ? 6.0 : Math.max(3.0, Math.min(4.7, width * 0.62))),
+  };
+  interactables.push(item);
+  animated.push({ type: "portfolioDisplay", item });
+}
+
+function facingToRotation(facing) {
+  return {
+    "+z": 0,
+    "-z": Math.PI,
+    "+x": Math.PI / 2,
+    "-x": -Math.PI / 2,
+  }[facing] ?? 0;
+}
+
+function makePortfolioTexture(title, subtitle, accent, width = 4.6, height = 1.9) {
+  const textureCanvas = document.createElement("canvas");
+  const aspect = Math.max(1.2, width / height);
+  textureCanvas.width = 864;
+  textureCanvas.height = Math.round(textureCanvas.width / aspect);
+  const ctx = textureCanvas.getContext("2d");
+  const cw = textureCanvas.width;
+  const ch = textureCanvas.height;
+
+  const paper = ctx.createLinearGradient(0, 0, cw, ch);
+  paper.addColorStop(0, "#f8e8c3");
+  paper.addColorStop(0.42, "#fff4d8");
+  paper.addColorStop(1, "#d6ad78");
+  ctx.fillStyle = paper;
+  ctx.fillRect(0, 0, cw, ch);
+
+  ctx.globalAlpha = 0.11;
+  ctx.strokeStyle = "#7d573a";
+  ctx.lineWidth = 1.3;
+  for (let x = 18; x < cw; x += 42) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x + Math.sin(x) * 5, ch);
+    ctx.stroke();
+  }
+  for (let i = 0; i < 360; i += 1) {
+    ctx.fillStyle = i % 3 ? "#8b6547" : accent;
+    ctx.fillRect(random(0, cw), random(0, ch), random(1, 3), random(1, 3));
+  }
+  ctx.globalAlpha = 1;
+
+  const margin = Math.round(ch * 0.09);
+  ctx.strokeStyle = "#4b2d20";
+  ctx.lineWidth = Math.max(12, ch * 0.045);
+  roundRect(ctx, margin, margin, cw - margin * 2, ch - margin * 2, 18);
+  ctx.stroke();
+
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = Math.max(5, ch * 0.018);
+  roundRect(ctx, margin * 1.65, margin * 1.65, cw - margin * 3.3, ch - margin * 3.3, 14);
+  ctx.stroke();
+
+  drawPortfolioCrest(ctx, title, accent, cw * 0.18, ch * 0.5, ch * 0.24);
+
+  ctx.fillStyle = "#2f211a";
+  ctx.font = `700 ${Math.round(ch * 0.18)}px Georgia`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(title, cw * 0.34, ch * 0.43);
+
+  ctx.fillStyle = "#6d4937";
+  ctx.font = `700 ${Math.round(ch * 0.072)}px Inter, Arial, sans-serif`;
+  ctx.fillText(subtitle, cw * 0.345, ch * 0.58);
+
+  ctx.fillStyle = accent;
+  ctx.fillRect(cw * 0.345, ch * 0.69, cw * 0.28, Math.max(5, ch * 0.018));
+
+  ctx.globalAlpha = 0.42;
+  drawSakuraStamp(ctx, cw * 0.87, ch * 0.28, ch * 0.08, accent);
+  drawSakuraStamp(ctx, cw * 0.82, ch * 0.7, ch * 0.055, "#d98a9b");
+  ctx.globalAlpha = 1;
+
+  const texture = new THREE.CanvasTexture(textureCanvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  return texture;
+}
+
+function makeHouseMapTexture() {
+  const textureCanvas = document.createElement("canvas");
+  textureCanvas.width = 1024;
+  textureCanvas.height = 520;
+  const ctx = textureCanvas.getContext("2d");
+  const cw = 1920;
+  const ch = 976;
+  ctx.scale(textureCanvas.width / cw, textureCanvas.height / ch);
+
+  const paper = ctx.createLinearGradient(0, 0, cw, ch);
+  paper.addColorStop(0, "#f3daa3");
+  paper.addColorStop(0.42, "#fff2d1");
+  paper.addColorStop(1, "#dfb37f");
+  ctx.fillStyle = paper;
+  ctx.fillRect(0, 0, cw, ch);
+
+  ctx.globalAlpha = 0.07;
+  ctx.strokeStyle = "#825f3f";
+  ctx.lineWidth = 2;
+  for (let x = 92; x < cw; x += 78) {
+    ctx.beginPath();
+    ctx.moveTo(x, 96);
+    ctx.lineTo(x, ch - 96);
+    ctx.stroke();
+  }
+  for (let y = 100; y < ch; y += 78) {
+    ctx.beginPath();
+    ctx.moveTo(96, y);
+    ctx.lineTo(cw - 96, y);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  ctx.strokeStyle = "#3d2419";
+  ctx.lineWidth = 28;
+  roundRect(ctx, 54, 54, cw - 108, ch - 108, 30);
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(195, 120, 88, 0.72)";
+  ctx.lineWidth = 8;
+  roundRect(ctx, 86, 86, cw - 172, ch - 172, 24);
+  ctx.stroke();
+
+  ctx.fillStyle = "#2f211a";
+  ctx.font = "700 64px Georgia";
+  ctx.textAlign = "center";
+  ctx.fillText("Sashit's Portfolio House", cw / 2, 128);
+  ctx.fillStyle = "#7f4f3d";
+  ctx.font = "700 25px Inter, Arial, sans-serif";
+  ctx.fillText("walkthrough guide", cw / 2, 166);
+
+  const rooms = [
+    { x: 235, y: 520, w: 360, h: 170, label: "Education", sub: "West Room", color: "#7896a8", icon: "book" },
+    { x: 740, y: 372, w: 440, h: 170, label: "Mission", sub: "Main Hall", color: "#c76576", icon: "crest" },
+    { x: 1325, y: 520, w: 360, h: 170, label: "Projects", sub: "East Room", color: "#77a88e", icon: "grid" },
+    { x: 760, y: 690, w: 400, h: 132, label: "Experience", sub: "Rear Room", color: "#ba7353", icon: "path" },
+    { x: 1210, y: 332, w: 260, h: 116, label: "Stack", sub: "Tool Wall", color: "#d0a45f", icon: "chip" },
+    { x: 820, y: 236, w: 280, h: 88, label: "Map", sub: "Table", color: "#9670a9", icon: "pin" },
+  ];
+
+  ctx.fillStyle = "rgba(158, 94, 51, 0.22)";
+  roundRect(ctx, 455, 262, 1010, 54, 8);
+  ctx.fill();
+  roundRect(ctx, 919, 316, 82, 430, 8);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(171, 102, 55, 0.45)";
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(960, 316);
+  ctx.lineTo(960, 746);
+  ctx.moveTo(455, 289);
+  ctx.lineTo(1465, 289);
+  ctx.stroke();
+
+  ctx.globalAlpha = 0.16;
+  [
+    [210, 250, 16],
+    [350, 310, 13],
+    [1510, 292, 15],
+    [1660, 370, 12],
+    [410, 792, 13],
+    [1485, 785, 14],
+  ].forEach(([x, y, size]) => drawSakuraStamp(ctx, x, y, size, "#d98798"));
+  ctx.globalAlpha = 1;
+
+  rooms.forEach((room) => {
+    const x = room.x;
+    const y = room.y;
+    ctx.fillStyle = "rgba(255, 248, 225, 0.88)";
+    roundRect(ctx, x, y, room.w, room.h, 24);
+    ctx.fill();
+    ctx.strokeStyle = room.color;
+    ctx.lineWidth = 12;
+    roundRect(ctx, x + 7, y + 7, room.w - 14, room.h - 14, 20);
+    ctx.stroke();
+    drawMapIcon(ctx, room.icon, room.color, x + room.w * 0.18, y + room.h * 0.52, Math.min(room.w, room.h) * 0.18);
+    ctx.fillStyle = "#2f211a";
+    ctx.font = `800 ${room.w < 230 ? 38 : 44}px Inter, Arial, sans-serif`;
+    ctx.fillText(room.label, x + room.w * 0.58, y + room.h / 2 - 10);
+    ctx.fillStyle = "#76513c";
+    ctx.font = `700 ${room.w < 230 ? 22 : 28}px Inter, Arial, sans-serif`;
+    ctx.fillText(room.sub, x + room.w * 0.58, y + room.h / 2 + 34);
+  });
+
+  ctx.fillStyle = "#a14d55";
+  ctx.font = "800 26px Inter, Arial, sans-serif";
+  ctx.fillText("Press F nearby to inspect each section.", cw / 2, ch - 96);
+
+  const texture = new THREE.CanvasTexture(textureCanvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  return texture;
+}
+
+function drawPortfolioCrest(ctx, title, accent, x, y, size) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.strokeStyle = accent;
+  ctx.fillStyle = "rgba(255, 250, 230, 0.75)";
+  ctx.lineWidth = Math.max(4, size * 0.06);
+  ctx.beginPath();
+  ctx.arc(0, 0, size, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.strokeStyle = "#4b2d20";
+  ctx.lineWidth = Math.max(3, size * 0.045);
+  const key = title.toLowerCase();
+  if (key.includes("project")) {
+    [-0.38, 0.38].forEach((ox) => {
+      [-0.32, 0.32].forEach((oy) => {
+        ctx.strokeRect(ox * size - size * 0.18, oy * size - size * 0.18, size * 0.36, size * 0.36);
+      });
+    });
+  } else if (key.includes("tech")) {
+    ctx.strokeRect(-size * 0.36, -size * 0.28, size * 0.72, size * 0.56);
+    for (let i = -2; i <= 2; i += 1) {
+      ctx.beginPath();
+      ctx.moveTo(i * size * 0.16, -size * 0.43);
+      ctx.lineTo(i * size * 0.16, -size * 0.3);
+      ctx.moveTo(i * size * 0.16, size * 0.3);
+      ctx.lineTo(i * size * 0.16, size * 0.43);
+      ctx.stroke();
+    }
+  } else if (key.includes("education")) {
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.55, -size * 0.05);
+    ctx.lineTo(0, -size * 0.35);
+    ctx.lineTo(size * 0.55, -size * 0.05);
+    ctx.lineTo(0, size * 0.25);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(size * 0.32, size * 0.08);
+    ctx.lineTo(size * 0.32, size * 0.46);
+    ctx.stroke();
+  } else if (key.includes("experience")) {
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.5, size * 0.25);
+    ctx.bezierCurveTo(-size * 0.18, -size * 0.45, size * 0.15, size * 0.48, size * 0.5, -size * 0.22);
+    ctx.stroke();
+    [-0.48, 0, 0.48].forEach((px) => {
+      ctx.beginPath();
+      ctx.arc(px * size, px === 0 ? 0 : -px * size * 0.1, size * 0.08, 0, Math.PI * 2);
+      ctx.fillStyle = accent;
+      ctx.fill();
+    });
+  } else if (key.includes("contact")) {
+    ctx.strokeRect(-size * 0.48, -size * 0.28, size * 0.96, size * 0.56);
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.48, -size * 0.28);
+    ctx.lineTo(0, size * 0.08);
+    ctx.lineTo(size * 0.48, -size * 0.28);
+    ctx.stroke();
+  } else {
+    ctx.beginPath();
+    ctx.moveTo(0, -size * 0.55);
+    ctx.lineTo(size * 0.14, -size * 0.12);
+    ctx.lineTo(size * 0.58, -size * 0.12);
+    ctx.lineTo(size * 0.22, size * 0.12);
+    ctx.lineTo(size * 0.36, size * 0.55);
+    ctx.lineTo(0, size * 0.28);
+    ctx.lineTo(-size * 0.36, size * 0.55);
+    ctx.lineTo(-size * 0.22, size * 0.12);
+    ctx.lineTo(-size * 0.58, -size * 0.12);
+    ctx.lineTo(-size * 0.14, -size * 0.12);
+    ctx.closePath();
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawMapIcon(ctx, icon, color, x, y, size) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.strokeStyle = color;
+  ctx.fillStyle = "rgba(255, 249, 228, 0.9)";
+  ctx.lineWidth = Math.max(4, size * 0.11);
+  ctx.beginPath();
+  ctx.arc(0, 0, size, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.strokeStyle = "#4b2d20";
+  ctx.lineWidth = Math.max(3, size * 0.08);
+  if (icon === "book") {
+    ctx.strokeRect(-size * 0.5, -size * 0.35, size, size * 0.7);
+    ctx.beginPath();
+    ctx.moveTo(0, -size * 0.35);
+    ctx.lineTo(0, size * 0.35);
+    ctx.stroke();
+  } else if (icon === "grid") {
+    for (let ix = -1; ix <= 1; ix += 1) {
+      for (let iy = -1; iy <= 1; iy += 1) {
+        ctx.strokeRect(ix * size * 0.28 - size * 0.09, iy * size * 0.28 - size * 0.09, size * 0.18, size * 0.18);
+      }
+    }
+  } else if (icon === "chip") {
+    ctx.strokeRect(-size * 0.42, -size * 0.32, size * 0.84, size * 0.64);
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.18, 0);
+    ctx.lineTo(size * 0.18, 0);
+    ctx.moveTo(0, -size * 0.18);
+    ctx.lineTo(0, size * 0.18);
+    ctx.stroke();
+  } else if (icon === "path") {
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.45, size * 0.2);
+    ctx.bezierCurveTo(-size * 0.1, -size * 0.42, size * 0.1, size * 0.42, size * 0.45, -size * 0.2);
+    ctx.stroke();
+  } else if (icon === "pin") {
+    ctx.beginPath();
+    ctx.arc(0, -size * 0.1, size * 0.22, 0, Math.PI * 2);
+    ctx.moveTo(0, size * 0.48);
+    ctx.lineTo(-size * 0.24, size * 0.08);
+    ctx.lineTo(size * 0.24, size * 0.08);
+    ctx.closePath();
+    ctx.stroke();
+  } else {
+    drawSakuraStamp(ctx, 0, 0, size * 0.48, color);
+  }
+  ctx.restore();
+}
+
+function drawSakuraStamp(ctx, x, y, size, color) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = color;
+  for (let i = 0; i < 5; i += 1) {
+    ctx.rotate((Math.PI * 2) / 5);
+    ctx.beginPath();
+    ctx.ellipse(0, -size * 0.5, size * 0.22, size * 0.42, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = "#f9df87";
+  ctx.beginPath();
+  ctx.arc(0, 0, size * 0.13, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
 }
 
 function addInteriorLight(x, z, y, intensity, distance) {
   const light = new THREE.PointLight("#ffd2a0", intensity, distance, 2.2);
-  light.position.set(x, y, z);
+  light.position.set(sx(x), y, sz(z));
   scene.add(light);
 }
 
 function addCeilingBeams() {
-  [-4.8, 0, 4.8].forEach((x) => {
-    block(0.28, 0.32, 13.2, materials.bridgeDark, x, 3.04, 0);
+  block(32.4, 0.12, 31.5, materials.ceiling, 0, 5.58, -9.6);
+  [-13.5, -6.75, 6.75, 13.5].forEach((x) => {
+    block(0.28, 0.32, 31.5, materials.bridgeDark, x, 5.42, -9.6);
   });
-  [-4.8, -1.6, 1.6, 4.8].forEach((z) => {
-    block(14.5, 0.28, 0.28, materials.bridgeDark, 0, 2.92, z);
+  [5.3, -2.4, -9.9, -17.4, -24.5].forEach((z) => {
+    block(33.0, 0.28, 0.28, materials.bridgeDark, 0, 5.24, z);
   });
 }
 
@@ -833,7 +1660,7 @@ function addHangingScroll(x, y, z, theme, facing, scale = 1) {
   cord.position.set(0, h / 2 + 0.12, 0);
   group.add(cord);
 
-  group.position.set(x, y, z);
+  group.position.set(sx(x), y, sz(z));
   group.rotation.y = facingRot[facing] ?? 0;
   scene.add(group);
 }
@@ -884,7 +1711,7 @@ function addFloorLantern(x, z, height = 1.25, baseY = 0.72) {
   block(0.34, 0.06, 0.34, materials.bridgeDark, x, baseY + height + 0.02, z);
   block(0.22, 0.04, 0.22, materials.bridgeDark, x, baseY + height + 0.07, z);
   const light = new THREE.PointLight("#ffc285", 1.2, 5.2, 2);
-  light.position.set(x, baseY + height * 0.55, z);
+  light.position.set(sx(x), baseY + height * 0.55, sz(z));
   scene.add(light);
   shade.userData.baseIntensity = 1;
   animated.push({ type: "lantern", mesh: shade, light });
@@ -971,7 +1798,7 @@ function addTokonoma(x, z, facing, theme = "mountain") {
   block(0.06, 0.05, 0.06, materials.flower, bowlX, 1.06, bowlZ);
 
   const light = new THREE.PointLight("#ffd2a0", 1.1, 4.4, 2);
-  light.position.set(x + facingX * 0.3, 2.05, z + facingZ * 0.3);
+  light.position.set(sx(x + facingX * 0.3), 2.05, sz(z + facingZ * 0.3));
   scene.add(light);
   addCollider(x, z, w + 0.1, d + 0.1);
 }
@@ -996,20 +1823,20 @@ function addPaperLantern(x, y, z) {
   block(0.06, 0.5, 0.06, materials.bridgeDark, x, y + 0.74, z);
   block(0.22, 0.04, 0.22, materials.bridgeDark, x, y + 0.005, z);
   const light = new THREE.PointLight("#ffc89a", 0.9, 4.6, 2);
-  light.position.set(x, y + 0.22, z);
+  light.position.set(sx(x), y + 0.22, sz(z));
   scene.add(light);
   shade.userData.baseIntensity = 1;
   animated.push({ type: "lantern", mesh: shade, light });
 }
 
 function addRoofs() {
-  addLayeredRoof(0, 3.2, 0, 19.6, 18.4, 0.42, 3);
-  addLayeredRoof(0, 3.08, -8.8, 12.4, 7.4, 0.5, 3);
+  addLayeredRoof(0, 6.15, -9.6, 39.0, 37.5, 0.42, 3);
+  addLayeredRoof(0, 7.7, -9.6, 25.5, 23.25, 0.46, 2);
 
-  block(1.0, 0.62, 11.0, materials.roofDark, -6.35, 3.62, -0.7);
-  block(1.0, 0.62, 11.0, materials.roofDark, 6.35, 3.62, -0.7);
-  block(12.1, 0.56, 0.9, materials.roofDark, 0, 3.72, -6.05);
-  block(12.1, 0.56, 0.9, materials.roofDark, 0, 3.72, 4.35);
+  block(1.0, 0.62, 28.5, materials.roofDark, -12.75, 7.93, -9.6);
+  block(1.0, 0.62, 28.5, materials.roofDark, 12.75, 7.93, -9.6);
+  block(25.1, 0.56, 0.9, materials.roofDark, 0, 8.01, -21.1);
+  block(25.1, 0.56, 0.9, materials.roofDark, 0, 8.01, 1.85);
 }
 
 function addLayeredRoof(x, y, z, w, d, stepY, layers) {
@@ -1022,18 +1849,13 @@ function addLayeredRoof(x, y, z, w, d, stepY, layers) {
 }
 
 function addExteriorDetails() {
-  block(22.0, 0.24, 18.8, materials.shore, 0, -0.18, 0.2);
-  block(20.2, 0.36, 17.0, materials.grass, 0, -0.02, 0.2);
+  block(37.5, 0.24, 36.8, materials.shore, 0, -0.18, -9.6);
+  block(36.0, 0.36, 35.3, materials.grass, 0, -0.02, -9.6);
 
   addLantern(-4.6, 7.1, 2.1, 0.52);
   addLantern(4.6, 7.1, 2.1, 0.52);
   addLantern(-6.9, 5.4, 2.0, 0.42);
   addLantern(6.9, 5.4, 2.0, 0.42);
-
-  addSakuraTree(-9.3, 7.7, 0.95);
-  addSakuraTree(9.2, 7.9, 0.9);
-  addSakuraTree(-9.8, -5.6, 0.88);
-  addSakuraTree(9.8, -5.4, 0.86);
 
   addGardenBed(-5.8, 7.4, 3.8, 0.62);
   addGardenBed(5.8, 7.4, 3.8, 0.62);
@@ -1043,22 +1865,37 @@ function addExteriorDetails() {
 }
 
 function addBackGarden() {
-  block(12.2, 0.18, 6.4, materials.shore, 0, -0.2, -14.1);
-  block(11.4, 0.3, 5.6, materials.grass, 0, -0.06, -14.1);
-  block(10.8, 0.12, 0.28, materials.hedge, 0, 0.22, -16.95);
-  block(0.28, 0.12, 4.7, materials.hedge, -5.55, 0.22, -14.1);
-  block(0.28, 0.12, 4.7, materials.hedge, 5.55, 0.22, -14.1);
-  addSakuraTree(0, -15.7, 0.92);
+  block(43.5, 0.18, 25.5, materials.shore, 0, -0.2, -38.05);
+  block(41.6, 0.3, 23.6, materials.grass, 0, -0.06, -38.05);
+  block(40.5, 0.12, 0.28, materials.hedge, 0, 0.22, -49.75);
+  block(0.28, 0.12, 21.75, materials.hedge, -20.7, 0.22, -38.05);
+  block(0.28, 0.12, 21.75, materials.hedge, 20.7, 0.22, -38.05);
+  addBoundaryFence(0, -49.75, 41.0, "x");
+  addBoundaryFence(-20.7, -38.05, 21.75, "z");
+  addBoundaryFence(20.7, -38.05, 21.75, "z");
+  addCollider(0, -49.75, 41.0, 0.55);
+  addCollider(-20.7, -38.05, 0.55, 21.75);
+  addCollider(20.7, -38.05, 0.55, 21.75);
+  addSakuraTree(0, -40.4, 2.55);
 
-  for (let i = 0; i < 22; i += 1) {
-    const petal = block(random(0.08, 0.18), 0.012, random(0.05, 0.13), i % 3 ? materials.flower : materials.sakura, random(-4.7, 4.7), 0.11, random(-16.2, -12.15));
-    petal.rotation.y = random(0, Math.PI);
+  const petals = [];
+  for (let i = 0; i < 28; i += 1) {
+    petals.push({
+      w: random(0.08, 0.18),
+      h: 0.012,
+      d: random(0.05, 0.13),
+      x: random(-16, 16),
+      y: 0.11,
+      z: random(-47, -30),
+      ry: random(0, Math.PI),
+    });
   }
+  addInstancedBoxes(petals, materials.sakura);
 }
 
 function addGardenBed(x, z, w, d) {
   block(w, 0.34, d, materials.hedge, x, 0.9, z);
-  const count = Math.max(3, Math.floor((w + d) * 1.1));
+  const count = Math.max(3, Math.floor((w + d) * 0.75));
   for (let i = 0; i < count; i += 1) {
     block(0.18, 0.16, 0.18, materials.flower, x + random(-w * 0.42, w * 0.42), 1.15, z + random(-d * 0.42, d * 0.42));
   }
@@ -1077,10 +1914,6 @@ function addSakuraForest() {
     [43, 9, 0.96],
     [42, -8, 1.1],
     [37, -26, 1.0],
-    [24, -39, 1.16],
-    [8, -42, 0.94],
-    [-9, -42, 1.08],
-    [-25, -38, 1.18],
     [-38, -27, 1.0],
     [-43, -10, 1.12],
     [-44, 8, 0.98],
@@ -1098,6 +1931,7 @@ function addLakeTreeRing() {
     const x = Math.cos(angle) * (43 + jitter);
     const z = Math.sin(angle) * (40 + Math.cos(i * 1.31) * 1.7);
     if (Math.abs(x) < 15 && z > 28) continue;
+    if (z < -28 && Math.abs(x) < 38) continue;
     ring.push([x, z, 0.66 + ((i % 5) * 0.07)]);
   }
 
@@ -1149,25 +1983,27 @@ function addLakeDetails() {
     const pad = new THREE.Mesh(new THREE.CircleGeometry(scale, 16), materials.lily);
     pad.rotation.x = -Math.PI / 2;
     pad.rotation.z = index * 0.8;
-    pad.position.set(x, -0.18, z);
+    pad.position.set(sx(x), -0.18, sz(z));
     scene.add(pad);
 
     if (index % 2 === 0) {
       const flower = new THREE.Mesh(new THREE.CircleGeometry(scale * 0.22, 8), materials.lotus);
       flower.rotation.x = -Math.PI / 2;
-      flower.position.set(x + scale * 0.22, -0.165, z - scale * 0.12);
+      flower.position.set(sx(x + scale * 0.22), -0.165, sz(z - scale * 0.12));
       scene.add(flower);
     }
   });
 }
 
 function addInteriorFloor(x, z, w, d) {
-  const tileW = 1.1;
-  const tileD = 1.0;
-  for (let ix = -Math.floor(w / 2); ix <= Math.floor(w / 2); ix += 1) {
-    for (let iz = -Math.floor(d / 2); iz <= Math.floor(d / 2); iz += 1) {
+  const tileW = 2.25;
+  const tileD = 2.1;
+  const cols = Math.max(1, Math.floor(w / tileW));
+  const rows = Math.max(1, Math.floor(d / tileD));
+  for (let ix = 0; ix < cols; ix += 1) {
+    for (let iz = 0; iz < rows; iz += 1) {
       const mat = (ix + iz) % 2 === 0 ? materials.floorAlt : materials.floor;
-      block(tileW - 0.04, 0.035, tileD - 0.04, mat, x + ix * tileW, 0.72, z + iz * tileD);
+      block(tileW - 0.05, 0.035, tileD - 0.05, mat, x + (ix - (cols - 1) / 2) * tileW, 0.72, z + (iz - (rows - 1) / 2) * tileD);
     }
   }
 }
@@ -1230,7 +2066,7 @@ function addRoomMarker(x, z, label) {
   const texture = new THREE.CanvasTexture(canvasTexture);
   texture.colorSpace = THREE.SRGBColorSpace;
   const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.64), new THREE.MeshBasicMaterial({ map: texture, transparent: true }));
-  sign.position.set(x, 1.65, z);
+  sign.position.set(sx(x), 1.65, sz(z));
   sign.rotation.y = Math.PI;
   scene.add(sign);
 }
@@ -1270,7 +2106,7 @@ function addToriiGate(x, z, rotationY) {
 
   block(0.22, 0.12, 0.22, materials.toriiBlack, 0, 3.79, 0, group);
 
-  group.position.set(x, 0.0, z);
+  group.position.set(sx(x), 0.0, sz(z));
   group.rotation.y = rotationY;
   scene.add(group);
   addCollider(x - 1.95, z, 0.7, 0.7);
@@ -1284,7 +2120,7 @@ function addLantern(x, z, y, size) {
   const shouldCastLight = size >= 0.42 || Math.abs(x) > 3.9 || Math.abs(z) < 11;
   const light = shouldCastLight ? new THREE.PointLight("#ffb36b", 1.6, 8, 2) : null;
   if (light) {
-    light.position.set(x, y + size * 0.24, z);
+    light.position.set(sx(x), y + size * 0.24, sz(z));
     scene.add(light);
   }
   animated.push({ type: "lantern", mesh: shade, light });
@@ -1326,7 +2162,7 @@ function addPetals() {
   const geometry = new THREE.PlaneGeometry(0.08, 0.04);
   for (let i = 0; i < 38; i += 1) {
     const petal = new THREE.Mesh(geometry, petalMaterial);
-    petal.position.set(random(-28, 28), random(1.2, 5.6), random(-28, 31));
+    petal.position.set(sx(random(-28, 28)), random(1.2, 5.6), sz(random(-28, 31)));
     petal.rotation.set(random(0, Math.PI), random(0, Math.PI), random(0, Math.PI));
     petal.userData.speed = random(0.18, 0.5);
     group.add(petal);
@@ -1336,25 +2172,74 @@ function addPetals() {
 }
 
 function block(w, h, d, material, x, y, z, parent = scene) {
-  const key = `${w.toFixed(3)}:${h.toFixed(3)}:${d.toFixed(3)}`;
+  const scaledW = sx(w);
+  const scaledD = sz(d);
+  const key = `${scaledW.toFixed(3)}:${h.toFixed(3)}:${scaledD.toFixed(3)}`;
   let geometry = boxGeometryCache.get(key);
   if (!geometry) {
-    geometry = new THREE.BoxGeometry(w, h, d);
+    geometry = new THREE.BoxGeometry(scaledW, h, scaledD);
     boxGeometryCache.set(key, geometry);
   }
   const mesh = new THREE.Mesh(geometry, material);
-  mesh.position.set(x, y, z);
+  mesh.position.set(sx(x), y, sz(z));
   mesh.castShadow = false;
   mesh.receiveShadow = true;
   parent.add(mesh);
   return mesh;
 }
 
+function addInstancedBoxes(instances, material, parent = scene) {
+  if (!instances.length) return null;
+  const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), material, instances.length);
+  const matrix = new THREE.Matrix4();
+  const position = new THREE.Vector3();
+  const quaternion = new THREE.Quaternion();
+  const scale = new THREE.Vector3();
+  const euler = new THREE.Euler();
+
+  instances.forEach((item, index) => {
+    position.set(sx(item.x), item.y, sz(item.z));
+    euler.set(0, item.ry ?? 0, 0);
+    quaternion.setFromEuler(euler);
+    scale.set(sx(item.w), item.h, sz(item.d));
+    matrix.compose(position, quaternion, scale);
+    mesh.setMatrixAt(index, matrix);
+  });
+
+  mesh.instanceMatrix.needsUpdate = true;
+  mesh.castShadow = false;
+  mesh.receiveShadow = true;
+  parent.add(mesh);
+  return mesh;
+}
+
+function addBoundaryFence(x, z, length, axis) {
+  const isX = axis === "x";
+  const posts = [];
+  const postCount = Math.max(2, Math.floor(length / 2.8) + 1);
+  for (let i = 0; i < postCount; i += 1) {
+    const offset = -length / 2 + (i / (postCount - 1)) * length;
+    posts.push({
+      w: 0.18,
+      h: 0.92,
+      d: 0.18,
+      x: x + (isX ? offset : 0),
+      y: 0.58,
+      z: z + (isX ? 0 : offset),
+    });
+  }
+  addInstancedBoxes(posts, materials.bridgeDark);
+  block(isX ? length : 0.16, 0.14, isX ? 0.16 : length, materials.bridgeDark, x, 1.03, z);
+  block(isX ? length : 0.12, 0.1, isX ? 0.12 : length, materials.woodLight, x, 0.58, z);
+}
+
 function cylinderBetween(start, end, radius, material) {
-  const direction = new THREE.Vector3().subVectors(end, start);
+  const scaledStart = scaledVector(start.x, start.y, start.z);
+  const scaledEnd = scaledVector(end.x, end.y, end.z);
+  const direction = new THREE.Vector3().subVectors(scaledEnd, scaledStart);
   const length = direction.length();
-  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius * 1.08, length, 8), material);
-  mesh.position.copy(start).add(end).multiplyScalar(0.5);
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(sx(radius), sx(radius) * 1.08, length, 8), material);
+  mesh.position.copy(scaledStart).add(scaledEnd).multiplyScalar(0.5);
   mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
   mesh.castShadow = false;
   mesh.receiveShadow = true;
@@ -1416,6 +2301,45 @@ function plankMaterial(base, highlight, plankCount = 8) {
   map.wrapT = THREE.RepeatWrapping;
   map.repeat.set(1.2, 2.5);
   return new THREE.MeshStandardMaterial({ color: base, map, roughness: 0.72, metalness: 0.01 });
+}
+
+function createGrassMaterial() {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      time: { value: 0 },
+      baseColor: { value: new THREE.Color("#77945f") },
+      tipColor: { value: new THREE.Color("#a7be7a") },
+    },
+    vertexShader: `
+      uniform float time;
+      varying float vTop;
+      varying float vWave;
+
+      void main() {
+        vec3 pos = position;
+        vec4 world = modelMatrix * vec4(pos, 1.0);
+        float top = smoothstep(-0.08, 0.22, pos.y);
+        float wave = sin(world.x * 0.38 + world.z * 0.24 + time * 1.55);
+        wave += sin(world.x * -0.18 + world.z * 0.42 + time * 1.1) * 0.45;
+        pos.x += wave * 0.035 * top;
+        pos.z += cos(world.x * 0.26 + world.z * 0.33 + time * 1.35) * 0.018 * top;
+        vTop = top;
+        vWave = wave;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 baseColor;
+      uniform vec3 tipColor;
+      varying float vTop;
+      varying float vWave;
+
+      void main() {
+        vec3 color = mix(baseColor, tipColor, vTop * 0.62 + vWave * 0.04);
+        gl_FragColor = vec4(color, 1.0);
+      }
+    `,
+  });
 }
 
 function createWaterMaterial() {
@@ -1802,11 +2726,20 @@ function addCollider(x, z, w, d, active = true, minY = -0.75, maxY = 2.75) {
 }
 
 function box2D(x, z, w, d) {
-  return { minX: x - w / 2, maxX: x + w / 2, minZ: z - d / 2, maxZ: z + d / 2 };
+  const scaledX = sx(x);
+  const scaledZ = sz(z);
+  const scaledW = sx(w);
+  const scaledD = sz(d);
+  return {
+    minX: scaledX - scaledW / 2,
+    maxX: scaledX + scaledW / 2,
+    minZ: scaledZ - scaledD / 2,
+    maxZ: scaledZ + scaledD / 2,
+  };
 }
 
 function isPlayable(x, z) {
-  const r = 0.32;
+  const r = sx(0.32);
   return playable.some((box) => x + r > box.minX && x - r < box.maxX && z + r > box.minZ && z - r < box.maxZ);
 }
 
@@ -1815,7 +2748,7 @@ function getFloorHeight() {
 }
 
 function hitsCollider(x, z) {
-  const r = 0.34;
+  const r = sx(0.34);
   const y = state.floorY + state.jumpOffset;
   return colliders.some(
     (box) =>
@@ -1830,6 +2763,12 @@ function hitsCollider(x, z) {
 }
 
 function movePlayer(delta) {
+  if (state.mapFocus) {
+    state.velocity.set(0, 0, 0);
+    state.moveBlend = damp(state.moveBlend, 0, 8, delta);
+    return;
+  }
+
   const input = new THREE.Vector3();
   if (state.keys.has("KeyW") || state.keys.has("ArrowUp")) input.z -= 1;
   if (state.keys.has("KeyS") || state.keys.has("ArrowDown")) input.z += 1;
@@ -1888,15 +2827,20 @@ function movePlayer(delta) {
   }
 
   const planarSpeed = Math.hypot(state.velocity.x, state.velocity.z);
-  state.bobPhase += delta * planarSpeed * 6.6;
+  state.bobPhase += delta * planarSpeed * 5.4;
   const bobTarget = THREE.MathUtils.clamp(planarSpeed / 3.15, 0, 1) * state.moveBlend;
   state.bobAmount = damp(state.bobAmount, bobTarget, 8, delta);
-  const stepBob = Math.sin(state.bobPhase) * 0.03 * state.bobAmount;
-  const stepLift = Math.abs(Math.cos(state.bobPhase)) * 0.015 * state.bobAmount;
+  const stepBob = Math.sin(state.bobPhase) * 0.014 * state.bobAmount;
+  const stepLift = Math.abs(Math.cos(state.bobPhase)) * 0.006 * state.bobAmount;
   camera.position.y = state.floorY + EYE_HEIGHT + state.jumpOffset + stepBob + stepLift;
 }
 
 function updateCamera(delta) {
+  if (state.mapFocus) {
+    updateMapFocusCamera(delta);
+    return;
+  }
+
   state.yaw = damp(state.yaw, state.targetYaw, lookEase, delta);
   state.pitch = damp(state.pitch, state.targetPitch, lookEase, delta);
   const roll = state.sway * -0.026 + state.lookSway;
@@ -1904,8 +2848,38 @@ function updateCamera(delta) {
   state.lookSway = damp(state.lookSway, 0, 9, delta);
 }
 
+function updateMapFocusCamera(delta) {
+  const focus = state.mapFocus;
+  const targetPosition = focus.closing ? focus.originPosition : focus.targetPosition;
+  const targetFov = focus.closing ? focus.originFov : focus.targetFov;
+  const positionEase = 1 - Math.exp(-6.5 * delta);
+
+  camera.position.lerp(targetPosition, positionEase);
+  camera.fov = damp(camera.fov, targetFov, 7, delta);
+  camera.updateProjectionMatrix();
+
+  if (focus.closing) {
+    camera.quaternion.slerp(focus.originQuaternion, positionEase);
+    if (camera.position.distanceTo(focus.originPosition) < 0.035 && camera.quaternion.angleTo(focus.originQuaternion) < 0.025) {
+      camera.position.copy(focus.originPosition);
+      camera.quaternion.copy(focus.originQuaternion);
+      camera.fov = focus.originFov;
+      camera.updateProjectionMatrix();
+      state.yaw = focus.originYaw;
+      state.pitch = focus.originPitch;
+      state.targetYaw = focus.originYaw;
+      state.targetPitch = focus.originPitch;
+      state.mapFocus = null;
+      clearInteractionHint();
+    }
+    return;
+  }
+
+  camera.lookAt(focus.lookAt);
+}
+
 function updateLighting(delta) {
-  state.dayTime = (state.dayTime + delta * 0.0026) % 1;
+  state.dayTime = (state.dayTime + delta * 0.00065) % 1;
   const t = state.dayTime;
   const angle = t * Math.PI * 2;
   const sunHeight = Math.sin(angle) * 18;
@@ -2001,12 +2975,18 @@ function updateLighting(delta) {
 }
 
 function updateAnimated(delta, now) {
-  frontDoor.progress = damp(frontDoor.progress, frontDoor.target, 9, delta);
-  frontDoor.panels.forEach((panel) => {
-    panel.group.position.x = THREE.MathUtils.lerp(panel.closedX, panel.openX, frontDoor.progress);
-  });
-  frontDoor.colliders.forEach((collider) => {
-    collider.active = frontDoor.target < 0.5 && frontDoor.progress < 0.18;
+  doors.forEach((door) => {
+    door.progress = damp(door.progress, door.target, 9, delta);
+    door.panels.forEach((panel) => {
+      panel.group.position.x = THREE.MathUtils.lerp(panel.closedX, panel.openX, door.progress);
+      panel.group.position.z = THREE.MathUtils.lerp(panel.closedZ, panel.openZ, door.progress);
+    });
+    door.colliders.forEach((collider) => {
+      collider.active = door.target < 0.5 && door.progress < 0.18;
+    });
+    if (door.solidCollider) {
+      door.solidCollider.active = door.target < 0.5 || door.progress < 0.78;
+    }
   });
 
   animated.forEach((item) => {
@@ -2025,11 +3005,19 @@ function updateAnimated(delta, now) {
       item.mesh.position.z += Math.sin(t * 1.4 + item.mesh.userData.phase) * delta * 0.08;
       item.mesh.position.y = item.mesh.userData.origY + Math.sin(t * 2.2 + item.mesh.userData.phase) * 0.012;
       item.mesh.rotation.z += delta * item.mesh.userData.spin;
-      if (item.mesh.position.x > 30) item.mesh.position.x = -30;
+      if (item.mesh.position.x > sx(30)) item.mesh.position.x = sx(-30);
     }
     if (item.type === "lantern") {
       const flicker = 0.88 + Math.sin(now * 0.006 + item.mesh.position.x) * 0.12;
       if (item.light) item.light.intensity = (item.light.userData.targetIntensity ?? 1.1) * flicker;
+    }
+    if (item.type === "portfolioDisplay") {
+      const active = state.activeInteractable?.id === item.item.id;
+      const targetScale = active ? 1.025 : 1;
+      const glow = active ? 0.08 + Math.sin(now * 0.006) * 0.025 : 0;
+      item.item.group.scale.x = damp(item.item.group.scale.x, targetScale, 9, delta);
+      item.item.group.scale.y = damp(item.item.group.scale.y, targetScale, 9, delta);
+      item.item.panel.material.color.setScalar(1 + glow);
     }
     if (item.type === "petals") {
       item.group.children.forEach((petal) => {
@@ -2039,19 +3027,39 @@ function updateAnimated(delta, now) {
         petal.rotation.x += delta * 0.6;
         petal.rotation.z += delta * 0.42;
         if (petal.position.y < 0.25) {
-          petal.position.set(random(-28, 28), random(3.0, 6.0), random(-28, 31));
+          petal.position.set(sx(random(-28, 28)), random(3.0, 6.0), sz(random(-28, 31)));
         }
       });
     }
   });
+  materials.grass.uniforms.time.value = now * 0.001;
 }
 
 function updateSpotLabel() {
-  if (Math.abs(camera.position.x) < 2.4 && camera.position.z > 5.0 && camera.position.z < 8.0 && state.floorY < 0.8) {
-    spotLabel.textContent = frontDoor.open ? "Front Door - F to close" : "Front Door - F to open";
+  if (state.mapFocus) {
+    spotLabel.textContent = "House Map";
+    showInteractionHint("F or Esc to return");
     return;
   }
 
+  const nearbyDoor = getNearbyDoor();
+  if (nearbyDoor) {
+    state.activeInteractable = null;
+    spotLabel.textContent = nearbyDoor.label;
+    showInteractionHint(`F to ${nearbyDoor.open ? "close" : "open"}`);
+    return;
+  }
+
+  const nearbyPortfolio = getNearbyInteractable() || getAimedInteractable();
+  if (nearbyPortfolio) {
+    state.activeInteractable = nearbyPortfolio;
+    spotLabel.textContent = nearbyPortfolio.label;
+    showInteractionHint(nearbyPortfolio.id === "map" ? "F to inspect map" : "Click or F to view");
+    return;
+  }
+
+  state.activeInteractable = null;
+  clearInteractionHint();
   let closest = "Bridge";
   let distance = Infinity;
   Object.entries(spots).forEach(([name, spot]) => {
@@ -2064,11 +3072,220 @@ function updateSpotLabel() {
   spotLabel.textContent = spots[closest].label;
 }
 
+function showInteractionHint(text) {
+  if (!interactionHint) return;
+  interactionHint.textContent = text;
+  interactionHint.classList.add("is-visible");
+}
+
+function clearInteractionHint() {
+  if (!interactionHint) return;
+  interactionHint.textContent = "";
+  interactionHint.classList.remove("is-visible", "is-map-focus");
+}
+
+function getNearbyInteractable() {
+  let closest = null;
+  let closestDistance = Infinity;
+  interactables.forEach((item) => {
+    const distance = Math.hypot(camera.position.x - item.center.x, camera.position.z - item.center.y);
+    if (distance < item.radius && distance < closestDistance && state.floorY < 0.8) {
+      closest = item;
+      closestDistance = distance;
+    }
+  });
+  return closest;
+}
+
+function getAimedInteractable(event = null) {
+  if (!interactables.length) return null;
+  if (event) {
+    pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+    pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  } else {
+    pointer.set(0, 0);
+  }
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObjects(interactables.map((item) => item.panel), false);
+  const hit = hits.find((entry) => entry.distance < 9.5);
+  if (!hit) return null;
+  return interactables.find((item) => item.id === hit.object.userData.interactableId) || null;
+}
+
+function getNearbyDoor() {
+  let closest = null;
+  let closestDistance = Infinity;
+  doors.forEach((door) => {
+    const distance = Math.hypot(camera.position.x - door.center.x, camera.position.z - door.center.y);
+    if (distance < 2.8 && distance < closestDistance && state.floorY < 0.8) {
+      closest = door;
+      closestDistance = distance;
+    }
+  });
+  return closest;
+}
+
 function toggleFrontDoor() {
-  const nearDoor = Math.abs(camera.position.x) < 2.6 && camera.position.z > 5.0 && camera.position.z < 8.2 && state.floorY < 0.8;
-  if (!nearDoor) return;
-  frontDoor.open = !frontDoor.open;
-  frontDoor.target = frontDoor.open ? 1 : 0;
+  const door = getNearbyDoor();
+  if (!door) return false;
+  door.open = !door.open;
+  door.target = door.open ? 1 : 0;
+  return true;
+}
+
+function openNearbyPortfolio() {
+  const item = getNearbyInteractable() || getAimedInteractable();
+  if (!item) return false;
+  openInteractable(item);
+  return true;
+}
+
+function openClickedPortfolio(event) {
+  const item = getAimedInteractable(event) || getNearbyInteractable();
+  if (!item) return false;
+  openInteractable(item);
+  return true;
+}
+
+function openInteractable(item) {
+  if (item.id === "map") {
+    enterMapFocus();
+    return;
+  }
+  openPortfolioPanel(item.id);
+}
+
+function enterMapFocus() {
+  if (state.mapFocus) return;
+  intro.classList.add("is-hidden");
+  closePortfolioPanel();
+  state.keys.clear();
+  state.dragLook = false;
+  document.exitPointerLock?.();
+  state.mapFocus = {
+    closing: false,
+    originPosition: camera.position.clone(),
+    originQuaternion: camera.quaternion.clone(),
+    originFov: camera.fov,
+    originYaw: state.yaw,
+    originPitch: state.pitch,
+    targetPosition: scaledVector(0, 3.85, -1.62),
+    lookAt: scaledVector(0, 1.13, -2.05),
+    targetFov: 42,
+  };
+  interactionHint?.classList.add("is-map-focus");
+  showInteractionHint("F or Esc to return");
+}
+
+function exitMapFocus() {
+  if (!state.mapFocus) return;
+  state.mapFocus.closing = true;
+  state.keys.clear();
+}
+
+function openPortfolioPanel(id) {
+  const section = portfolioSections[id];
+  if (!section || !portfolioPanel) return;
+  intro.classList.add("is-hidden");
+  state.keys.clear();
+  document.exitPointerLock?.();
+  portfolioTitle.textContent = section.title;
+  portfolioEyebrow.textContent = section.eyebrow;
+  renderPortfolioSection(section);
+  portfolioPanel.classList.add("is-open");
+  portfolioPanel.setAttribute("aria-hidden", "false");
+}
+
+function closePortfolioPanel() {
+  if (!portfolioPanel) return;
+  portfolioPanel.classList.remove("is-open");
+  portfolioPanel.setAttribute("aria-hidden", "true");
+}
+
+function isPortfolioOpen() {
+  return portfolioPanel?.classList.contains("is-open");
+}
+
+function renderPortfolioSection(section) {
+  portfolioBody.replaceChildren();
+
+  if (section.lead) {
+    const lead = document.createElement("p");
+    lead.className = "panel-lead";
+    lead.textContent = section.lead;
+    portfolioBody.append(lead);
+  }
+
+  if (section.tags) {
+    const tags = document.createElement("div");
+    tags.className = "panel-tags";
+    section.tags.forEach((tag) => {
+      const chip = document.createElement("span");
+      chip.className = "panel-tag";
+      chip.textContent = tag;
+      tags.append(chip);
+    });
+    portfolioBody.append(tags);
+  }
+
+  section.groups?.forEach((group) => {
+    const wrap = document.createElement("section");
+    wrap.className = "panel-group";
+    const heading = document.createElement("h3");
+    heading.textContent = group.heading;
+    wrap.append(heading);
+
+    if (group.items) {
+      const list = document.createElement("ul");
+      group.items.forEach((item) => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        list.append(li);
+      });
+      wrap.append(list);
+    }
+
+    if (group.cards) {
+      const grid = document.createElement("div");
+      grid.className = "panel-card-grid";
+      group.cards.forEach((card) => grid.append(createPortfolioCard(card)));
+      wrap.append(grid);
+    }
+
+    portfolioBody.append(wrap);
+  });
+
+  if (section.actions) {
+    const actions = document.createElement("div");
+    actions.className = "panel-actions";
+    section.actions.forEach((action) => {
+      const link = document.createElement("a");
+      link.href = action.href;
+      link.textContent = action.label;
+      link.target = action.href.startsWith("mailto:") ? "_self" : "_blank";
+      link.rel = "noreferrer";
+      actions.append(link);
+    });
+    portfolioBody.append(actions);
+  }
+}
+
+function createPortfolioCard(card) {
+  const node = document.createElement("article");
+  node.className = "panel-card";
+  const title = document.createElement(card.href ? "a" : "strong");
+  title.textContent = card.title;
+  if (card.href) {
+    title.href = card.href;
+    title.target = "_blank";
+    title.rel = "noreferrer";
+  }
+  const meta = document.createElement("span");
+  meta.textContent = card.meta;
+  const body = document.createElement("p");
+  body.textContent = card.body;
+  node.append(title, meta, body);
+  return node;
 }
 
 function animate(now) {
@@ -2086,6 +3303,10 @@ function animate(now) {
 function teleportTo(name) {
   const spot = spots[name];
   if (!spot) return;
+  state.mapFocus = null;
+  clearInteractionHint();
+  camera.fov = 68;
+  camera.updateProjectionMatrix();
   intro.classList.add("is-hidden");
   state.velocity.set(0, 0, 0);
   camera.position.copy(spot.position);
@@ -2138,12 +3359,17 @@ enterButton.addEventListener("click", () => {
   requestLookControl();
 });
 
-canvas.addEventListener("click", () => {
+canvas.addEventListener("click", (event) => {
+  if (state.mapFocus) return;
+  if (isPortfolioOpen()) return;
   intro.classList.add("is-hidden");
+  if (openClickedPortfolio(event)) return;
   requestLookControl();
 });
 
 canvas.addEventListener("mousedown", () => {
+  if (state.mapFocus) return;
+  if (isPortfolioOpen()) return;
   state.dragLook = true;
 });
 
@@ -2164,9 +3390,24 @@ document.addEventListener("mousemove", (event) => {
 });
 
 document.addEventListener("keydown", (event) => {
+  if (state.mapFocus) {
+    if ((event.code === "Escape" || event.code === "KeyF") && !event.repeat) {
+      exitMapFocus();
+    }
+    return;
+  }
+
+  if (isPortfolioOpen()) {
+    if (event.code === "Escape" || (event.code === "KeyF" && !event.repeat)) {
+      closePortfolioPanel();
+    }
+    return;
+  }
   state.keys.add(event.code);
   if (event.code === "KeyF" && !event.repeat) {
-    toggleFrontDoor();
+    if (!toggleFrontDoor()) {
+      openNearbyPortfolio();
+    }
   }
   if (event.code === "Space") {
     intro.classList.add("is-hidden");
@@ -2180,6 +3421,14 @@ document.addEventListener("keydown", (event) => {
 
 document.addEventListener("keyup", (event) => {
   state.keys.delete(event.code);
+});
+
+portfolioClose?.addEventListener("click", () => {
+  closePortfolioPanel();
+});
+
+portfolioPanel?.addEventListener("click", (event) => {
+  event.stopPropagation();
 });
 
 document.addEventListener("pointerdown", (event) => {

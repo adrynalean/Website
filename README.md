@@ -1,8 +1,9 @@
-# Sakura Estate Prototype
+# Sashit Vijay Portfolio
 
-Static Three.js environment prototype for a voxel-inspired Japanese sakura
-house. This restart focuses only on modeling, mood, movement, and boundaries.
-Portfolio content can be assigned to rooms later.
+Static portfolio site with two presentation modes:
+
+- `/` is a fast, elegant portfolio inspired by editorial/code-forward sites.
+- `/world.html` preserves the interactive Three.js sakura house prototype.
 
 ## Run locally
 
@@ -16,13 +17,25 @@ Open:
 http://localhost:5173
 ```
 
-## Controls
+## Main Portfolio
+
+- Light and dark theme toggle with local preference storage
+- Smooth anchor navigation
+- Selected projects with GitHub links
+- Experience timeline
+- Education, awards, and tech stack
+- Contact links and current resume PDF at `assets/SV_CV_26.pdf`
+- Link into the interactive portfolio world
+
+## Interactive World Controls
 
 - `W/S`: move forward and backward
 - `A/D` or arrow keys: turn camera
 - `Q/E`: strafe left and right
 - `Shift`: move faster
-- `F`: open/close the front door when nearby
+- `F`: open/close a nearby door
+- Click a wall exhibit or press `F` nearby to view portfolio content; press `F` again to close it
+- Press `F` near the main table map to enter or exit a focused overhead map view
 - `Space`: jump
 - Mouse / click-drag: look around
 
@@ -35,13 +48,21 @@ http://localhost:5173
 - West room
 - East room
 - Rear room annex
-- Walkable interior doorways connecting the hall and rooms
+- Personalized entry heading for Sashit Vijay
+- Portfolio-first navigation labels with room locations as subtitles
+- Tabletop house map in the main hall with a focused overhead camera view
+- Side-wall portfolio exhibits that keep the central walking route clear
+- Wall-mounted exhibits for Mission, Education, Tech Stack, Experience, Projects, and Contact
+- Current resume PDF copied to `assets/SV_CV_26.pdf`
+- Larger single-floor house footprint with clearer room zoning
+- Sliding shoji-style doors for the west room, east room, rear room, garden, and front entry
+- Walkable interior route that uses doors instead of open partition gaps
 - Warm interior furnishings: lanterns, shelves, cabinets, planters, tables, cushions, books, and vases
 - Connected bridge landing that leads visually into the front gate and house entry
 - Single-floor Japanese house layout with lighter wood and paper tones
 - Brighter light-wood plank flooring throughout the interior
 - Continuous playable route from the starting bridge through the gate and into the house
-- Accessible back garden with a central sakura tree and fallen petals
+- Expanded lightweight back garden with sparse sakura trees and fallen petals
 - More active water shader with stronger sine-wave motion
 - Front entry rail removed so the door and bridge path stay unobstructed
 - Brighter interior lighting on the first floor
