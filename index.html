@@ -86,9 +86,25 @@
         <p class="decor-type" aria-hidden="true">bloom 01</p>
         <div class="project-visual laptop-mockup reveal">
           <div class="screen thred-screen">
-            <div class="mock-sidebar"></div>
-            <div class="mock-content">
-              <span></span><span></span><span></span>
+            <div class="thred-topbar"><span class="thred-logo"></span><span></span><span></span></div>
+            <div class="thred-body">
+              <div class="thred-sidebar">
+                <span class="thred-nav-item thred-nav-active"></span>
+                <span class="thred-nav-item"></span>
+                <span class="thred-nav-item"></span>
+              </div>
+              <div class="thred-feed">
+                <div class="thred-card thred-card--ai">
+                  <span class="thred-ai-badge"></span>
+                  <span></span><span></span>
+                </div>
+                <div class="thred-card">
+                  <span></span><span></span><span class="thred-short"></span>
+                </div>
+                <div class="thred-card">
+                  <span></span><span class="thred-short"></span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -99,8 +115,8 @@
             Thred is a React and Node.js product concept using OpenAI integration to help
             people shape reflective writing into structured, shareable threads.
           </p>
-          <div class="project-code" aria-label="Thred tech summary">
-            <span>const stack = ["React", "Node", "OpenAI"];</span>
+          <div class="stack-tags" aria-label="Thred tech stack">
+            <span>React</span><span>Node.js</span><span>OpenAI</span>
           </div>
           <a class="project-button" href="https://github.com/adrynalean/Thred" target="_blank" rel="noreferrer">
             View project
@@ -108,14 +124,29 @@
         </article>
       </section>
 
-      <section class="project-section section-shell" id="project-2">
+      <section class="project-section project-flip section-shell" id="project-2">
         <p class="decor-type" aria-hidden="true">bloom 02</p>
-        <div class="project-visual phone-mockup reveal">
-          <div class="phone phone-left">
-            <span></span><span></span><span></span><span></span>
-          </div>
-          <div class="phone phone-right">
-            <span></span><span></span><span></span><span></span>
+        <div class="project-visual soccer-mockup reveal">
+          <div class="soccer-screen">
+            <div class="soccer-topbar"><span></span><span class="soccer-rec"></span></div>
+            <div class="soccer-field">
+              <div class="field-lines">
+                <span class="field-center"></span>
+                <span class="field-box field-box--left"></span>
+                <span class="field-box field-box--right"></span>
+              </div>
+              <span class="player-dot" style="top:34%;left:22%"></span>
+              <span class="player-dot" style="top:55%;left:31%"></span>
+              <span class="player-dot" style="top:42%;left:48%"></span>
+              <span class="player-dot player-dot--opp" style="top:38%;left:62%"></span>
+              <span class="player-dot player-dot--opp" style="top:58%;left:70%"></span>
+              <span class="player-dot player-dot--ball" style="top:45%;left:52%"></span>
+              <span class="track-path"></span>
+            </div>
+            <div class="soccer-stats">
+              <span class="stat-bar"><em style="width:72%"></em></span>
+              <span class="stat-bar"><em style="width:48%"></em></span>
+            </div>
           </div>
         </div>
         <article class="project-copy reveal">
@@ -125,8 +156,8 @@
             SoccerSense detects players and movement patterns with Python, YOLO, OpenCV,
             PyTorch, KMeans, Pandas, and NumPy.
           </p>
-          <div class="project-code" aria-label="SoccerSense tech summary">
-            <span>model.track("players", "ball", "motion");</span>
+          <div class="stack-tags" aria-label="SoccerSense tech stack">
+            <span>Python</span><span>YOLO</span><span>OpenCV</span><span>PyTorch</span>
           </div>
           <a class="project-button" href="https://github.com/adrynalean/SoccerSense" target="_blank" rel="noreferrer">
             View project
@@ -138,11 +169,15 @@
         <p class="decor-type" aria-hidden="true">bloom 03</p>
         <div class="project-visual laptop-mockup reveal">
           <div class="screen systems-screen">
+            <div class="terminal-prompt">synclink v1.0</div>
             <div class="terminal-lines">
-              <span>$ sync --link socket</span>
-              <span>opening channel...</span>
-              <span>packet stream verified</span>
-              <span>transfer complete</span>
+              <span class="t-cmd">$ ./synclink --bind 0.0.0.0:8080</span>
+              <span class="t-ok">socket bound on port 8080</span>
+              <span class="t-cmd">$ connect peer 192.168.1.42</span>
+              <span class="t-ok">handshake complete [14ms]</span>
+              <span class="t-muted">streaming packets...</span>
+              <span class="t-ok">✓ transfer complete  4.2 MB</span>
+              <span class="t-cursor">█</span>
             </div>
           </div>
         </div>
@@ -153,8 +188,8 @@
             SyncLink explores C, shell scripting, operating systems, socket programming,
             and the lower-level mechanics behind reliable data movement.
           </p>
-          <div class="project-code" aria-label="SyncLink tech summary">
-            <span>socket.pipe(packet).verify().sync();</span>
+          <div class="stack-tags" aria-label="SyncLink tech stack">
+            <span>C</span><span>Sockets</span><span>Shell</span><span>Linux</span>
           </div>
           <a class="project-button" href="https://github.com/adrynalean/SyncLink" target="_blank" rel="noreferrer">
             View project
@@ -162,11 +197,17 @@
         </article>
       </section>
 
-      <section class="project-section section-shell" id="project-4">
+      <section class="project-section project-flip section-shell" id="project-4">
         <p class="decor-type" aria-hidden="true">bloom 04</p>
         <div class="project-visual laptop-mockup reveal">
           <div class="screen threadit-screen">
-            <div></div><div></div><div></div>
+            <div class="threadit-topbar"><span></span><span></span><span class="ti-tag"></span></div>
+            <div class="threadit-posts">
+              <div class="ti-post ti-post--pinned"><span></span><span></span><span class="ti-meta"></span></div>
+              <div class="ti-post"><span></span><span></span><span class="ti-meta"></span></div>
+              <div class="ti-post"><span class="ti-short"></span><span class="ti-meta"></span></div>
+            </div>
+            <div class="threadit-compose"><span></span><span class="ti-send"></span></div>
           </div>
         </div>
         <article class="project-copy reveal">
@@ -176,8 +217,8 @@
             ThreadIt is a MERN application with Docker support, built around structured
             discussion flows and practical full-stack product architecture.
           </p>
-          <div class="project-code" aria-label="ThreadIt tech summary">
-            <span>compose("Mongo", "Express", "React", "Node");</span>
+          <div class="stack-tags" aria-label="ThreadIt tech stack">
+            <span>MongoDB</span><span>Express</span><span>React</span><span>Docker</span>
           </div>
           <a class="project-button" href="https://github.com/adrynalean/ThreadIt" target="_blank" rel="noreferrer">
             View project

@@ -668,6 +668,14 @@ h1 > span {
   margin-top: 8vh;
 }
 
+.project-flip {
+  grid-template-columns: minmax(320px, 0.82fr) minmax(0, 1.08fr);
+}
+
+.project-flip .project-visual {
+  order: 2;
+}
+
 .decor-type {
   position: absolute;
   top: 15%;
@@ -730,59 +738,371 @@ h1 > span {
   transform: rotateX(4deg) rotateY(-9deg) rotateZ(1deg);
 }
 
+/* ── Thred mockup ───────────────────────────────── */
 .thred-screen {
   display: grid;
-  grid-template-columns: 28% 1fr;
-  gap: 0.8rem;
-  padding: 0.9rem;
+  grid-template-rows: auto 1fr;
+  background: color-mix(in srgb, var(--ink-1) 96%, transparent);
+  overflow: hidden;
 }
 
-.mock-sidebar,
-.mock-content,
-.threadit-screen div,
-.phone span {
-  border-radius: 0.45rem;
-  background: color-mix(in srgb, var(--accent) 28%, var(--bg-soft));
+.thred-topbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 1.6rem;
+  padding: 0 0.7rem;
+  background: var(--ink-2);
+  border-bottom: 1px solid var(--line);
 }
 
-.mock-content {
-  display: grid;
-  gap: 0.55rem;
-  padding: 0.8rem;
-  background: color-mix(in srgb, var(--panel-strong) 90%, #000);
-}
-
-.mock-content span {
-  display: block;
-  height: 1.1rem;
+.thred-logo {
+  width: 0.7rem;
+  height: 0.7rem;
   border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--accent-2) 30%, transparent);
+  background: var(--sakura);
+  flex-shrink: 0;
 }
 
+.thred-topbar span:not(.thred-logo) {
+  height: 0.35rem;
+  border-radius: var(--radius-pill);
+  background: var(--line);
+}
+
+.thred-topbar span:nth-child(2) { width: 3rem; }
+.thred-topbar span:nth-child(3) { width: 2rem; margin-left: auto; }
+
+.thred-body {
+  display: grid;
+  grid-template-columns: 1.8rem 1fr;
+  overflow: hidden;
+}
+
+.thred-sidebar {
+  display: grid;
+  align-content: start;
+  gap: 0.55rem;
+  padding: 0.6rem 0.3rem;
+  background: var(--ink-2);
+  border-right: 1px solid var(--line);
+}
+
+.thred-nav-item {
+  height: 1rem;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.thred-nav-active {
+  background: color-mix(in srgb, var(--sakura) 55%, transparent);
+}
+
+.thred-feed {
+  display: grid;
+  align-content: start;
+  gap: 0.45rem;
+  padding: 0.55rem;
+  overflow: hidden;
+}
+
+.thred-card {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--ink-3);
+}
+
+.thred-card--ai {
+  border-color: color-mix(in srgb, var(--sakura) 38%, transparent);
+  background: color-mix(in srgb, var(--sakura) 8%, var(--ink-3));
+}
+
+.thred-ai-badge {
+  width: 2rem;
+  height: 0.3rem;
+  border-radius: var(--radius-pill);
+  background: var(--sakura);
+  opacity: 0.7;
+}
+
+.thred-card span:not(.thred-ai-badge) {
+  display: block;
+  height: 0.38rem;
+  border-radius: var(--radius-pill);
+  background: var(--line);
+}
+
+.thred-card span:first-of-type:not(.thred-ai-badge) { width: 90%; }
+.thred-card span:nth-of-type(2):not(.thred-ai-badge) { width: 75%; }
+.thred-short { width: 55% !important; }
+
+/* ── SoccerSense mockup ─────────────────────────── */
+.soccer-mockup {
+  position: relative;
+  min-height: 26rem;
+  perspective: 1100px;
+}
+
+.soccer-screen {
+  position: absolute;
+  top: 5%;
+  left: 4%;
+  width: 88%;
+  height: 86%;
+  display: grid;
+  grid-template-rows: 1.6rem 1fr auto;
+  border: 1px solid color-mix(in srgb, var(--moss) 40%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--ink-1) 98%, transparent);
+  box-shadow: var(--shadow-strong), 0 0 40px color-mix(in srgb, var(--moss) 18%, transparent);
+  overflow: hidden;
+  transform: rotateX(3deg) rotateY(-6deg);
+}
+
+.soccer-topbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.8rem;
+  background: var(--ink-2);
+  border-bottom: 1px solid color-mix(in srgb, var(--moss) 24%, transparent);
+}
+
+.soccer-topbar span:first-child {
+  height: 0.35rem;
+  width: 4rem;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--moss) 50%, transparent);
+}
+
+.soccer-rec {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: var(--radius-pill);
+  background: #e05;
+  margin-left: auto;
+  animation: recPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes recPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.soccer-field {
+  position: relative;
+  background: color-mix(in srgb, var(--moss-deep) 28%, var(--ink-1));
+  overflow: hidden;
+}
+
+.field-lines {
+  position: absolute;
+  inset: 0;
+}
+
+.field-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3.5rem;
+  height: 3.5rem;
+  border: 1px solid color-mix(in srgb, var(--moss) 30%, transparent);
+  border-radius: var(--radius-pill);
+  transform: translate(-50%, -50%);
+}
+
+.field-box {
+  position: absolute;
+  top: 20%;
+  height: 60%;
+  width: 22%;
+  border: 1px solid color-mix(in srgb, var(--moss) 22%, transparent);
+}
+
+.field-box--left { left: 0; border-left: none; }
+.field-box--right { right: 0; border-right: none; }
+
+.player-dot {
+  position: absolute;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: var(--radius-pill);
+  background: var(--sakura);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 6px var(--sakura);
+}
+
+.player-dot--opp {
+  background: var(--lantern);
+  box-shadow: 0 0 6px var(--lantern);
+}
+
+.player-dot--ball {
+  width: 0.38rem;
+  height: 0.38rem;
+  background: #fff;
+  box-shadow: 0 0 8px rgba(255,255,255,0.8);
+}
+
+.track-path {
+  position: absolute;
+  top: 44%;
+  left: 22%;
+  width: 30%;
+  height: 0.5rem;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--sakura) 50%, transparent));
+  clip-path: polygon(0 50%, 60% 30%, 100% 50%, 60% 70%);
+}
+
+.soccer-stats {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.45rem 0.7rem;
+  background: var(--ink-2);
+  border-top: 1px solid color-mix(in srgb, var(--moss) 20%, transparent);
+}
+
+.stat-bar {
+  display: block;
+  height: 0.28rem;
+  border-radius: var(--radius-pill);
+  background: var(--line);
+  overflow: hidden;
+}
+
+.stat-bar em {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, var(--moss), var(--sakura));
+  font-style: normal;
+}
+
+/* ── SyncLink terminal ──────────────────────────── */
 .systems-screen {
   display: grid;
-  place-items: center;
-  padding: 1.2rem;
+  align-content: start;
+  padding: 0.8rem 1rem;
+  gap: 0.5rem;
+  background: color-mix(in srgb, var(--ink-0) 98%, transparent);
+}
+
+.terminal-prompt {
+  color: var(--moss);
+  font-family: var(--mono);
+  font-size: clamp(0.56rem, 0.85vw, 0.72rem);
+  letter-spacing: 0.1em;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.4rem;
+  margin-bottom: 0.2rem;
 }
 
 .terminal-lines {
   display: grid;
-  gap: 0.55rem;
+  gap: 0.38rem;
   width: 100%;
-  color: color-mix(in srgb, var(--accent) 76%, var(--text));
   font-family: var(--mono);
-  font-size: clamp(0.64rem, 1.1vw, 0.9rem);
+  font-size: clamp(0.58rem, 0.9vw, 0.78rem);
+  line-height: 1.5;
 }
 
+.t-cmd { color: color-mix(in srgb, var(--text) 90%, transparent); }
+.t-ok  { color: var(--moss); }
+.t-muted { color: var(--faint); }
+.t-cursor {
+  color: var(--accent);
+  animation: cursorBlink 820ms steps(2, start) infinite;
+}
+
+/* ── ThreadIt mockup ────────────────────────────── */
 .threadit-screen {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.9rem;
-  padding: 1rem;
+  grid-template-rows: 1.5rem 1fr auto;
+  background: color-mix(in srgb, var(--ink-1) 96%, transparent);
+  overflow: hidden;
 }
 
-.threadit-screen div {
-  min-height: 100%;
+.threadit-topbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.7rem;
+  background: var(--ink-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.threadit-topbar span {
+  height: 0.35rem;
+  border-radius: var(--radius-pill);
+  background: var(--line);
+}
+
+.threadit-topbar span:nth-child(1) { width: 2.5rem; }
+.threadit-topbar span:nth-child(2) { width: 2rem; }
+.ti-tag {
+  width: 1.2rem !important;
+  margin-left: auto;
+  background: color-mix(in srgb, var(--lantern) 50%, transparent) !important;
+}
+
+.threadit-posts {
+  display: grid;
+  align-content: start;
+  gap: 0.4rem;
+  padding: 0.55rem;
+  overflow: hidden;
+}
+
+.ti-post {
+  display: grid;
+  gap: 0.28rem;
+  padding: 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--ink-3);
+}
+
+.ti-post--pinned {
+  border-color: color-mix(in srgb, var(--lantern) 36%, transparent);
+  background: color-mix(in srgb, var(--lantern) 6%, var(--ink-3));
+}
+
+.ti-post span {
+  display: block;
+  height: 0.35rem;
+  border-radius: var(--radius-pill);
+  background: var(--line);
+}
+
+.ti-post span:first-child { width: 88%; }
+.ti-post span:nth-child(2) { width: 68%; }
+.ti-short { width: 50% !important; }
+.ti-meta { width: 36% !important; background: color-mix(in srgb, var(--lantern) 30%, transparent) !important; }
+.ti-send {
+  width: 1.5rem !important;
+  height: 0.9rem !important;
+  background: color-mix(in srgb, var(--lantern) 50%, transparent) !important;
+  border-radius: var(--radius-sm) !important;
+}
+
+.threadit-compose {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.55rem;
+  border-top: 1px solid var(--line);
+  background: var(--ink-2);
+}
+
+.threadit-compose span:first-child {
+  flex: 1;
+  height: 0.6rem;
+  border-radius: var(--radius-sm);
+  background: var(--ink-4);
+  border: 1px solid var(--line);
 }
 
 .phone-mockup {
@@ -826,14 +1146,29 @@ h1 > span {
   display: flex;
   align-items: center;
   gap: 0.8rem;
+  margin-bottom: 0.2rem;
   color: var(--accent);
 }
 
 .project-number span {
   display: inline-block;
   width: 3rem;
+  height: 1px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+}
+
+.project-copy h2 {
+  position: relative;
+}
+
+.project-copy h2::after {
+  content: "";
+  display: block;
+  width: 2.5rem;
   height: 2px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  margin-top: 0.9rem;
+  background: linear-gradient(90deg, var(--accent-2), transparent);
+  border-radius: var(--radius-pill);
 }
 
 .project-copy h2,
@@ -855,23 +1190,30 @@ h1 > span {
   line-height: 1.65;
 }
 
-.project-code {
-  width: min(31rem, 100%);
+.stack-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
   margin: 1.3rem 0 1.5rem;
-  padding: 0.8rem 0.9rem;
-  border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--line));
-  border-radius: var(--radius-sm);
-  background:
-    linear-gradient(90deg, color-mix(in srgb, var(--accent) 9%, transparent), transparent),
-    color-mix(in srgb, var(--panel-strong) 82%, transparent);
-  color: color-mix(in srgb, var(--accent) 80%, var(--text));
-  font-family: var(--mono);
-  font-size: clamp(0.72rem, 0.9vw, 0.84rem);
-  overflow-x: auto;
 }
 
-.project-code span {
-  white-space: nowrap;
+.stack-tags span {
+  padding: 0.28rem 0.72rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface-2));
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+.stack-tags span:hover {
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface-2));
+  border-color: var(--accent);
+  color: var(--text);
 }
 
 .details {
