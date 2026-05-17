@@ -20,7 +20,7 @@ themeToggle?.addEventListener("click", () => {
 
 const roles = [
   "full-stack craft",
-  "machine learning",
+  "ML systems",
   "computer vision",
   "systems thinking",
   "clear teaching"
