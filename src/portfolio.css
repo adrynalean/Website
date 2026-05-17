@@ -95,6 +95,15 @@
   --ease-spring: cubic-bezier(0.34, 1.32, 0.64, 1);
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
 
+  /* ---------- Layout ---------- */
+  --container: 1120px;
+  --container-wide: 1320px;
+  --gutter: clamp(1.25rem, 4vw, 4rem);
+  --section-y: clamp(5rem, 14vh, 12rem);
+  --section-gap: clamp(2rem, 5vw, 5rem);
+  --bp-md: 900px;
+  --bp-sm: 560px;
+
   /* ---------- Type ---------- */
   --sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --serif: "Cormorant Garamond", "EB Garamond", Georgia, "Times New Roman", serif;
@@ -363,8 +372,12 @@ button {
 }
 
 .section-shell {
-  width: min(1120px, calc(100% - 8rem));
+  width: min(var(--container), calc(100% - var(--gutter) * 2));
   margin: 0 auto;
+}
+
+.section-shell--wide {
+  width: min(var(--container-wide), calc(100% - var(--gutter) * 2));
 }
 
 .hero {
@@ -519,11 +532,11 @@ h1 > span {
 
 .role-row {
   display: block;
-  margin-top: 0.35em;
+  margin-top: clamp(1.5rem, 2.6vw, 2.6rem);
   color: var(--muted);
   font-size: 0.52em;
   letter-spacing: -0.02em;
-  line-height: 1.15;
+  line-height: 1.2;
   white-space: nowrap;
 }
 
@@ -589,6 +602,13 @@ h1 > span {
 .project-button::after,
 .text-link::after {
   content: "->";
+  transition: transform var(--dur-base) var(--ease-spring);
+}
+
+.scroll-cta:hover::after,
+.project-button:hover::after,
+.text-link:hover::after {
+  transform: translateX(0.3rem);
 }
 
 .scroll-indicator {
@@ -620,9 +640,9 @@ h1 > span {
   display: grid;
   min-height: 118vh;
   grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.82fr);
-  gap: clamp(2rem, 5vw, 5rem);
+  gap: var(--section-gap);
   align-items: center;
-  padding: 14vh 0;
+  padding: var(--section-y) 0;
 }
 
 .project-section::before {
@@ -859,8 +879,9 @@ h1 > span {
   display: grid;
   min-height: 115vh;
   grid-template-columns: minmax(0, 0.9fr) minmax(280px, 0.8fr);
-  gap: clamp(2rem, 7vw, 6rem);
+  gap: var(--section-gap);
   align-items: center;
+  padding: var(--section-y) 0;
 }
 
 .details::after {
@@ -1004,7 +1025,7 @@ h1 > span {
 }
 
 .stack {
-  padding: 5rem 0 8rem;
+  padding: var(--section-y) 0;
 }
 
 .skill-grid {
@@ -1034,7 +1055,7 @@ h1 > span {
 
 .contact {
   min-height: 80vh;
-  padding: 10rem 0 8rem;
+  padding: var(--section-y) 0;
 }
 
 .contact h2 {
@@ -1055,11 +1076,22 @@ h1 > span {
   border-bottom: 1px solid var(--line);
   color: var(--text);
   font-weight: 900;
+  transition: color var(--dur-fast) var(--ease-out), padding-left var(--dur-base) var(--ease-out);
+}
+
+.contact-links a:hover {
+  color: var(--accent);
+  padding-left: 0.5rem;
 }
 
 .contact-links a::after {
   content: "->";
   color: var(--accent);
+  transition: transform var(--dur-base) var(--ease-spring);
+}
+
+.contact-links a:hover::after {
+  transform: translateX(0.35rem);
 }
 
 .footer {
@@ -1074,13 +1106,39 @@ h1 > span {
 
 .reveal {
   opacity: 0;
-  transform: translateY(3rem);
-  transition: opacity var(--dur-reveal) var(--ease-out), transform var(--dur-reveal) var(--ease-out);
+  transform: translateY(var(--reveal-y, 3rem));
+  transition:
+    opacity var(--dur-reveal) var(--ease-out) var(--reveal-delay, 0ms),
+    transform var(--dur-reveal) var(--ease-out) var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
 }
 
 .reveal.is-visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+.reveal--left {
+  transform: translate(calc(var(--reveal-x, -2.5rem)), 0);
+}
+
+.reveal--right {
+  transform: translate(calc(var(--reveal-x, 2.5rem)), 0);
+}
+
+.reveal--left.is-visible,
+.reveal--right.is-visible {
+  transform: translate(0, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal--left,
+  .reveal--right {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }
 
 @keyframes cursorBlink {
@@ -1117,8 +1175,9 @@ h1 > span {
 }
 
 @media (max-width: 900px) {
-  .section-shell {
-    width: min(100% - 2rem, 680px);
+  .section-shell,
+  .section-shell--wide {
+    width: min(100% - var(--gutter), 680px);
   }
 
   .edge-nav {

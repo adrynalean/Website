@@ -71,11 +71,14 @@ sections.forEach((section) => navObserver.observe(section));
 
 const revealObserver = new IntersectionObserver(
   (entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add("is-visible");
-        revealObserver.unobserve(entry.target);
-      }
+    const visibleEntries = entries.filter((entry) => entry.isIntersecting);
+
+    visibleEntries.forEach((entry, index) => {
+      const explicitDelay = entry.target.dataset.revealDelay;
+      const delay = explicitDelay !== undefined ? Number(explicitDelay) : index * 90;
+      entry.target.style.setProperty("--reveal-delay", `${delay}ms`);
+      entry.target.classList.add("is-visible");
+      revealObserver.unobserve(entry.target);
     });
   },
   { rootMargin: "0px 0px -8% 0px", threshold: 0.16 }
