@@ -5,6 +5,7 @@ const enterButton = document.querySelector("#enterButton");
 const intro = document.querySelector("#intro");
 const spotLabel = document.querySelector("#spotLabel");
 const timeLabel = document.querySelector("#timeLabel");
+const timeToggle = document.querySelector("#timeToggle");
 const portfolioPanel = document.querySelector("#portfolioPanel");
 const portfolioTitle = document.querySelector("#portfolioTitle");
 const portfolioEyebrow = document.querySelector("#portfolioEyebrow");
@@ -405,11 +406,26 @@ const state = {
   sway: 0,
   lookSway: 0,
   dayTime: 0.12,
+  timePresetIndex: 1,
   floorY: 0,
   jumpOffset: 0,
   verticalVelocity: 0,
   grounded: true,
 };
+
+const timePresets = [
+  { label: "Sakura Dawn", value: 0.035 },
+  { label: "Bright Day", value: 0.25 },
+  { label: "Sunset", value: 0.49 },
+  { label: "Lantern Night", value: 0.76 },
+];
+
+timeToggle?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  state.timePresetIndex = (state.timePresetIndex + 1) % timePresets.length;
+  state.dayTime = timePresets[state.timePresetIndex].value;
+  updateLighting(0);
+});
 
 camera.position.copy(spots.Bridge.position);
 
@@ -2903,13 +2919,13 @@ function updateLighting(delta) {
     top.copy(dayTop);
     horizon.copy(dayHorizon);
     bottom.copy(dayBottom);
-    timeLabel.textContent = "Golden Hour";
+    timeLabel.textContent = t < 0.25 ? "Morning Light" : "Bright Day";
   } else if (sunHeight > -3) {
     const blend = Math.max(sunHeight + 3, 0) / 9;
     top.copy(sunsetTop).lerp(dayTop, blend);
     horizon.copy(sunsetHorizon).lerp(dayHorizon, blend);
     bottom.copy(sunsetBottom).lerp(dayBottom, blend);
-    timeLabel.textContent = "Sunset";
+    timeLabel.textContent = t < 0.25 ? "Sakura Dawn" : "Sunset";
   } else {
     const blend = Math.max(sunHeight + 18, 0) / 15;
     top.copy(nightTop).lerp(sunsetTop, blend);

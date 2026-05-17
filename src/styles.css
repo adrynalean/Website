@@ -185,6 +185,8 @@ button:active {
   left: 20px;
   top: 20px;
   min-width: 132px;
+  pointer-events: auto;
+  text-align: left;
 }
 
 .corner-panel span,
@@ -194,10 +196,16 @@ button:active {
   font-weight: 850;
 }
 
-.corner-panel small {
+.corner-panel small,
+.time-pill small {
   color: #d6c4b4;
   font-size: 0.78rem;
   line-height: 1.4;
+}
+
+.time-pill:hover span,
+.time-pill:focus-visible span {
+  color: #ffe0d8;
 }
 
 .reticle {
