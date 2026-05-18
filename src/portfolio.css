@@ -975,26 +975,12 @@ h1 > span {
 .thred-short { width: 55% !important; }
 
 /* ── SoccerSense mockup ─────────────────────────── */
-.soccer-mockup {
-  position: relative;
-  min-height: 26rem;
-  perspective: 1100px;
-}
-
 .soccer-screen {
-  position: absolute;
-  top: 5%;
-  left: 4%;
-  width: 88%;
-  height: 86%;
   display: grid;
   grid-template-rows: 1.6rem 1fr auto;
-  border: 1px solid color-mix(in srgb, var(--moss) 40%, transparent);
-  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--ink-1) 98%, transparent);
+  border-color: color-mix(in srgb, var(--moss) 40%, transparent);
   box-shadow: var(--shadow-strong), 0 0 40px color-mix(in srgb, var(--moss) 18%, transparent);
-  overflow: hidden;
-  transform: rotateX(3deg) rotateY(-6deg);
 }
 
 .soccer-topbar {
