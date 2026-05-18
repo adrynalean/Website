@@ -1493,6 +1493,36 @@ h1 > span {
 .photo-slot {
   position: relative;
   margin: 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.photo-img {
+  display: block;
+  width: 100%;
+  min-height: 24rem;
+  max-height: 34rem;
+  object-fit: cover;
+  object-position: center top;
+  border-radius: var(--radius-lg);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+  box-shadow: var(--shadow-medium), 0 0 40px color-mix(in srgb, var(--sakura) 12%, transparent);
+  transition: transform var(--dur-slow) var(--ease-out);
+}
+
+.photo-img:hover {
+  transform: scale(1.02);
+}
+
+.photo-slot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(180deg, transparent 55%, color-mix(in srgb, var(--ink-0) 52%, transparent) 100%),
+    linear-gradient(135deg, color-mix(in srgb, var(--sakura) 8%, transparent), transparent 50%);
+  pointer-events: none;
 }
 
 .photo-frame {
