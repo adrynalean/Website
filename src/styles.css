@@ -189,6 +189,35 @@ button:active {
   text-align: left;
 }
 
+.back-home {
+  position: absolute;
+  left: 20px;
+  bottom: 20px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 246, 236, 0.14);
+  border-radius: 999px;
+  background: rgba(22, 17, 18, 0.62);
+  backdrop-filter: blur(18px);
+  color: #ffd0c4;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  pointer-events: auto;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.back-home:hover {
+  background: rgba(243, 167, 188, 0.18);
+  border-color: rgba(243, 167, 188, 0.45);
+  color: #fff4e8;
+}
+
 .corner-panel span,
 .time-pill span {
   color: #ffd0c4;
