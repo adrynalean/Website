@@ -1748,6 +1748,208 @@ h1 > span {
   transform: translateX(0.35rem);
 }
 
+/* ── Portal section ─────────────────────────────── */
+.portal-section {
+  padding: var(--section-y) 0 calc(var(--section-y) * 1.5);
+}
+
+.portal-gate {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: clamp(22rem, 48vh, 36rem);
+  padding: clamp(2rem, 4vw, 3.5rem);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line));
+  border-radius: 1.6rem;
+  background:
+    radial-gradient(ellipse 80% 60% at 70% 100%, color-mix(in srgb, var(--sakura) 14%, transparent), transparent),
+    radial-gradient(ellipse 50% 40% at 20% 10%, color-mix(in srgb, var(--lantern) 8%, transparent), transparent),
+    linear-gradient(160deg, var(--ink-2), var(--ink-1) 60%);
+  overflow: hidden;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    border-color 0.35s var(--ease-out),
+    box-shadow 0.35s var(--ease-out),
+    transform 0.35s var(--ease-out);
+}
+
+.portal-gate:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  box-shadow: var(--shadow-medium), 0 0 80px color-mix(in srgb, var(--sakura) 18%, transparent);
+  transform: translateY(-3px);
+}
+
+.portal-kanji {
+  position: absolute;
+  right: -2vw;
+  top: -0.1em;
+  margin: 0;
+  font-family: var(--japanese);
+  font-size: clamp(14rem, 36vw, 30rem);
+  font-weight: 700;
+  line-height: 1;
+  color: color-mix(in srgb, var(--accent) 7%, transparent);
+  user-select: none;
+  pointer-events: none;
+  transition: color 0.35s var(--ease-out);
+}
+
+.portal-gate:hover .portal-kanji {
+  color: color-mix(in srgb, var(--accent) 13%, transparent);
+}
+
+.portal-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 auto;
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: var(--type-small);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.portal-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: recPulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.portal-title {
+  margin: 1.4rem 0 0.6rem;
+  font-family: var(--display);
+  font-size: clamp(2.8rem, 6vw, 5.6rem);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+  color: var(--text-strong);
+}
+
+.portal-sub {
+  max-width: 38ch;
+  margin: 0 0 2rem;
+  color: var(--muted);
+  font-size: var(--type-body);
+  line-height: 1.6;
+}
+
+.portal-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.75rem 1.4rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  transition:
+    background 0.25s var(--ease-out),
+    border-color 0.25s var(--ease-out),
+    color 0.25s var(--ease-out);
+  width: fit-content;
+}
+
+.portal-gate:hover .portal-cta {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  border-color: var(--accent);
+  color: var(--text-strong);
+}
+
+.portal-cta-arrow {
+  display: inline-block;
+  transition: transform 0.25s var(--ease-spring);
+}
+
+.portal-gate:hover .portal-cta-arrow {
+  transform: translateX(4px);
+}
+
+/* ── Loading overlay ─────────────────────────────── */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ink-0);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.45s var(--ease-out);
+}
+
+.loading-overlay.is-active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.loading-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2rem;
+  text-align: center;
+}
+
+.loading-kanji {
+  margin: 0;
+  font-family: var(--japanese);
+  font-size: clamp(5rem, 14vw, 10rem);
+  font-weight: 700;
+  line-height: 1;
+  color: color-mix(in srgb, var(--accent) 45%, transparent);
+  animation: loadingPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes loadingPulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.04); }
+}
+
+.loading-title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-strong);
+}
+
+.loading-track {
+  width: clamp(14rem, 36vw, 24rem);
+  height: 2px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  overflow: hidden;
+}
+
+.loading-bar {
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--sakura-deep), var(--accent), var(--lantern));
+  transition: width 2.4s cubic-bezier(0.4, 0, 0.15, 1);
+}
+
+.loading-hint {
+  margin: 0;
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: var(--type-small);
+  letter-spacing: 0.08em;
+}
+
 .footer {
   display: flex;
   justify-content: center;

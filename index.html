@@ -313,8 +313,20 @@
         <div class="contact-links reveal">
           <a href="mailto:sashitvijay@gmail.com">sashitvijay@gmail.com</a>
           <a href="./assets/SV_CV_26.pdf" target="_blank" rel="noreferrer">Resume</a>
-          <a href="./world.html">Interactive portfolio</a>
         </div>
+      </section>
+
+      <section class="portal-section section-shell" id="portal" aria-label="Enter interactive portfolio">
+        <a class="portal-gate reveal" id="portalGate" href="./world.html">
+          <p class="portal-eyebrow"><span class="portal-dot" aria-hidden="true"></span>Interactive · Three.js · 3D walkthrough</p>
+          <h2 class="portal-title">Enter Sakura House</h2>
+          <p class="portal-sub">A real-time 3D walkthrough of a Japanese home — explore every room at your own pace.</p>
+          <span class="portal-cta" aria-hidden="true">
+            <span class="portal-cta-text">Step inside</span>
+            <span class="portal-cta-arrow">→</span>
+          </span>
+          <span class="portal-kanji" aria-hidden="true">桜</span>
+        </a>
       </section>
     </main>
 
@@ -322,6 +334,17 @@
       <span>2026 Sashit Vijay.</span>
       <span>Simple portfolio by default, sakura walkthrough when you want the scenic route.</span>
     </footer>
+
+    <div class="loading-overlay" id="loadingOverlay" aria-hidden="true" role="status">
+      <div class="loading-inner">
+        <p class="loading-kanji" aria-hidden="true">桜</p>
+        <p class="loading-title">Entering Sakura House</p>
+        <div class="loading-track" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+          <div class="loading-bar" id="loadingBar"></div>
+        </div>
+        <p class="loading-hint">Loading scene assets…</p>
+      </div>
+    </div>
 
     <script type="module" src="./src/portfolio.js"></script>
   </body>
