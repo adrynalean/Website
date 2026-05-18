@@ -240,3 +240,16 @@ const drawHeroBlob = () => {
 };
 
 drawHeroBlob();
+
+document.querySelectorAll(".project-copy").forEach((card) => {
+  card.addEventListener("mousemove", (e) => {
+    const rect = card.getBoundingClientRect();
+    const dx = (e.clientX - (rect.left + rect.width * 0.5)) / (rect.width * 0.5);
+    const dy = (e.clientY - (rect.top + rect.height * 0.5)) / (rect.height * 0.5);
+    card.style.transform = `perspective(1000px) rotateX(${-dy * 4.5}deg) rotateY(${dx * 5.5}deg) translateY(-5px)`;
+  });
+
+  card.addEventListener("mouseleave", () => {
+    card.style.transform = "";
+  });
+});

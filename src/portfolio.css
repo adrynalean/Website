@@ -105,10 +105,12 @@
   --bp-sm: 560px;
 
   /* ---------- Type ---------- */
-  --sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --serif: "Cormorant Garamond", "EB Garamond", Georgia, "Times New Roman", serif;
+  --sans: "IBM Plex Sans JP", "Zen Kaku Gothic New", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  --display: "Zen Kaku Gothic New", "IBM Plex Sans JP", ui-sans-serif, sans-serif;
+  --serif: "Shippori Mincho", "Noto Serif JP", Georgia, "Times New Roman", serif;
   --mono: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  --japanese: "Noto Serif JP", serif;
+  --japanese: "Shippori Mincho", "Noto Serif JP", serif;
   --type-display: clamp(3.25rem, 7.6vw, 7rem);
   --type-h1: clamp(2.4rem, 5.2vw, 5rem);
   --type-h2: clamp(2rem, 4.7vw, 4.6rem);
@@ -594,11 +596,12 @@ p {
 h1 {
   max-width: 10.6ch;
   margin: 0.85rem 0 1.45rem;
+  font-family: var(--display);
   font-size: var(--type-display);
-  font-weight: 800;
+  font-weight: 900;
   letter-spacing: -0.04em;
   line-height: 0.92;
-  font-feature-settings: "kern" 1, "liga" 1, "calt" 1, "ss01" 1, "ss02" 1;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
 }
 
 h1 > span {
@@ -790,6 +793,16 @@ h1 > span {
   position: relative;
   min-height: 26rem;
   perspective: 1100px;
+  transform-style: preserve-3d;
+  transition:
+    transform 0.24s var(--ease-out),
+    filter 0.24s var(--ease-out);
+  will-change: transform;
+}
+
+.project-visual:hover {
+  transform: translateY(-0.45rem);
+  filter: drop-shadow(0 0 42px color-mix(in srgb, var(--accent) 16%, transparent));
 }
 
 .laptop-mockup::before {
@@ -804,6 +817,10 @@ h1 > span {
     linear-gradient(145deg, #2d1f24, #110b10);
   box-shadow: var(--shadow);
   transform: rotateX(4deg) rotateY(-9deg) rotateZ(1deg);
+  transition:
+    border-color 0.24s var(--ease-out),
+    box-shadow 0.24s var(--ease-out),
+    transform 0.24s var(--ease-out);
 }
 
 .laptop-mockup::after {
@@ -816,6 +833,20 @@ h1 > span {
   border-radius: 0 0 2rem 2rem;
   background: linear-gradient(90deg, var(--wood), #2a1716 50%, var(--wood));
   transform: rotateX(62deg) rotateZ(1deg);
+  transition:
+    filter 0.24s var(--ease-out),
+    transform 0.24s var(--ease-out);
+}
+
+.laptop-mockup:hover::before {
+  border-color: color-mix(in srgb, var(--accent) 42%, transparent);
+  box-shadow: var(--shadow-medium), 0 0 48px color-mix(in srgb, var(--accent) 14%, transparent);
+  transform: rotateX(3deg) rotateY(-7deg) rotateZ(0.5deg) translateY(-0.18rem);
+}
+
+.laptop-mockup:hover::after {
+  filter: brightness(1.08);
+  transform: rotateX(62deg) rotateZ(0.5deg) translateY(-0.08rem);
 }
 
 .screen {
@@ -830,6 +861,16 @@ h1 > span {
   border-radius: 0.2rem;
   background: color-mix(in srgb, var(--bg-soft) 92%, #000);
   transform: rotateX(4deg) rotateY(-9deg) rotateZ(1deg);
+  transition:
+    border-color 0.24s var(--ease-out),
+    transform 0.24s var(--ease-out),
+    filter 0.24s var(--ease-out);
+}
+
+.laptop-mockup:hover .screen {
+  border-color: color-mix(in srgb, var(--accent-2) 36%, transparent);
+  filter: brightness(1.08) saturate(1.06);
+  transform: rotateX(3deg) rotateY(-7deg) rotateZ(0.5deg) translateY(-0.18rem);
 }
 
 /* ── Thred mockup ───────────────────────────────── */
@@ -1216,6 +1257,11 @@ h1 > span {
   border-radius: 2rem;
   background: color-mix(in srgb, var(--bg-soft) 86%, #000);
   box-shadow: var(--shadow);
+  transition:
+    border-color 0.24s var(--ease-out),
+    box-shadow 0.24s var(--ease-out),
+    filter 0.24s var(--ease-out),
+    transform 0.24s var(--ease-out);
 }
 
 .phone-left {
@@ -1226,6 +1272,20 @@ h1 > span {
   transform: translateY(-1rem) rotate(6deg);
 }
 
+.phone-mockup:hover .phone {
+  border-color: color-mix(in srgb, var(--accent) 44%, var(--wood));
+  box-shadow: var(--shadow-medium), 0 0 42px color-mix(in srgb, var(--accent) 12%, transparent);
+  filter: brightness(1.08) saturate(1.05);
+}
+
+.phone-mockup:hover .phone-left {
+  transform: translateY(1.7rem) rotate(-4deg);
+}
+
+.phone-mockup:hover .phone-right {
+  transform: translateY(-1.35rem) rotate(4deg);
+}
+
 .phone span:nth-child(2),
 .phone span:nth-child(4) {
   background: color-mix(in srgb, var(--moss) 42%, var(--bg-soft));
@@ -1233,7 +1293,25 @@ h1 > span {
 
 .project-copy {
   align-self: end;
-  padding-bottom: 13vh;
+  padding: 2.4rem 2.2rem 2.8rem;
+  padding-bottom: max(2.8rem, 13vh - 2.8rem);
+  border: 1px solid var(--line);
+  border-radius: 1.2rem;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--sakura) 4%, transparent), transparent 55%),
+    var(--panel);
+  box-shadow: var(--shadow-soft);
+  transform-style: preserve-3d;
+  transition:
+    transform 0.22s var(--ease-out),
+    box-shadow 0.22s var(--ease-out),
+    border-color 0.22s var(--ease-out);
+  will-change: transform;
+}
+
+.project-copy:hover {
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--line));
+  box-shadow: var(--shadow-medium), 0 0 48px color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
 .project-number {
@@ -1270,8 +1348,9 @@ h1 > span {
 .contact h2 {
   max-width: 12ch;
   margin: 1rem 0;
+  font-family: var(--display);
   font-size: var(--type-h2);
-  font-weight: 800;
+  font-weight: 900;
   letter-spacing: -0.035em;
   line-height: 0.98;
 }
