@@ -104,6 +104,22 @@ const drawHeroBlob = () => {
   let width = 0;
   let height = 0;
   let animationFrame = 0;
+  let lastTime = 0;
+
+  // Pre-initialise each petal with independent properties so none share phase
+  const PETAL_COUNT = 38;
+  const petals = Array.from({ length: PETAL_COUNT }, (_, i) => ({
+    x: (i * 0.23 + 0.04) % 1,                        // 0-1 fraction of width
+    y: (i * 0.17 + 0.03) % 1,                        // spread across full height on load
+    vy: 0.000055 + (i * 7919 % 97) / 97 * 0.000065,  // px/ms per unit height, varied
+    swFreq: 0.00042 + (i * 6271 % 89) / 89 * 0.00055,
+    swAmp: 10 + (i * 9001 % 83) / 83 * 22,
+    swPhase: (i * 1.618) % (Math.PI * 2),
+    size: 3.2 + (i * 7151 % 79) / 79 * 5.2,
+    rot: (i * 2.399) % (Math.PI * 2),
+    rotSpeed: ((i * 3571 % 73) / 73 - 0.5) * 0.0018,
+    alpha: 0.32 + (i * 4447 % 61) / 61 * 0.38,
+  }));
 
   const resize = () => {
     const bounds = heroCanvas.getBoundingClientRect();
@@ -115,6 +131,9 @@ const drawHeroBlob = () => {
   };
 
   const render = (time) => {
+    const dt = lastTime ? Math.min(time - lastTime, 50) : 16;
+    lastTime = time;
+
     context.clearRect(0, 0, width, height);
     const dark = root.dataset.theme !== "light";
     const centerX = width * 0.63;
@@ -142,12 +161,7 @@ const drawHeroBlob = () => {
         Math.sin(angle * 17 + time * 0.00045) * 14;
       const x = centerX + Math.cos(angle) * (radius + jag);
       const y = centerY + Math.sin(angle) * (radius * 0.82 + jag * 0.72);
-
-      if (i === 0) {
-        context.moveTo(x, y);
-      } else {
-        context.lineTo(x, y);
-      }
+      if (i === 0) { context.moveTo(x, y); } else { context.lineTo(x, y); }
     }
     context.closePath();
     context.fillStyle = gradient;
@@ -162,11 +176,7 @@ const drawHeroBlob = () => {
         const wave = Math.sin(angle * 4 + time * 0.001 + ring) * 18;
         const x = centerX + Math.cos(angle) * (ringRadius + wave);
         const y = centerY + Math.sin(angle) * (ringRadius * 0.72 + wave);
-        if (i === 0) {
-          context.moveTo(x, y);
-        } else {
-          context.lineTo(x, y);
-        }
+        if (i === 0) { context.moveTo(x, y); } else { context.lineTo(x, y); }
       }
       context.strokeStyle = dark ? "rgba(243, 167, 188, 0.32)" : "rgba(200, 95, 127, 0.3)";
       context.lineWidth = 1;
@@ -174,27 +184,41 @@ const drawHeroBlob = () => {
     }
     context.globalAlpha = 1;
 
-    context.globalAlpha = dark ? 0.72 : 0.48;
-    for (let petal = 0; petal < 42; petal += 1) {
-      const speed = 0.000045 * (petal % 7 + 5);
-      const drift = time * speed;
-      const sway = Math.sin(time * 0.001 + petal * 1.7) * 18;
-      const x = (width * ((petal * 0.097 + drift * 0.42) % 1.18)) - width * 0.1 + sway;
-      const y = (height * ((petal * 0.161 + drift * 1.9) % 1.12)) - height * 0.08;
-      const size = 3.5 + (petal % 6);
+    // Update and draw petals — delta-time physics, no modulo burst
+    petals.forEach((p) => {
+      p.y += p.vy * dt;
+      p.rot += p.rotSpeed * dt;
+
+      // Recycle smoothly at top with a fresh random x when petal exits bottom
+      if (p.y > 1.08) {
+        p.y = -0.06 - Math.random() * 0.08;
+        p.x = 0.02 + Math.random() * 0.96;
+      }
+
+      const sway = Math.sin(time * p.swFreq + p.swPhase) * p.swAmp;
+      const px = p.x * width + sway;
+      const py = p.y * height;
+      const sz = p.size;
+
+      context.globalAlpha = dark ? p.alpha : p.alpha * 0.72;
       context.save();
-      context.translate(x, y);
-      context.rotate(time * 0.0007 + petal);
+      context.translate(px, py);
+      context.rotate(p.rot);
+
+      // Petal body
       context.beginPath();
-      context.ellipse(0, 0, size * 0.55, size, 0, 0, Math.PI * 2);
-      context.fillStyle = dark ? "rgba(255, 197, 213, 0.48)" : "rgba(200, 95, 127, 0.42)";
+      context.ellipse(0, 0, sz * 0.52, sz, 0, 0, Math.PI * 2);
+      context.fillStyle = dark ? "rgba(255, 197, 213, 0.9)" : "rgba(200, 95, 127, 0.85)";
       context.fill();
+
+      // Petal highlight
       context.beginPath();
-      context.ellipse(size * 0.2, -size * 0.35, size * 0.22, size * 0.48, 0, 0, Math.PI * 2);
-      context.fillStyle = dark ? "rgba(255, 226, 205, 0.28)" : "rgba(255, 232, 213, 0.34)";
+      context.ellipse(sz * 0.18, -sz * 0.32, sz * 0.2, sz * 0.44, 0, 0, Math.PI * 2);
+      context.fillStyle = dark ? "rgba(255, 226, 205, 0.55)" : "rgba(255, 232, 213, 0.6)";
       context.fill();
+
       context.restore();
-    }
+    });
     context.globalAlpha = 1;
 
     animationFrame = window.requestAnimationFrame(render);
@@ -208,6 +232,7 @@ const drawHeroBlob = () => {
     if (document.hidden) {
       window.cancelAnimationFrame(animationFrame);
     } else {
+      lastTime = 0; // reset dt so no position jump on resume
       resize();
       animationFrame = window.requestAnimationFrame(render);
     }

@@ -108,7 +108,7 @@
   --sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --serif: "Cormorant Garamond", "EB Garamond", Georgia, "Times New Roman", serif;
   --mono: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  --hindi: "Noto Serif Devanagari", serif;
+  --japanese: "Noto Serif JP", serif;
   --type-display: clamp(3.25rem, 7.6vw, 7rem);
   --type-h1: clamp(2.4rem, 5.2vw, 5rem);
   --type-h2: clamp(2rem, 4.7vw, 4.6rem);
@@ -391,15 +391,15 @@ button {
 }
 
 .hero::after {
-  content: "निर्माण";
+  content: "創";
   position: absolute;
   bottom: 8%;
   right: 2%;
   z-index: 0;
-  color: color-mix(in srgb, var(--accent-2) 8%, transparent);
-  font-family: var(--hindi);
-  font-size: clamp(6rem, 16vw, 15rem);
-  font-weight: 600;
+  color: color-mix(in srgb, var(--accent-2) 7%, transparent);
+  font-family: var(--japanese);
+  font-size: clamp(8rem, 18vw, 18rem);
+  font-weight: 700;
   line-height: 1;
   pointer-events: none;
   user-select: none;
@@ -617,10 +617,10 @@ h1 > span {
 
 .role-prefix {
   margin-right: 0.18em;
-  font-family: var(--serif);
-  font-style: italic;
-  font-weight: 500;
-  color: var(--accent);
+  font-family: var(--sans);
+  font-style: normal;
+  font-weight: 400;
+  color: var(--muted);
 }
 
 #roleWord {
@@ -776,7 +776,7 @@ h1 > span {
   z-index: -1;
   margin: 0;
   color: color-mix(in srgb, var(--accent) 14%, transparent);
-  font-family: var(--hindi);
+  font-family: var(--japanese);
   font-size: clamp(4.8rem, 13vw, 12rem);
   font-style: normal;
   font-weight: 600;
@@ -1321,31 +1321,15 @@ h1 > span {
 }
 
 .details::after {
-  content: "sakura";
+  content: "旅";
   position: absolute;
-  right: -6vw;
-  bottom: 16%;
+  right: -4vw;
+  bottom: 12%;
   z-index: -1;
-  color: color-mix(in srgb, var(--accent) 12%, transparent);
-  font-family: var(--serif);
-  font-size: clamp(7rem, 18vw, 16rem);
-  font-style: italic;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  line-height: 0.8;
-  user-select: none;
-}
-
-.details::before {
-  content: "यात्रा";
-  position: absolute;
-  left: -4vw;
-  top: 12%;
-  z-index: -1;
-  color: color-mix(in srgb, var(--accent-2) 10%, transparent);
-  font-family: var(--hindi);
-  font-size: clamp(5rem, 12vw, 11rem);
-  font-weight: 600;
+  color: color-mix(in srgb, var(--accent) 11%, transparent);
+  font-family: var(--japanese);
+  font-size: clamp(10rem, 24vw, 22rem);
+  font-weight: 700;
   line-height: 1;
   user-select: none;
   pointer-events: none;
