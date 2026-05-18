@@ -190,10 +190,10 @@ button:active {
 }
 
 .back-home {
-  position: absolute;
-  left: 20px;
-  bottom: 20px;
-  z-index: 3;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 999;
   display: inline-flex;
   align-items: center;
   gap: 6px;
