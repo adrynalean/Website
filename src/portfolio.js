@@ -241,15 +241,59 @@ const drawHeroBlob = () => {
 
 drawHeroBlob();
 
-document.querySelectorAll(".project-copy").forEach((card) => {
-  card.addEventListener("mousemove", (e) => {
-    const rect = card.getBoundingClientRect();
-    const dx = (e.clientX - (rect.left + rect.width * 0.5)) / (rect.width * 0.5);
-    const dy = (e.clientY - (rect.top + rect.height * 0.5)) / (rect.height * 0.5);
-    card.style.transform = `perspective(1000px) rotateX(${-dy * 4.5}deg) rotateY(${dx * 5.5}deg) translateY(-5px)`;
-  });
+if (!reduceMotion) {
+  document.querySelectorAll(".project-copy").forEach((card) => {
+    let tx = 0, ty = 0, cx = 0, cy = 0, lift = 0, targetLift = 0;
+    let raf = null;
+    let hovered = false;
 
-  card.addEventListener("mouseleave", () => {
-    card.style.transform = "";
+    const lerp = (a, b, t) => a + (b - a) * t;
+
+    const tick = () => {
+      cx = lerp(cx, tx, 0.09);
+      cy = lerp(cy, ty, 0.09);
+      lift = lerp(lift, targetLift, 0.07);
+
+      card.style.transform = `perspective(1000px) rotateX(${(-cy * 4.5).toFixed(3)}deg) rotateY(${(cx * 5.5).toFixed(3)}deg) translateY(${(-lift * 7).toFixed(3)}px)`;
+
+      const moving =
+        Math.abs(cx - tx) > 0.002 ||
+        Math.abs(cy - ty) > 0.002 ||
+        Math.abs(lift - targetLift) > 0.002;
+
+      if (hovered || moving) {
+        raf = window.requestAnimationFrame(tick);
+      } else {
+        card.style.transform = "";
+        raf = null;
+      }
+    };
+
+    const start = () => { if (!raf) raf = window.requestAnimationFrame(tick); };
+
+    card.addEventListener("mousemove", (e) => {
+      const rect = card.getBoundingClientRect();
+      tx = (e.clientX - (rect.left + rect.width * 0.5)) / (rect.width * 0.5);
+      ty = (e.clientY - (rect.top + rect.height * 0.5)) / (rect.height * 0.5);
+      card.style.setProperty("--mouse-x", `${((e.clientX - rect.left) / rect.width * 100).toFixed(1)}%`);
+      card.style.setProperty("--mouse-y", `${((e.clientY - rect.top) / rect.height * 100).toFixed(1)}%`);
+      start();
+    });
+
+    card.addEventListener("mouseenter", () => {
+      hovered = true;
+      targetLift = 1;
+      card.style.setProperty("--spot-op", "1");
+      start();
+    });
+
+    card.addEventListener("mouseleave", () => {
+      hovered = false;
+      tx = 0;
+      ty = 0;
+      targetLift = 0;
+      card.style.setProperty("--spot-op", "0");
+      start();
+    });
   });
-});
+}

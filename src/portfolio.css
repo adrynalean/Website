@@ -1292,6 +1292,11 @@ h1 > span {
 }
 
 .project-copy {
+  --mouse-x: 50%;
+  --mouse-y: 50%;
+  --spot-op: 0;
+
+  position: relative;
   align-self: end;
   padding: 2.4rem 2.2rem 2.8rem;
   padding-bottom: max(2.8rem, 13vh - 2.8rem);
@@ -1303,15 +1308,35 @@ h1 > span {
   box-shadow: var(--shadow-soft);
   transform-style: preserve-3d;
   transition:
-    transform 0.22s var(--ease-out),
-    box-shadow 0.22s var(--ease-out),
-    border-color 0.22s var(--ease-out);
+    box-shadow 0.3s var(--ease-out),
+    border-color 0.3s var(--ease-out);
   will-change: transform;
 }
 
+.project-copy::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    26rem circle at var(--mouse-x) var(--mouse-y),
+    color-mix(in srgb, var(--sakura) 18%, transparent),
+    transparent 68%
+  );
+  opacity: var(--spot-op);
+  transition: opacity 0.4s var(--ease-out);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.project-copy > * {
+  position: relative;
+  z-index: 1;
+}
+
 .project-copy:hover {
-  border-color: color-mix(in srgb, var(--accent) 38%, var(--line));
-  box-shadow: var(--shadow-medium), 0 0 48px color-mix(in srgb, var(--accent) 14%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--line));
+  box-shadow: var(--shadow-medium), 0 0 56px color-mix(in srgb, var(--accent) 16%, transparent);
 }
 
 .project-number {
