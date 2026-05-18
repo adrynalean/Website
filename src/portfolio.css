@@ -1218,6 +1218,104 @@ h1 > span {
   background: var(--ink-2);
 }
 
+/* ── Onsight pipeline mockup ────────────────────── */
+.onsight-screen {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background: color-mix(in srgb, var(--ink-1) 97%, transparent);
+  overflow: hidden;
+}
+
+.onsight-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.45rem 0.7rem;
+  background: var(--ink-2);
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.onsight-eps {
+  color: var(--accent);
+  font-size: 0.58rem;
+}
+
+.onsight-modules {
+  display: grid;
+  align-content: start;
+  gap: 0.28rem;
+  padding: 0.5rem;
+}
+
+.onsight-mod {
+  display: grid;
+  grid-template-columns: 3.4rem 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.36rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--ink-3);
+}
+
+.onsight-mod--done {
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--line));
+}
+
+.onsight-mod--active {
+  border-color: color-mix(in srgb, var(--lantern) 48%, var(--line));
+  background: color-mix(in srgb, var(--lantern) 6%, var(--ink-3));
+}
+
+.om-tag {
+  padding: 0.12rem 0.3rem;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent) 16%, var(--ink-2));
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+.onsight-mod--active .om-tag {
+  background: color-mix(in srgb, var(--lantern) 22%, var(--ink-2));
+  color: var(--lantern);
+}
+
+.om-label {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.om-check {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 70%, transparent);
+  flex-shrink: 0;
+}
+
+.om-pulse {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--lantern);
+  flex-shrink: 0;
+  animation: recPulse 1.4s ease-in-out infinite;
+}
+
 .threadit-compose span:first-child {
   flex: 1;
   height: 0.6rem;

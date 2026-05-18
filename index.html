@@ -87,42 +87,35 @@
       </section>
 
       <section class="project-section section-shell" id="project-1">
-        <p class="decor-type" aria-hidden="true">糸</p>
+        <p class="decor-type" aria-hidden="true">言</p>
         <div class="project-visual laptop-mockup reveal">
-          <div class="screen thred-screen">
-            <div class="thred-topbar"><span class="thred-logo"></span><span></span><span></span></div>
-            <div class="thred-body">
-              <div class="thred-sidebar">
-                <span class="thred-nav-item thred-nav-active"></span>
-                <span class="thred-nav-item"></span>
-                <span class="thred-nav-item"></span>
-              </div>
-              <div class="thred-feed">
-                <div class="thred-card thred-card--ai">
-                  <span class="thred-ai-badge"></span>
-                  <span></span><span></span>
-                </div>
-                <div class="thred-card">
-                  <span></span><span></span><span class="thred-short"></span>
-                </div>
-                <div class="thred-card">
-                  <span></span><span class="thred-short"></span>
-                </div>
-              </div>
+          <div class="screen systems-screen">
+            <div class="terminal-prompt">MyLLM v3 · 54M params</div>
+            <div class="terminal-lines">
+              <span class="t-muted">dataset: OpenWebText · 50M tokens</span>
+              <span class="t-muted">layers: 8 · heads: 8 · d_model: 512 · ctx: 256</span>
+              <span class="t-cmd">$ python train.py --model v3 --steps 5000</span>
+              <span class="t-muted">step 1000 · loss 5.82</span>
+              <span class="t-muted">step 3000 · loss 5.38</span>
+              <span class="t-ok">step 5000 · train_loss 5.18  val_loss 5.22</span>
+              <span class="t-ok">✓ checkpoint saved · serving via FastAPI</span>
+              <span class="t-cursor">█</span>
             </div>
           </div>
         </div>
         <article class="project-copy reveal">
           <p class="project-number"><span></span>01</p>
-          <h2>AI-assisted social journaling</h2>
+          <h2>GPT decoder built from scratch</h2>
           <p>
-            Thred is a React and Node.js product concept using OpenAI integration to help
-            people shape reflective writing into structured, shareable threads.
+            54M-parameter decoder-only transformer trained on 50M tokens of OpenWebText
+            with no pretrained weights. 8 layers, 8 attention heads, 512-dimensional
+            embeddings, Flash Attention, cosine LR with 200-step warmup, and AdamW with
+            gradient clipping. Inference served via FastAPI.
           </p>
-          <div class="stack-tags" aria-label="Thred tech stack">
-            <span>React</span><span>Node.js</span><span>OpenAI</span>
+          <div class="stack-tags" aria-label="MyLLM tech stack">
+            <span>PyTorch</span><span>FastAPI</span><span>tiktoken</span><span>Flash Attention</span>
           </div>
-          <a class="project-button" href="https://github.com/adrynalean/Thred" target="_blank" rel="noreferrer">
+          <a class="project-button" href="https://github.com/adrynalean/MyLLM" target="_blank" rel="noreferrer">
             View project
           </a>
         </article>
@@ -157,11 +150,13 @@
           <p class="project-number"><span></span>02</p>
           <h2>Computer vision for match analysis</h2>
           <p>
-            SoccerSense detects players and movement patterns with Python, YOLO, OpenCV,
-            PyTorch, KMeans, Pandas, and NumPy.
+            Processes Bundesliga footage through a YOLOv8 detection pipeline, KMeans
+            shirt-colour team segmentation, optical-flow camera motion compensation,
+            and perspective transform — producing real-world speed and distance
+            per player from raw video frames.
           </p>
           <div class="stack-tags" aria-label="SoccerSense tech stack">
-            <span>Python</span><span>YOLO</span><span>OpenCV</span><span>PyTorch</span>
+            <span>Python</span><span>YOLOv8</span><span>OpenCV</span><span>KMeans</span>
           </div>
           <a class="project-button" href="https://github.com/adrynalean/SoccerSense" target="_blank" rel="noreferrer">
             View project
@@ -173,27 +168,31 @@
         <p class="decor-type" aria-hidden="true">繋</p>
         <div class="project-visual laptop-mockup reveal">
           <div class="screen systems-screen">
-            <div class="terminal-prompt">synclink v1.0</div>
+            <div class="terminal-prompt">SyncLink NFS · 3-tier distributed FS</div>
             <div class="terminal-lines">
-              <span class="t-cmd">$ ./synclink --bind 0.0.0.0:8080</span>
-              <span class="t-ok">socket bound on port 8080</span>
-              <span class="t-cmd">$ connect peer 192.168.1.42</span>
-              <span class="t-ok">handshake complete [14ms]</span>
-              <span class="t-muted">streaming packets...</span>
-              <span class="t-ok">✓ transfer complete  4.2 MB</span>
+              <span class="t-muted">clients: 50 concurrent · protocol: binary 9-byte header</span>
+              <span class="t-cmd">$ nm --storage SS_Root_0,SS_Root_1</span>
+              <span class="t-ok">network manager bound · routing ready</span>
+              <span class="t-cmd">$ client write /docs/report.pdf  2.1MB</span>
+              <span class="t-ok">→ SS_Root_1 · acked in 11ms</span>
+              <span class="t-cmd">$ client copy /docs/report.pdf /backup/</span>
+              <span class="t-ok">✓ cross-server copy complete</span>
               <span class="t-cursor">█</span>
             </div>
           </div>
         </div>
         <article class="project-copy reveal">
           <p class="project-number"><span></span>03</p>
-          <h2>Systems-level networking</h2>
+          <h2>Distributed file system in C</h2>
           <p>
-            SyncLink explores C, shell scripting, operating systems, socket programming,
-            and the lower-level mechanics behind reliable data movement.
+            Network File System written in C supporting 50 concurrent clients across a
+            three-tier architecture — Clients, Network Manager, and Storage Servers.
+            Binary protocol with a 9-byte header (1-byte type + 8-byte length). Full
+            CRUD, cross-server copy, metadata retrieval, and backup management at the
+            Network Manager layer.
           </p>
           <div class="stack-tags" aria-label="SyncLink tech stack">
-            <span>C</span><span>Sockets</span><span>Shell</span><span>Linux</span>
+            <span>C</span><span>POSIX Sockets</span><span>Binary Protocol</span><span>NFS</span>
           </div>
           <a class="project-button" href="https://github.com/adrynalean/SyncLink" target="_blank" rel="noreferrer">
             View project
@@ -204,27 +203,54 @@
       <section class="project-section project-flip section-shell" id="project-4">
         <p class="decor-type" aria-hidden="true">語</p>
         <div class="project-visual laptop-mockup reveal">
-          <div class="screen threadit-screen">
-            <div class="threadit-topbar"><span></span><span></span><span class="ti-tag"></span></div>
-            <div class="threadit-posts">
-              <div class="ti-post ti-post--pinned"><span></span><span></span><span class="ti-meta"></span></div>
-              <div class="ti-post"><span></span><span></span><span class="ti-meta"></span></div>
-              <div class="ti-post"><span class="ti-short"></span><span class="ti-meta"></span></div>
+          <div class="screen onsight-screen">
+            <div class="onsight-header">
+              <span>Onsight Pipeline</span>
+              <span class="onsight-eps">ep 382 – 777</span>
             </div>
-            <div class="threadit-compose"><span></span><span class="ti-send"></span></div>
+            <div class="onsight-modules">
+              <div class="onsight-mod onsight-mod--done">
+                <span class="om-tag">NER</span>
+                <span class="om-label">SpaCy · entity extraction</span>
+                <span class="om-check"></span>
+              </div>
+              <div class="onsight-mod onsight-mod--done">
+                <span class="om-tag">Graph</span>
+                <span class="om-label">NetworkX · co-occurrence</span>
+                <span class="om-check"></span>
+              </div>
+              <div class="onsight-mod onsight-mod--done">
+                <span class="om-tag">Classify</span>
+                <span class="om-label">DeBERTa · ability types</span>
+                <span class="om-check"></span>
+              </div>
+              <div class="onsight-mod onsight-mod--done">
+                <span class="om-tag">Theme</span>
+                <span class="om-label">zero-shot · DeBERTa-large</span>
+                <span class="om-check"></span>
+              </div>
+              <div class="onsight-mod onsight-mod--active">
+                <span class="om-tag">Chat</span>
+                <span class="om-label">Llama 3.1-8B · LoRA</span>
+                <span class="om-pulse"></span>
+              </div>
+            </div>
           </div>
         </div>
         <article class="project-copy reveal">
           <p class="project-number"><span></span>04</p>
-          <h2>Full-stack discussion architecture</h2>
+          <h2>Five-module NLP pipeline</h2>
           <p>
-            ThreadIt is a MERN application with Docker support, built around structured
-            discussion flows and practical full-stack product architecture.
+            End-to-end LLM/NLP system analysing 395 episodes of One Piece dialogue.
+            SpaCy NER for entity extraction, NetworkX character co-occurrence graph,
+            fine-tuned DeBERTa ability classifier, zero-shot episode theme analysis
+            with DeBERTa-large, and a LoRA-tuned Llama 3.1-8B chatbot — all unified
+            in a single Gradio dashboard.
           </p>
-          <div class="stack-tags" aria-label="ThreadIt tech stack">
-            <span>MongoDB</span><span>Express</span><span>React</span><span>Docker</span>
+          <div class="stack-tags" aria-label="Onsight tech stack">
+            <span>Llama 3.1</span><span>DeBERTa</span><span>SpaCy</span><span>Gradio</span>
           </div>
-          <a class="project-button" href="https://github.com/adrynalean/ThreadIt" target="_blank" rel="noreferrer">
+          <a class="project-button" href="https://github.com/adrynalean/Onsight" target="_blank" rel="noreferrer">
             View project
           </a>
         </article>
