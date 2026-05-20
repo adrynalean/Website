@@ -10,6 +10,12 @@
     <meta name="color-scheme" content="dark light" />
     <meta name="theme-color" content="#160d14" />
     <title>Sashit Vijay | Developer Portfolio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Shippori+Mincho:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="./src/portfolio.css" />
   </head>
   <body id="top">
@@ -39,10 +45,14 @@
     <main id="main-content">
       <section class="hero section-shell" id="intro">
         <div class="hero-copy">
-          <p class="name-label">Sashit Vijay / Portfolio</p>
+          <div class="hero-eyebrow">
+            <span class="hero-name">Sashit Vijay</span>
+            <span class="hero-divider" aria-hidden="true"></span>
+            <span class="hero-available"><span aria-hidden="true"></span>Open to roles</span>
+          </div>
           <h1>
-            <span>Useful systems</span>
-            <span class="role-row">with <span id="roleWord">full-stack craft</span></span>
+            <span>Useful <em class="h1-accent">systems</em></span>
+            <span class="role-row"><em class="role-prefix">with</em> <span id="roleWord">full-stack craft</span></span>
           </h1>
           <p class="hero-summary">
             I build full-stack products, machine learning systems, and computer vision tools
@@ -77,50 +87,76 @@
       </section>
 
       <section class="project-section section-shell" id="project-1">
-        <p class="decor-type" aria-hidden="true">bloom 01</p>
+        <p class="decor-type" aria-hidden="true">言</p>
         <div class="project-visual laptop-mockup reveal">
-          <div class="screen thred-screen">
-            <div class="mock-sidebar"></div>
-            <div class="mock-content">
-              <span></span><span></span><span></span>
+          <div class="screen systems-screen">
+            <div class="terminal-prompt">MyLLM v3 · 54M params</div>
+            <div class="terminal-lines">
+              <span class="t-muted">dataset: OpenWebText · 50M tokens</span>
+              <span class="t-muted">layers: 8 · heads: 8 · d_model: 512 · ctx: 256</span>
+              <span class="t-cmd">$ python train.py --model v3 --steps 5000</span>
+              <span class="t-muted">step 1000 · loss 5.82</span>
+              <span class="t-muted">step 3000 · loss 5.38</span>
+              <span class="t-ok">step 5000 · train_loss 5.18  val_loss 5.22</span>
+              <span class="t-ok">✓ checkpoint saved · serving via FastAPI</span>
+              <span class="t-cursor">█</span>
             </div>
           </div>
         </div>
         <article class="project-copy reveal">
           <p class="project-number"><span></span>01</p>
-          <h2>AI-assisted social journaling</h2>
+          <h2>GPT decoder built from scratch</h2>
           <p>
-            Thred is a React and Node.js product concept using OpenAI integration to help
-            people shape reflective writing into structured, shareable threads.
+            54M-parameter decoder-only transformer trained on 50M tokens of OpenWebText
+            with no pretrained weights. 8 layers, 8 attention heads, 512-dimensional
+            embeddings, Flash Attention, cosine LR with 200-step warmup, and AdamW with
+            gradient clipping. Inference served via FastAPI.
           </p>
-          <div class="project-code" aria-label="Thred tech summary">
-            <span>const stack = ["React", "Node", "OpenAI"];</span>
+          <div class="stack-tags" aria-label="MyLLM tech stack">
+            <span>PyTorch</span><span>FastAPI</span><span>tiktoken</span><span>Flash Attention</span>
           </div>
-          <a class="project-button" href="https://github.com/adrynalean/Thred" target="_blank" rel="noreferrer">
+          <a class="project-button" href="https://github.com/adrynalean/MyLLM" target="_blank" rel="noreferrer">
             View project
           </a>
         </article>
       </section>
 
-      <section class="project-section section-shell" id="project-2">
-        <p class="decor-type" aria-hidden="true">bloom 02</p>
-        <div class="project-visual phone-mockup reveal">
-          <div class="phone phone-left">
-            <span></span><span></span><span></span><span></span>
-          </div>
-          <div class="phone phone-right">
-            <span></span><span></span><span></span><span></span>
+      <section class="project-section project-flip section-shell" id="project-2">
+        <p class="decor-type" aria-hidden="true">眼</p>
+        <div class="project-visual laptop-mockup reveal">
+          <div class="screen soccer-screen">
+            <div class="soccer-topbar"><span></span><span class="soccer-rec"></span></div>
+            <div class="soccer-field">
+              <div class="field-lines">
+                <span class="field-center"></span>
+                <span class="field-box field-box--left"></span>
+                <span class="field-box field-box--right"></span>
+              </div>
+              <span class="player-dot" style="top:34%;left:22%"></span>
+              <span class="player-dot" style="top:55%;left:31%"></span>
+              <span class="player-dot" style="top:42%;left:48%"></span>
+              <span class="player-dot player-dot--opp" style="top:38%;left:62%"></span>
+              <span class="player-dot player-dot--opp" style="top:58%;left:70%"></span>
+              <span class="player-dot player-dot--ball" style="top:45%;left:52%"></span>
+              <span class="track-path"></span>
+            </div>
+            <div class="soccer-stats">
+              <span class="stat-bar"><em style="width:72%"></em></span>
+              <span class="stat-bar"><em style="width:48%"></em></span>
+            </div>
           </div>
         </div>
         <article class="project-copy reveal">
           <p class="project-number"><span></span>02</p>
           <h2>Computer vision for match analysis</h2>
           <p>
-            SoccerSense detects players and movement patterns with Python, YOLO, OpenCV,
-            PyTorch, KMeans, Pandas, and NumPy.
+            Processes Bundesliga footage through a YOLOv8 detection pipeline, KMeans
+            shirt-colour team segmentation, optical-flow camera motion compensation,
+            and perspective transform — producing real-world speed and distance
+            per player from raw video frames.
           </p>
-          <div class="project-code" aria-label="SoccerSense tech summary">
-            <span>model.track("players", "ball", "motion");</span>
+          <div class="stack-tags" aria-label="SoccerSense tech stack">
+            <span>Python</span><span>YOLOv8</span><span>OpenCV</span><span>KMeans</span>
           </div>
           <a class="project-button" href="https://github.com/adrynalean/SoccerSense" target="_blank" rel="noreferrer">
             View project
@@ -129,51 +165,92 @@
       </section>
 
       <section class="project-section section-shell" id="project-3">
-        <p class="decor-type" aria-hidden="true">bloom 03</p>
+        <p class="decor-type" aria-hidden="true">語</p>
         <div class="project-visual laptop-mockup reveal">
-          <div class="screen systems-screen">
-            <div class="terminal-lines">
-              <span>$ sync --link socket</span>
-              <span>opening channel...</span>
-              <span>packet stream verified</span>
-              <span>transfer complete</span>
+          <div class="screen onsight-screen">
+            <div class="onsight-header">
+              <span>Onsight Pipeline</span>
+              <span class="onsight-eps">ep 382 – 777</span>
+            </div>
+            <div class="onsight-modules">
+              <div class="onsight-mod onsight-mod--done">
+                <span class="om-tag">NER</span>
+                <span class="om-label">SpaCy · entity extraction</span>
+                <span class="om-check"></span>
+              </div>
+              <div class="onsight-mod onsight-mod--done">
+                <span class="om-tag">Graph</span>
+                <span class="om-label">NetworkX · co-occurrence</span>
+                <span class="om-check"></span>
+              </div>
+              <div class="onsight-mod onsight-mod--done">
+                <span class="om-tag">Classify</span>
+                <span class="om-label">DeBERTa · ability types</span>
+                <span class="om-check"></span>
+              </div>
+              <div class="onsight-mod onsight-mod--done">
+                <span class="om-tag">Theme</span>
+                <span class="om-label">zero-shot · DeBERTa-large</span>
+                <span class="om-check"></span>
+              </div>
+              <div class="onsight-mod onsight-mod--active">
+                <span class="om-tag">Chat</span>
+                <span class="om-label">Llama 3.1-8B · LoRA</span>
+                <span class="om-pulse"></span>
+              </div>
             </div>
           </div>
         </div>
         <article class="project-copy reveal">
           <p class="project-number"><span></span>03</p>
-          <h2>Systems-level networking</h2>
+          <h2>Five-module NLP pipeline</h2>
           <p>
-            SyncLink explores C, shell scripting, operating systems, socket programming,
-            and the lower-level mechanics behind reliable data movement.
+            End-to-end LLM/NLP system analysing 395 episodes of One Piece dialogue.
+            SpaCy NER for entity extraction, NetworkX character co-occurrence graph,
+            fine-tuned DeBERTa ability classifier, zero-shot episode theme analysis
+            with DeBERTa-large, and a LoRA-tuned Llama 3.1-8B chatbot — all unified
+            in a single Gradio dashboard.
           </p>
-          <div class="project-code" aria-label="SyncLink tech summary">
-            <span>socket.pipe(packet).verify().sync();</span>
+          <div class="stack-tags" aria-label="Onsight tech stack">
+            <span>Llama 3.1</span><span>DeBERTa</span><span>SpaCy</span><span>Gradio</span>
           </div>
-          <a class="project-button" href="https://github.com/adrynalean/SyncLink" target="_blank" rel="noreferrer">
+          <a class="project-button" href="https://github.com/adrynalean/Onsight" target="_blank" rel="noreferrer">
             View project
           </a>
         </article>
       </section>
 
-      <section class="project-section section-shell" id="project-4">
-        <p class="decor-type" aria-hidden="true">bloom 04</p>
+      <section class="project-section project-flip section-shell" id="project-4">
+        <p class="decor-type" aria-hidden="true">繋</p>
         <div class="project-visual laptop-mockup reveal">
-          <div class="screen threadit-screen">
-            <div></div><div></div><div></div>
+          <div class="screen systems-screen">
+            <div class="terminal-prompt">SyncLink NFS · 3-tier distributed FS</div>
+            <div class="terminal-lines">
+              <span class="t-muted">clients: 50 concurrent · protocol: binary 9-byte header</span>
+              <span class="t-cmd">$ nm --storage SS_Root_0,SS_Root_1</span>
+              <span class="t-ok">network manager bound · routing ready</span>
+              <span class="t-cmd">$ client write /docs/report.pdf  2.1MB</span>
+              <span class="t-ok">→ SS_Root_1 · acked in 11ms</span>
+              <span class="t-cmd">$ client copy /docs/report.pdf /backup/</span>
+              <span class="t-ok">✓ cross-server copy complete</span>
+              <span class="t-cursor">█</span>
+            </div>
           </div>
         </div>
         <article class="project-copy reveal">
           <p class="project-number"><span></span>04</p>
-          <h2>Full-stack discussion architecture</h2>
+          <h2>Distributed file system in C</h2>
           <p>
-            ThreadIt is a MERN application with Docker support, built around structured
-            discussion flows and practical full-stack product architecture.
+            Network File System written in C supporting 50 concurrent clients across a
+            three-tier architecture — Clients, Network Manager, and Storage Servers.
+            Binary protocol with a 9-byte header (1-byte type + 8-byte length). Full
+            CRUD, cross-server copy, metadata retrieval, and backup management at the
+            Network Manager layer.
           </p>
-          <div class="project-code" aria-label="ThreadIt tech summary">
-            <span>compose("Mongo", "Express", "React", "Node");</span>
+          <div class="stack-tags" aria-label="SyncLink tech stack">
+            <span>C</span><span>POSIX Sockets</span><span>Binary Protocol</span><span>NFS</span>
           </div>
-          <a class="project-button" href="https://github.com/adrynalean/ThreadIt" target="_blank" rel="noreferrer">
+          <a class="project-button" href="https://github.com/adrynalean/SyncLink" target="_blank" rel="noreferrer">
             View project
           </a>
         </article>
@@ -197,12 +274,8 @@
 
         <aside class="details-card reveal">
           <p class="card-label"><span></span>Profile note</p>
-          <figure class="photo-slot" aria-label="Portrait placeholder">
-            <div class="photo-frame">
-              <span>Portrait placeholder</span>
-              <small>drop your image here later</small>
-            </div>
-            <figcaption>assets/profile.jpg</figcaption>
+          <figure class="photo-slot" aria-label="Portrait of Sashit Vijay">
+            <img class="photo-img" src="./assets/profile_picture.png" alt="Sashit Vijay" />
           </figure>
           <div class="profile-panel">
             <p>ASU Computer Science</p>
@@ -213,7 +286,7 @@
       </section>
 
       <section class="stack section-shell" id="stack">
-        <p class="section-label">Tool garden</p>
+        <p class="section-label reveal">Tool garden</p>
         <div class="skill-grid reveal" aria-label="Technical skills">
           <span>Python</span>
           <span>Java</span>
@@ -235,13 +308,25 @@
       </section>
 
       <section class="contact section-shell" id="contact">
-        <p class="section-label">Contact</p>
-        <h2>Have a role, project, or idea that needs a builder?</h2>
-        <div class="contact-links">
+        <p class="section-label reveal">Contact</p>
+        <h2 class="reveal">Have a role, project, or idea that needs a builder?</h2>
+        <div class="contact-links reveal">
           <a href="mailto:sashitvijay@gmail.com">sashitvijay@gmail.com</a>
           <a href="./assets/SV_CV_26.pdf" target="_blank" rel="noreferrer">Resume</a>
-          <a href="./world.html">Interactive portfolio</a>
         </div>
+      </section>
+
+      <section class="portal-section section-shell" id="portal" aria-label="Enter interactive portfolio">
+        <a class="portal-gate reveal" id="portalGate" href="./world.html">
+          <p class="portal-eyebrow"><span class="portal-dot" aria-hidden="true"></span>Interactive · Three.js · 3D walkthrough</p>
+          <h2 class="portal-title">Enter Sakura House</h2>
+          <p class="portal-sub">A real-time 3D walkthrough of a Japanese home — explore every room at your own pace.</p>
+          <span class="portal-cta" aria-hidden="true">
+            <span class="portal-cta-text">Step inside</span>
+            <span class="portal-cta-arrow">→</span>
+          </span>
+          <span class="portal-kanji" aria-hidden="true">桜</span>
+        </a>
       </section>
     </main>
 
@@ -249,6 +334,17 @@
       <span>2026 Sashit Vijay.</span>
       <span>Simple portfolio by default, sakura walkthrough when you want the scenic route.</span>
     </footer>
+
+    <div class="loading-overlay" id="loadingOverlay" aria-hidden="true" role="status">
+      <div class="loading-inner">
+        <p class="loading-kanji" aria-hidden="true">桜</p>
+        <p class="loading-title">Entering Sakura House</p>
+        <div class="loading-track" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+          <div class="loading-bar" id="loadingBar"></div>
+        </div>
+        <p class="loading-hint">Loading scene assets…</p>
+      </div>
+    </div>
 
     <script type="module" src="./src/portfolio.js"></script>
   </body>
