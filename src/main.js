@@ -4,8 +4,8 @@ const canvas = document.querySelector("#scene");
 const enterButton = document.querySelector("#enterButton");
 const intro = document.querySelector("#intro");
 const spotLabel = document.querySelector("#spotLabel");
-const timeLabel = document.querySelector("#timeLabel");
-const timeToggle = document.querySelector("#timeToggle");
+const timeLabel = document.querySelector("#themeLabel");
+const timeToggle = document.querySelector("#themeToggle");
 const portfolioPanel = document.querySelector("#portfolioPanel");
 const portfolioTitle = document.querySelector("#portfolioTitle");
 const portfolioEyebrow = document.querySelector("#portfolioEyebrow");
@@ -27,8 +27,8 @@ renderer.shadowMap.enabled = false;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color("#d58b82");
-scene.fog = new THREE.Fog("#d58b82", 30, 92);
+scene.background = new THREE.Color("#0c0a08");
+scene.fog = new THREE.Fog("#0c0a08", 10, 32);
 
 const camera = new THREE.PerspectiveCamera(68, window.innerWidth / window.innerHeight, 0.08, 140);
 const raycaster = new THREE.Raycaster();
@@ -95,7 +95,7 @@ const waterUniforms = {
 
 const materials = {
   bridge: blockMaterial("#b98251", "#d8a66d"),
-  bridgeDark: blockMaterial("#d6bb91", "#f2dfbd"),
+  bridgeDark: blockMaterial("#1e1208", "#2e1c0c"),
   roof: blockMaterial(palette.roof, palette.roofHighlight),
   roofDark: blockMaterial(palette.roofDark, "#9b4526"),
   blossomPanel: blockMaterial(palette.blossomPanel, "#ffd4da"),
@@ -142,18 +142,17 @@ const materials = {
   material.polygonOffsetUnits = 1;
 });
 
+
 const colliders = [];
 const playable = [];
 const animated = [];
 const boxGeometryCache = new Map();
-const doors = [];
 const interactables = [];
-const frontDoor = createDoorController("Front Door", true);
 
 const skyUniforms = {
-  topColor: { value: new THREE.Color("#894e8c") },
-  horizonColor: { value: new THREE.Color("#ffb082") },
-  bottomColor: { value: new THREE.Color("#273057") },
+  topColor: { value: new THREE.Color("#0a0c18") },
+  horizonColor: { value: new THREE.Color("#14100e") },
+  bottomColor: { value: new THREE.Color("#080608") },
 };
 const skyDome = new THREE.Mesh(
   new THREE.SphereGeometry(95, 24, 12),
@@ -209,15 +208,13 @@ moonSprite.scale.set(3.2, 3.2, 1);
 scene.add(moonSprite);
 
 const spots = {
-  Bridge: { position: scaledVector(0, EYE_HEIGHT, 23), yaw: 0, label: "Bridge Approach" },
-  Gate: { position: scaledVector(0, EYE_HEIGHT, 8.4), yaw: 0, label: "Lantern Gate" },
-  Map: { position: scaledVector(0, EYE_HEIGHT, 0.15), yaw: 0, label: "Portfolio Map Table" },
-  Hall: { position: scaledVector(-14.15, EYE_HEIGHT, 1.65), yaw: -Math.PI / 2, label: "Main Hall" },
-  Tech: { position: scaledVector(14.4, EYE_HEIGHT, 2.35), yaw: Math.PI / 2, label: "Tool Wall" },
-  "West Room": { position: scaledVector(-14.4, EYE_HEIGHT, -5.45), yaw: -Math.PI / 2, label: "West Room" },
-  "East Room": { position: scaledVector(14.0, EYE_HEIGHT, -4.3), yaw: Math.PI / 2, label: "East Room" },
-  "Rear Room": { position: scaledVector(-14.0, EYE_HEIGHT, -19.2), yaw: -Math.PI / 2, label: "Rear Room" },
-  Garden: { position: scaledVector(0, EYE_HEIGHT, -34.1), yaw: 0, label: "Back Garden" },
+  Map:         { position: scaledVector(0,   EYE_HEIGHT,  -7),  yaw: 0,            label: "Entry Hall" },
+  Hall:        { position: scaledVector(-8,  EYE_HEIGHT,  -4),  yaw: Math.PI / 2,  label: "Mission" },
+  Tech:        { position: scaledVector( 8,  EYE_HEIGHT,  -4),  yaw: -Math.PI / 2, label: "Tech Stack" },
+  "West Room": { position: scaledVector(-8,  EYE_HEIGHT, -15),  yaw: Math.PI / 2,  label: "Education" },
+  "East Room": { position: scaledVector( 8,  EYE_HEIGHT, -15),  yaw: -Math.PI / 2, label: "Projects" },
+  "Rear Room": { position: scaledVector(0,   EYE_HEIGHT, -21),  yaw: 0,            label: "Experience" },
+  Contact:     { position: scaledVector(8,   EYE_HEIGHT, -24),  yaw: -Math.PI / 2, label: "Contact" },
 };
 
 const portfolioSections = {
@@ -313,34 +310,34 @@ const portfolioSections = {
   projects: {
     title: "Projects",
     eyebrow: "East Project Room",
-    lead: "Selected projects from the latest resume, staged here as lightweight project cards.",
+    lead: "Four production-grade builds spanning ML, computer vision, systems, and networking.",
     groups: [
       {
         heading: "Featured Builds",
         cards: [
           {
-            title: "Thred",
-            meta: "React, CSS, JavaScript, Axios, Node.js, OpenAI Integration",
-            body: "Responsive full-screen chatbot interface inspired by ChatGPT, focused on interface fluidity and usability.",
-            href: "https://github.com/adrynalean/Thred",
+            title: "MyLLM",
+            meta: "Python · PyTorch · CUDA · Hugging Face Tokenizers",
+            body: "GPT-2 style transformer built from scratch — 54M parameters trained on 50M tokens, reaching train loss 5.18 / val loss 5.22.",
+            href: "https://github.com/adrynalean/MyLLM",
           },
           {
             title: "SoccerSense",
-            meta: "Python, OpenCV, YOLO, PyTorch, KMeans, Pandas, Numpy",
-            body: "Live soccer analysis with tracking, interpolation, perspective transforms, clustering, and player statistics.",
+            meta: "Python · OpenCV · YOLO · PyTorch · KMeans · Pandas",
+            body: "Full-match soccer analytics: multi-player YOLO tracking, homography pitch mapping, KMeans team clustering, and per-player speed stats.",
             href: "https://github.com/adrynalean/SoccerSense",
           },
           {
-            title: "SyncLink",
-            meta: "C, Shell Scripting, Operating Systems, Networking, Socket Programming",
-            body: "Network file system supporting seamless file operations and optimized server response handling.",
-            href: "https://github.com/adrynalean/SyncLink",
+            title: "Onsight",
+            meta: "Python · ROS2 · PyTorch · Diffusion Policy · LLM",
+            body: "Navigation assistant for a Unitree Go2 robotic dog — diffusion-policy motion with real-time LLM voice commands for visually impaired users.",
+            href: "https://github.com/adrynalean/Onsight",
           },
           {
-            title: "ThreadIt",
-            meta: "MongoDB, Express, React, Node, Docker",
-            body: "Reddit-inspired social platform with fuzzy search, reporting, user registration, and Docker deployment.",
-            href: "https://github.com/adrynalean/ThreadIt",
+            title: "SyncLink",
+            meta: "C · Socket Programming · TCP/IP · OS · Shell",
+            body: "Distributed network file system in C supporting multi-client file operations over TCP/IP with optimised server-side concurrency.",
+            href: "https://github.com/adrynalean/SyncLink",
           },
         ],
       },
@@ -405,34 +402,25 @@ const state = {
   moveBlend: 0,
   sway: 0,
   lookSway: 0,
-  dayTime: 0.12,
-  timePresetIndex: 1,
+  isDark: true,
   floorY: 0,
   jumpOffset: 0,
   verticalVelocity: 0,
   grounded: true,
 };
 
-const timePresets = [
-  { label: "Sakura Dawn", value: 0.035 },
-  { label: "Bright Day", value: 0.25 },
-  { label: "Sunset", value: 0.49 },
-  { label: "Lantern Night", value: 0.76 },
-];
-
 timeToggle?.addEventListener("click", (event) => {
   event.stopPropagation();
-  state.timePresetIndex = (state.timePresetIndex + 1) % timePresets.length;
-  state.dayTime = timePresets[state.timePresetIndex].value;
-  updateLighting(0);
+  state.isDark = !state.isDark;
+  applyTheme(state.isDark);
 });
 
-camera.position.copy(spots.Bridge.position);
+camera.position.copy(spots.Map.position);
 
-const hemiLight = new THREE.HemisphereLight("#ffd8bc", "#2d2d42", 1.5);
+const hemiLight = new THREE.HemisphereLight("#1e0f1e", "#100810", 1.55);
 scene.add(hemiLight);
 
-const sun = new THREE.DirectionalLight("#ffc78d", 2.2);
+const sun = new THREE.DirectionalLight("#f3a7bc", 0.35);
 sun.castShadow = true;
 sun.shadow.mapSize.width = 512;
 sun.shadow.mapSize.height = 512;
@@ -449,17 +437,12 @@ moonLight.position.set(18, 18, 20);
 scene.add(moonLight);
 
 buildWorld();
+applyTheme(state.isDark);
 requestAnimationFrame(animate);
 
 function buildWorld() {
-  addWater();
-  addDistantTerrain();
-  addMountainRing();
-  addSakuraForest();
-  addBridge();
-  addHouse();
-  addExteriorDetails();
-  addPetals();
+  addMainResidence();
+  addPortfolioInstallations();
 }
 
 function addWater() {
@@ -714,185 +697,259 @@ function addRidgeRange({ x = 0, z, baseY, width, peaks, color, opacity, rotation
 }
 
 function addBridge() {
-  addPlayable(0, 16.4, 5.4, 23.8);
-  addCollider(-2.25, 16.2, 0.55, 17.2);
-  addCollider(2.25, 16.2, 0.55, 17.2);
-  addCollider(0, 26.0, 4.7, 0.55);
+  // Playable zone on bridge
+  addPlayable(0, 19, 5.5, 18);
 
+  // Plank deck
   const planks = [];
-  for (let z = 7.1; z <= 25.5; z += 0.72) {
-    planks.push({ w: 3.55, h: 0.16, d: 0.55, x: 0, y: 0.05, z });
+  for (let z = 11; z <= 27; z += 0.72) {
+    planks.push({ w: 3.8, h: 0.16, d: 0.56, x: 0, y: 0.05, z });
   }
   addInstancedBoxes(planks, materials.bridge);
 
-  [-2.05, 2.05].forEach((x) => {
-    block(0.22, 0.45, 19.4, materials.bridgeDark, x, 0.38, 16.35);
-    for (let z = 7.4; z <= 25.3; z += 3.6) {
-      block(0.34, 1.15, 0.34, materials.bridgeDark, x, 0.72, z);
-      addLantern(x, z, 1.5, 0.36);
+  // Side rails + posts + small lanterns
+  [-2.1, 2.1].forEach((x) => {
+    block(0.2, 0.42, 17, materials.bridgeDark, x, 0.36, 19);
+    for (let z = 11.5; z <= 26.5; z += 3.6) {
+      block(0.3, 1.1, 0.3, materials.bridgeDark, x, 0.7, z);
+      addLantern(x, z, 1.45, 0.34);
     }
   });
-  addBoundaryFence(0, 26.0, 4.8, "x");
 
-  addEntryLanding();
-  addToriiGate(0, 9.4, Math.PI);
+  // Stone landing at house end
+  block(9, 0.22, 4, materials.stone, 0, 0.11, 9.5);
+  block(9.4, 0.1, 0.3, materials.bridgeDark, 0, 0.27, 7.6);
+
+  // Far fence at water start
+  addBoundaryFence(0, 28.2, 5.0, "x");
+  addCollider(-2.5, 19, 0.45, 18);
+  addCollider(2.5, 19, 0.45, 18);
+  addCollider(0, 28.4, 5, 0.5);
+
+  // Torii gate framing bridge entry
+  addToriiGate(0, 8, Math.PI);
 }
 
-function addEntryLanding() {
-  block(5.5, 0.22, 2.6, materials.floorAlt, 0, 0.22, 7.3);
-  block(4.7, 0.18, 0.75, materials.woodLight, 0, 0.42, 6.55);
-  block(4.1, 0.16, 0.62, materials.woodLight, 0, 0.28, 7.15);
-  block(3.7, 0.14, 0.58, materials.woodLight, 0, 0.16, 7.78);
-  [-2.45, -1.75, 1.75, 2.45].forEach((x) => {
-    block(0.12, 0.62, 0.12, materials.bridgeDark, x, 0.78, 6.35);
+// ─── Entry Garden (z +8 to +2) ───────────────────────────────────────────────
+function addEntryGarden() {
+  addPlayable(0, 5, 24, 14);
+
+  // Central stone path strip
+  block(5, 0.18, 12, materials.stone, 0, 0.09, 5);
+
+  // Wider stone plaza in front of pavilion
+  block(14, 0.18, 6, materials.stone, 0, 0.09, 0.5);
+
+  // Stone step edge into pavilion zone
+  block(14.4, 0.1, 0.35, materials.bridgeDark, 0, 0.24, -2.3);
+
+  // Flanking grass pads
+  block(9, 0.14, 12, materials.grass, -9, 0.07, 5);
+  block(9, 0.14, 12, materials.grass, 9, 0.07, 5);
+
+  // Stone lanterns lining the approach
+  [13, 9, 5].forEach((z) => {
+    addLantern(-3.2, z, 1.55, 0.42);
+    addLantern(3.2, z, 1.55, 0.42);
   });
-  block(1.5, 0.14, 0.14, materials.bridgeDark, -2.1, 1.08, 6.35);
-  block(1.5, 0.14, 0.14, materials.bridgeDark, 2.1, 1.08, 6.35);
+
+  // Sakura trees flanking entry
+  addSakuraTree(-7, 14, 0.88);
+  addSakuraTree(7, 14, 0.82);
+  addSakuraTree(-8, 8, 0.76);
+  addSakuraTree(8, 8, 0.8);
+  addSakuraTree(-6, 3, 0.72);
+  addSakuraTree(6, 3, 0.7);
+
+  // Garden beds at sides
+  addGardenBed(-8, 11, 3.5, 3);
+  addGardenBed(8, 11, 3.5, 3);
+  addGardenBed(-8, 5, 2.5, 3.5);
+  addGardenBed(8, 5, 2.5, 3.5);
 }
 
-function addHouse() {
-  addPlayable(0, -9.6, 33.9, 33.3);
-  addPlayable(0, -38.0, 42.0, 24.0);
+// ─── Main Residence ────────────────────────────────────────────────────────────
+// One unified building z=0 to -28, x=-13 to +13.
+// Three bays: entry (z=0 to -9), gallery (z=-9 to -22), rear (z=-22 to -28).
+// Central spine (x=-5 to +5) connects all bays; side alcoves house displays.
+function addMainResidence() {
+  const H   = 4.8;
+  const wY  = H / 2 + 0.28;   // wall center y (sitting on 0.28 foundation)
 
-  block(35.4, 0.8, 34.5, materials.stone, 0, 0, -9.6);
-  block(34.1, 0.28, 33.2, materials.floor, 0, 0.54, -9.6);
+  // ── Playable zones ──────────────────────────────────────────────────────
+  addPlayable(0,   -4.5, 10, 9);   addPlayable(-9, -4.5,  8, 9);   addPlayable(9, -4.5,  8, 9);
+  addPlayable(0,  -15.5, 10,13);   addPlayable(-9,-15.5,  8,13);   addPlayable(9,-15.5,  8,13);
+  addPlayable(0,   -25,  22, 6);   addPlayable(0,  -33,  12, 8);
 
-  addInteriorFloor(0, -9.6, 32.4, 31.5);
-  addHouseWalls();
-  addFrontDoor();
-  addRoofs();
-  addRoomPartitions();
-  addInteriorDetails();
-}
+  // ── Foundation / floor ──────────────────────────────────────────────────
+  block(26, 0.28, 28.6, materials.charcoal, 0, 0.14, -14);
+  block(26.6, 0.05, 0.22, materials.bridgeDark, 0, 0.30,  0.2);
+  block(26.6, 0.05, 0.22, materials.bridgeDark, 0, 0.30, -28.2);
+  block(0.22, 0.05, 29.0, materials.bridgeDark, -13.1, 0.30, -14);
+  block(0.22, 0.05, 29.0, materials.bridgeDark,  13.1, 0.30, -14);
 
-function addHouseWalls() {
-  const wallY = 2.95;
-  const h = 4.6;
-  const zFront = 6.8;
-  const zBack = -26.05;
-  const xLeft = -17.1;
-  const xRight = 17.1;
-  const zMid = (zFront + zBack) / 2;
+  // ── Exterior walls ───────────────────────────────────────────────────────
+  block(0.32, H, 28.6, materials.paper, -13, wY, -14);   // west
+  block(0.32, H, 28.6, materials.paper,  13, wY, -14);   // east
+  block(26,   H, 0.32, materials.paper,   0, wY, -28);   // north
+  block(26,   H, 0.32, materials.paper,   0, wY,   0);   // south (sealed)
 
-  wallSegment(-9.15, zFront, 15.75, h, "x", wallY);
-  wallSegment(9.15, zFront, 15.75, h, "x", wallY);
-  wallSegment(xLeft, zMid, 32.85, h, "z", wallY);
-  wallSegment(xRight, zMid, 32.85, h, "z", wallY);
-  wallSegment(-9.4, zBack, 14.85, h, "x", wallY);
-  wallSegment(9.4, zBack, 14.85, h, "x", wallY);
-
-  addCollider(-9.15, zFront, 15.75, 0.5);
-  addCollider(9.15, zFront, 15.75, 0.5);
-  addCollider(xLeft, zMid, 0.5, 32.85);
-  addCollider(xRight, zMid, 0.5, 32.85);
-  addCollider(-9.4, zBack, 14.85, 0.5);
-  addCollider(9.4, zBack, 14.85, 0.5);
-
-  addWindow(-7.9, zFront + 0.03, 2.6, "x", 2.6);
-  addWindow(7.9, zFront + 0.03, 2.6, "x", 2.6);
-  addWindow(-17.13, -2.4, 2.8, "z", 2.6);
-  addWindow(17.13, -2.4, 2.8, "z", 2.6);
-  addWindow(-17.13, -14.8, 2.8, "z", 2.6);
-  addWindow(17.13, -14.8, 2.8, "z", 2.6);
-  addBackDoorFrame(0, zBack - 0.01);
-}
-
-function addBackDoorFrame(x, z) {
-  block(0.24, 3.1, 0.18, materials.bridgeDark, x - 1.25, 2.27, z);
-  block(0.24, 3.1, 0.18, materials.bridgeDark, x + 1.25, 2.27, z);
-  block(2.75, 0.2, 0.2, materials.bridgeDark, x, 3.86, z);
-  block(2.35, 1.55, 0.16, materials.paperDim, x, 4.6, z);
-  block(2.25, 0.12, 0.56, materials.woodLight, x, 0.82, z + 0.1);
-}
-
-function addFrontDoor() {
-  const z = 6.86;
-  block(0.28, 2.3, 0.18, materials.bridgeDark, -1.62, 1.86, z + 0.08);
-  block(0.28, 2.3, 0.18, materials.bridgeDark, 1.62, 1.86, z + 0.08);
-  block(3.55, 0.2, 0.2, materials.bridgeDark, 0, 2.98, z + 0.08);
-  block(3.2, 0.12, 0.18, materials.gold, 0, 2.78, z + 0.12);
-  block(3.25, 2.25, 0.16, materials.paperDim, 0, 4.16, z + 0.1);
-  block(3.45, 0.18, 0.22, materials.bridgeDark, 0, 5.28, z + 0.1);
-  block(3.0, 0.12, 0.42, materials.woodLight, 0, 0.82, z - 0.04);
-  frontDoor.center.set(0, z);
-
-  [
-    { side: -1, closedX: -0.58, openX: -1.78 },
-    { side: 1, closedX: 0.58, openX: 1.78 },
-  ].forEach(({ side, closedX, openX }) => {
-    const group = new THREE.Group();
-    const panelZ = 0.16;
-    group.position.set(sx(openX), 0, sz(z));
-    block(1.2, 2.36, 0.08, materials.paperWarm, 0, 2.05, panelZ, group);
-    block(1.28, 0.1, 0.12, materials.bridgeDark, 0, 3.24, panelZ, group);
-    block(1.28, 0.1, 0.12, materials.bridgeDark, 0, 0.86, panelZ, group);
-    block(0.08, 2.4, 0.12, materials.bridgeDark, side * -0.6, 2.05, panelZ, group);
-    block(0.08, 2.4, 0.12, materials.bridgeDark, side * 0.6, 2.05, panelZ, group);
-    block(0.08, 2.25, 0.14, materials.bridgeDark, side * -0.62, 2.03, panelZ, group);
-    block(0.18, 0.18, 0.12, materials.gold, side * -0.22, 1.9, panelZ + 0.04, group);
-    scene.add(group);
-    const collider = addCollider(closedX, z, 1.08, 0.32, false, -0.5, 2.9);
-    frontDoor.panels.push({ group, closedX: sx(closedX), closedZ: sz(z), openX: sx(openX), openZ: sz(z) });
-    frontDoor.colliders.push(collider);
-  });
-  frontDoor.solidCollider = addCollider(0, z, 2.8, 0.52, false, -0.5, 3.0);
-}
-
-function createDoorController(label, initiallyOpen = false) {
-  const door = {
-    label,
-    panels: [],
-    colliders: [],
-    center: new THREE.Vector2(999, 999),
-    open: initiallyOpen,
-    progress: initiallyOpen ? 1 : 0,
-    target: initiallyOpen ? 1 : 0,
-    solidCollider: null,
+  // ── Structural columns ───────────────────────────────────────────────────
+  const col = (cx, cz) => {
+    block(0.48, H + 0.38, 0.48, materials.bridgeDark, cx, wY + 0.19, cz);
+    block(0.72, 0.14, 0.72, materials.gold,           cx, H + 0.47,  cz);
   };
-  doors.push(door);
-  return door;
+  [[-12.5, -0.2], [12.5, -0.2], [-12.5, -27.8], [12.5, -27.8],
+   [-12.5,  -9],  [12.5,  -9],  [-12.5,  -22],  [12.5,  -22],
+   [ -4.8, -0.2], [ 4.8, -0.2]].forEach(([cx, cz]) => col(cx, cz));
+
+  // ── Spine partition walls (x = ±5) ───────────────────────────────────────
+  // Entry bay z=0→-9, doorway gap z=-2.5 to -6.5
+  wallSegment(-5, -1.25, 2.5, H, "z", wY);  wallSegment(-5, -7.75, 2.5, H, "z", wY);
+  wallSegment( 5, -1.25, 2.5, H, "z", wY);  wallSegment( 5, -7.75, 2.5, H, "z", wY);
+  block(0.4, 0.2, 4.0, materials.bridgeDark, -5, H + 0.1, -4.5);
+  block(0.4, 0.2, 4.0, materials.bridgeDark,  5, H + 0.1, -4.5);
+  // Gallery bay z=-9→-22, doorway gap z=-13 to -17
+  wallSegment(-5, -11,   4,   H, "z", wY);  wallSegment(-5, -19.5, 5, H, "z", wY);
+  wallSegment( 5, -11,   4,   H, "z", wY);  wallSegment( 5, -19.5, 5, H, "z", wY);
+  block(0.4, 0.2, 4.0, materials.bridgeDark, -5, H + 0.1, -15);
+  block(0.4, 0.2, 4.0, materials.bridgeDark,  5, H + 0.1, -15);
+
+  // ── Cross partitions ─────────────────────────────────────────────────────
+  // z=-9: closes alcoves either side, central opening stays open
+  block(8, H, 0.32, materials.paperDim, -9, wY, -9);
+  block(8, H, 0.32, materials.paperDim,  9, wY, -9);
+  block(10, 0.2, 0.32, materials.bridgeDark, 0, H + 0.1, -9);
+  // z=-22
+  block(8, H, 0.32, materials.paperDim, -9, wY, -22);
+  block(8, H, 0.32, materials.paperDim,  9, wY, -22);
+  block(10, 0.2, 0.32, materials.bridgeDark, 0, H + 0.1, -22);
+
+  // ── Roof ─────────────────────────────────────────────────────────────────
+  block(27, 0.28, 29.2, materials.roofDark, 0, H + 0.42, -14);
+  block(27.6, 0.1, 0.4, materials.roof,  0,     H + 0.27,  0.5);
+  block(27.6, 0.1, 0.4, materials.roof,  0,     H + 0.27, -28.5);
+  block(0.4, 0.1, 30,   materials.roof, -13.6,  H + 0.27, -14);
+  block(0.4, 0.1, 30,   materials.roof,  13.6,  H + 0.27, -14);
+  // Interior ceiling beams
+  block(26.5, 0.22, 0.26, materials.bridgeDark,  0, H + 0.08,  -9);
+  block(26.5, 0.22, 0.26, materials.bridgeDark,  0, H + 0.08, -22);
+  block(0.24, 0.2,  29,   materials.bridgeDark,  0, H + 0.04, -14);
+
+  // ── Tatami floors ─────────────────────────────────────────────────────────
+  addTatamiArea(-9, -4.5, 3, 3);  addTatamiArea(9, -4.5, 3, 3);
+  addTatamiArea(-9,-15.5, 3, 5);  addTatamiArea(9,-15.5, 3, 5);
+  addTatamiArea(0, -25,   5, 2);
+
+  // ── Lighting ─────────────────────────────────────────────────────────────
+  addPaperLantern( 0, H-0.15,  -4.5);  addPaperLantern(-9, H-0.15,  -4.5);  addPaperLantern(9, H-0.15,  -4.5);
+  addPaperLantern(-9, H-0.15, -15.5);  addPaperLantern( 9, H-0.15, -15.5);  addPaperLantern(0, H-0.15, -25);
+  addInteriorLight( 0, -4.5,  4.1, 1.4, 18);  addInteriorLight(-9, -4.5,  4.1, 1.2, 15);  addInteriorLight(9, -4.5,  4.1, 1.2, 15);
+  addInteriorLight( 0,-15.5,  4.0, 1.3, 18);  addInteriorLight(-9,-15.5,  4.0, 1.1, 15);  addInteriorLight(9,-15.5,  4.0, 1.1, 15);
+  addInteriorLight( 0, -25,   3.9, 1.3, 18);
+
+  // ── Decor (minimal) ───────────────────────────────────────────────────────
+  addBonsai(-11.5, 0.30, -6);    addIkebana(11.5, 0.30, -6);
+  addBonsai(-11.5, 0.30, -12);   addIkebana(11.5, 0.30, -20);
+  addLowTable(0, -25, 2.8, 1.4); addTeaSet(0, 0.97, -25);
+
+  // ── Colliders ────────────────────────────────────────────────────────────
+  addCollider(-13, -14, 0.5, 28.6);  addCollider(13, -14, 0.5, 28.6);
+  addCollider(0, -28, 26, 0.5);
+  addCollider(0,   0,  26, 0.5);   // sealed south wall
+  addCollider(-5, -1.25, 0.5, 2.5);  addCollider(-5, -7.75, 0.5, 2.5);
+  addCollider(-5, -11,   0.5, 4);    addCollider(-5, -19.5, 0.5, 5);
+  addCollider( 5, -1.25, 0.5, 2.5);  addCollider( 5, -7.75, 0.5, 2.5);
+  addCollider( 5, -11,   0.5, 4);    addCollider( 5, -19.5, 0.5, 5);
+  addCollider(-9, -9,  8, 0.5);  addCollider(9, -9,  8, 0.5);
+  addCollider(-9, -22, 8, 0.5);  addCollider(9, -22, 8, 0.5);
 }
 
-function addSlidingDoor(label, x, z, axis, width, initiallyOpen = false) {
-  const door = createDoorController(label, initiallyOpen);
-  door.center.set(x, z);
-  const isHorizontal = axis === "x";
-  const panelWidth = width * 0.52;
-  const openOffset = width * 0.45;
-  const closedOffset = width * 0.24;
+// ─── Zen Garden (z -36 to -52) ────────────────────────────────────────────────
+function addZenGarden() {
+  addPlayable(0, -44, 26, 18);
 
-  block(isHorizontal ? width + 0.42 : 0.42, 0.18, isHorizontal ? 0.16 : width + 0.42, materials.bridgeDark, x, 0.92, z);
-  block(isHorizontal ? width + 0.5 : 0.5, 0.16, isHorizontal ? 0.18 : width + 0.5, materials.bridgeDark, x, 3.15, z);
+  // Torii gate entrance to zen garden
+  addToriiGate(0, -38, Math.PI);
 
-  [-1, 1].forEach((side) => {
-    const group = new THREE.Group();
-    const closedX = isHorizontal ? x + side * closedOffset : x;
-    const closedZ = isHorizontal ? z : z + side * closedOffset;
-    const openX = isHorizontal ? x + side * openOffset : x;
-    const openZ = isHorizontal ? z : z + side * openOffset;
-    group.position.set(sx(initiallyOpen ? openX : closedX), 0, sz(initiallyOpen ? openZ : closedZ));
-
-    block(isHorizontal ? panelWidth : 0.08, 2.35, isHorizontal ? 0.08 : panelWidth, materials.paperWarm, 0, 2.16, 0, group);
-    block(isHorizontal ? panelWidth + 0.08 : 0.12, 0.08, isHorizontal ? 0.12 : panelWidth + 0.08, materials.bridgeDark, 0, 3.36, 0, group);
-    block(isHorizontal ? panelWidth + 0.08 : 0.12, 0.08, isHorizontal ? 0.12 : panelWidth + 0.08, materials.bridgeDark, 0, 0.98, 0, group);
-
-    for (let i = -1; i <= 1; i += 1) {
-      const offset = i * panelWidth * 0.24;
-      block(isHorizontal ? 0.045 : 0.08, 2.2, isHorizontal ? 0.08 : 0.045, materials.bridgeDark, isHorizontal ? offset : 0, 2.16, isHorizontal ? 0 : offset, group);
+  // Raked gravel base (alt-coloured stone grid to suggest raking)
+  for (let row = 0; row < 5; row += 1) {
+    for (let col = 0; col < 7; col += 1) {
+      const mat = (row + col) % 2 === 0 ? materials.stone : materials.floor;
+      block(3.4, 0.06, 2.4, mat, (col - 3) * 3.6, 0.03, -43 + row * 2.8);
     }
-    for (let i = -1; i <= 1; i += 1) {
-      block(isHorizontal ? panelWidth : 0.08, 0.045, isHorizontal ? 0.08 : panelWidth, materials.bridgeDark, 0, 1.65 + i * 0.55, 0, group);
-    }
+  }
 
-    scene.add(group);
-    const collider = addCollider(closedX, closedZ, isHorizontal ? panelWidth : 0.34, isHorizontal ? 0.34 : panelWidth, !initiallyOpen, -0.5, 2.8);
-    door.panels.push({ group, closedX: sx(closedX), closedZ: sz(closedZ), openX: sx(openX), openZ: sz(openZ) });
-    door.colliders.push(collider);
-  });
-  door.solidCollider = addCollider(x, z, isHorizontal ? width : 0.56, isHorizontal ? 0.56 : width, !initiallyOpen, -0.5, 3.2);
+  // Raised stone border around the garden
+  block(26.5, 0.38, 0.55, materials.stone, 0, 0.19, -37.2);
+  block(26.5, 0.38, 0.55, materials.stone, 0, 0.19, -51.8);
+  block(0.55, 0.38, 15, materials.stone, -13.2, 0.19, -44.5);
+  block(0.55, 0.38, 15, materials.stone, 13.2, 0.19, -44.5);
+
+  // Stone arrangements (large + small boulders via blocks)
+  block(1.6, 0.7, 0.9, materials.stone, -7, 0.35, -41);
+  block(0.7, 1.1, 0.6, materials.stone, -6.2, 0.55, -40.2);
+  block(0.5, 0.55, 0.5, materials.stone, -7.8, 0.28, -41.6);
+  block(1.4, 0.6, 0.8, materials.stone, 7, 0.3, -48);
+  block(0.6, 0.9, 0.5, materials.stone, 7.7, 0.45, -47.3);
+  block(0.4, 0.5, 0.4, materials.stone, 6.3, 0.25, -48.7);
+
+  // Three boulders in a cluster (wabi aesthetic)
+  block(1.1, 0.45, 0.7, materials.stone, 0, 0.22, -48.5);
+  block(0.6, 0.7, 0.5, materials.stone, 0.9, 0.35, -47.8);
+  block(0.45, 0.38, 0.4, materials.stone, -0.7, 0.19, -49.1);
+
+  // Bonsai on black lacquer plinths
+  block(0.7, 0.4, 0.7, materials.blackLacquer, -9, 0.2, -44);
+  addBonsai(-9, 0.58, -44);
+  block(0.7, 0.4, 0.7, materials.blackLacquer, 9, 0.2, -44);
+  addBonsai(9, 0.58, -44);
+  block(0.7, 0.4, 0.7, materials.blackLacquer, -9, 0.2, -50);
+  addIkebana(-9, 0.58, -50);
+  block(0.7, 0.4, 0.7, materials.blackLacquer, 9, 0.2, -50);
+  addIkebana(9, 0.58, -50);
+
+  // Floor stone lanterns around garden
+  addFloorLantern(-10, -40, 1.2);
+  addFloorLantern(10, -40, 1.2);
+  addFloorLantern(-10, -48, 1.2);
+  addFloorLantern(10, -48, 1.2);
+  addFloorLantern(-5, -51, 1.1);
+  addFloorLantern(5, -51, 1.1);
+
+  // Sakura tree in garden
+  addSakuraTree(-3, -41, 0.88);
+  addSakuraTree(3, -49, 0.76);
+
+  // Back fence
+  addBoundaryFence(0, -52.5, 28, "x");
+  addCollider(0, -52.8, 28, 0.6);
+  addCollider(-13.5, -44.5, 0.6, 16);
+  addCollider(13.5, -44.5, 0.6, 16);
 }
 
-function addRoomPartitions() {
+// ─── World Bounds ─────────────────────────────────────────────────────────────
+function addWorldBounds() {
+  // Lateral water boundaries
+  addCollider(-25, -22, 0.6, 80);
+  addCollider(25, -22, 0.6, 80);
+  // Front water
+  addCollider(0, 30, 60, 0.6);
+}
+
+// ─── Portfolio display placement (new positions) ──────────────────────────────
+function addPortfolioInstallations() {
+  addTableMap();
+
+  addPortfolioDisplay({ id: "mission",    x: -12,  z:  -4,  facing: "+x", title: "Mission",    subtitle: "Sashit Vijay",          accent: "#c76576", width: 4.4, height: 1.8 });
+  addPortfolioDisplay({ id: "tech",       x:  12,  z:  -4,  facing: "-x", title: "Tech Stack", subtitle: "Languages + tools",      accent: "#d0a45f", width: 4.7, height: 2.0 });
+  addPortfolioDisplay({ id: "education",  x: -12,  z: -15,  facing: "+x", title: "Education",  subtitle: "ASU CS, 4.0",            accent: "#7f93a7", width: 4.9, height: 2.0 });
+  addPortfolioDisplay({ id: "projects",   x:  12,  z: -15,  facing: "-x", title: "Projects",   subtitle: "MyLLM, SoccerSense",     accent: "#6f9b82", width: 4.9, height: 1.9 });
+  addPortfolioDisplay({ id: "experience", x:   0,  z: -27,  facing: "+z", title: "Experience", subtitle: "Engineering + teaching", accent: "#b46b51", width: 5.5, height: 2.1 });
+  addPortfolioDisplay({ id: "contact",    x:  12,  z: -24,  facing: "-x", title: "Contact",    subtitle: "Links + resume",         accent: "#d6889a", width: 4.6, height: 1.9 });
+}
+
+function _removedRoomPartitions() {
   partitionWithDoor(-5.4, -9.6, 31.65, "z", 8.0, 2.4, "West Room Door", false);
   partitionWithDoor(5.4, -9.6, 31.65, "z", 8.0, 2.4, "East Room Door", false);
   partitionWithDoor(0, -13.45, 32.4, "x", 0, 2.7, "Rear Room Door", false);
@@ -1003,80 +1060,8 @@ function addInteriorDetails() {
   addFloorLantern(-13.5, -15.1, 1.1);
   addFloorLantern(13.5, -15.1, 1.1);
   addPaperLantern(0, 4.65, -19.2);
-
-  addPortfolioInstallations();
 }
 
-function addPortfolioInstallations() {
-  addTableMap();
-  addPortfolioDisplay({
-    id: "mission",
-    x: -16.92,
-    z: 1.65,
-    facing: "+x",
-    title: "Mission",
-    subtitle: "Sashit Vijay",
-    accent: "#c76576",
-    width: 4.4,
-    height: 1.8,
-  });
-  addPortfolioDisplay({
-    id: "education",
-    x: -16.92,
-    z: -5.4,
-    facing: "+x",
-    title: "Education",
-    subtitle: "ASU CS, 4.0",
-    accent: "#7f93a7",
-    width: 5.6,
-    height: 2.15,
-  });
-  addPortfolioDisplay({
-    id: "projects",
-    x: 16.92,
-    z: -4.3,
-    facing: "-x",
-    title: "Projects",
-    subtitle: "Thred, SoccerSense",
-    accent: "#6f9b82",
-    width: 4.9,
-    height: 1.9,
-  });
-  addPortfolioDisplay({
-    id: "tech",
-    x: 16.92,
-    z: 2.35,
-    facing: "-x",
-    title: "Tech Stack",
-    subtitle: "Languages + tools",
-    accent: "#d0a45f",
-    width: 4.7,
-    height: 2.0,
-  });
-  addPortfolioDisplay({
-    id: "experience",
-    x: -16.92,
-    z: -19.2,
-    facing: "+x",
-    title: "Experience",
-    subtitle: "Engineering + teaching",
-    accent: "#b46b51",
-    width: 4.9,
-    height: 1.9,
-  });
-  addPortfolioDisplay({
-    id: "contact",
-    x: 0,
-    z: -35.7,
-    facing: "+z",
-    title: "Contact",
-    subtitle: "Links + resume",
-    accent: "#d6889a",
-    garden: true,
-    width: 4.8,
-    height: 2.05,
-  });
-}
 
 function addTableMap() {
   const x = 0;
@@ -1259,113 +1244,170 @@ function makePortfolioTexture(title, subtitle, accent, width = 4.6, height = 1.9
 }
 
 function makeHouseMapTexture() {
-  const textureCanvas = document.createElement("canvas");
-  textureCanvas.width = 1024;
-  textureCanvas.height = 520;
-  const ctx = textureCanvas.getContext("2d");
-  const cw = 1920;
-  const ch = 976;
-  ctx.scale(textureCanvas.width / cw, textureCanvas.height / ch);
+  const W = 1024, H = 520;
+  const c = document.createElement("canvas");
+  c.width = W; c.height = H;
+  const ctx = c.getContext("2d");
 
-  const paper = ctx.createLinearGradient(0, 0, cw, ch);
-  paper.addColorStop(0, "#f3daa3");
-  paper.addColorStop(0.42, "#fff2d1");
-  paper.addColorStop(1, "#dfb37f");
-  ctx.fillStyle = paper;
-  ctx.fillRect(0, 0, cw, ch);
+  // ── Background: warm washi paper ──────────────────────────────────────────
+  const bg = ctx.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, "#fef6e3");
+  bg.addColorStop(0.5, "#fdf0d5");
+  bg.addColorStop(1, "#f0e2c4");
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
 
-  ctx.globalAlpha = 0.07;
-  ctx.strokeStyle = "#825f3f";
-  ctx.lineWidth = 2;
-  for (let x = 92; x < cw; x += 78) {
-    ctx.beginPath();
-    ctx.moveTo(x, 96);
-    ctx.lineTo(x, ch - 96);
-    ctx.stroke();
-  }
-  for (let y = 100; y < ch; y += 78) {
-    ctx.beginPath();
-    ctx.moveTo(96, y);
-    ctx.lineTo(cw - 96, y);
-    ctx.stroke();
+  // Horizontal washi grain lines (very faint)
+  ctx.globalAlpha = 0.038;
+  ctx.strokeStyle = "#7a5030";
+  ctx.lineWidth = 1;
+  for (let y = 4; y < H; y += 7) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
   }
   ctx.globalAlpha = 1;
 
-  ctx.strokeStyle = "#3d2419";
-  ctx.lineWidth = 28;
-  roundRect(ctx, 54, 54, cw - 108, ch - 108, 30);
-  ctx.stroke();
-  ctx.strokeStyle = "rgba(195, 120, 88, 0.72)";
-  ctx.lineWidth = 8;
-  roundRect(ctx, 86, 86, cw - 172, ch - 172, 24);
-  ctx.stroke();
+  // ── Double border ──────────────────────────────────────────────────────────
+  ctx.strokeStyle = "#4a2e18";
+  ctx.lineWidth = 2.5;
+  ctx.strokeRect(12, 12, W - 24, H - 24);
+  ctx.strokeStyle = "rgba(160, 100, 50, 0.3)";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(19, 19, W - 38, H - 38);
 
-  ctx.fillStyle = "#2f211a";
-  ctx.font = "700 64px Georgia";
+  // ── Title (top-left) ───────────────────────────────────────────────────────
+  ctx.fillStyle = "#2e190c";
+  ctx.font = "700 24px 'IBM Plex Sans JP', 'Segoe UI', Arial, sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText("Sashit Vijay", 32, 44);
+  ctx.fillStyle = "#9a6640";
+  ctx.font = "500 12px 'IBM Plex Sans JP', 'Segoe UI', Arial, sans-serif";
+  ctx.fillText("PORTFOLIO GARDEN  ·  PRESS F TO INSPECT", 32, 60);
+
+  // ── Compass (top-right) ────────────────────────────────────────────────────
+  ctx.save();
+  ctx.translate(W - 42, 42);
+  ctx.fillStyle = "#c76576";
+  ctx.font = "700 13px Arial, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("Sashit's Portfolio House", cw / 2, 128);
-  ctx.fillStyle = "#7f4f3d";
-  ctx.font = "700 25px Inter, Arial, sans-serif";
-  ctx.fillText("walkthrough guide", cw / 2, 166);
+  ctx.fillText("N", 0, -16);
+  ctx.strokeStyle = "#c76576";
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, -13); ctx.lineTo(0, 6); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-4, -2); ctx.lineTo(0, -13); ctx.lineTo(4, -2); ctx.closePath();
+  ctx.fillStyle = "#c76576"; ctx.fill();
+  ctx.restore();
 
-  const rooms = [
-    { x: 235, y: 520, w: 360, h: 170, label: "Education", sub: "West Room", color: "#7896a8", icon: "book" },
-    { x: 740, y: 372, w: 440, h: 170, label: "Mission", sub: "Main Hall", color: "#c76576", icon: "crest" },
-    { x: 1325, y: 520, w: 360, h: 170, label: "Projects", sub: "East Room", color: "#77a88e", icon: "grid" },
-    { x: 760, y: 690, w: 400, h: 132, label: "Experience", sub: "Rear Room", color: "#ba7353", icon: "path" },
-    { x: 1210, y: 332, w: 260, h: 116, label: "Stack", sub: "Tool Wall", color: "#d0a45f", icon: "chip" },
-    { x: 820, y: 236, w: 280, h: 88, label: "Map", sub: "Table", color: "#9670a9", icon: "pin" },
+  // ── Layout constants ───────────────────────────────────────────────────────
+  const CX = 512;
+  // y-positions: bottom = south (bridge entry), top = north (zen garden)
+  const Y = { bridge: 472, gate: 415, pavilion: 352, wings1: 285, gallery: 237, wings2: 182, experience: 120, zen: 68 };
+  const XL1 = 228, XR1 = 796; // Mission / Tech
+  const XL2 = 194, XR2 = 830; // Education / Projects
+
+  // ── Spine and branch connectors ────────────────────────────────────────────
+  ctx.strokeStyle = "#c8aa80";
+  ctx.lineWidth = 2;
+  ctx.setLineDash([]);
+
+  // Main vertical spine
+  ctx.beginPath();
+  ctx.moveTo(CX, Y.bridge);
+  ctx.lineTo(CX, Y.zen);
+  ctx.stroke();
+
+  // Wing row 1: Mission ↔ Tech
+  ctx.beginPath();
+  ctx.moveTo(XL1 + 12, Y.wings1); ctx.lineTo(CX, Y.wings1);
+  ctx.moveTo(CX, Y.wings1);       ctx.lineTo(XR1 - 12, Y.wings1);
+  ctx.stroke();
+
+  // Wing row 2: Education ↔ Projects
+  ctx.beginPath();
+  ctx.moveTo(XL2 + 12, Y.wings2); ctx.lineTo(CX, Y.wings2);
+  ctx.moveTo(CX, Y.wings2);       ctx.lineTo(XR2 - 12, Y.wings2);
+  ctx.stroke();
+
+  // ── Torii gate symbols on path ─────────────────────────────────────────────
+  const drawTorii = (x, y, w) => {
+    ctx.save();
+    ctx.strokeStyle = "#8c3e1e";
+    ctx.lineWidth = 2;
+    // kasagi (curved top beam)
+    ctx.beginPath();
+    ctx.moveTo(x - w, y - w * 0.28);
+    ctx.bezierCurveTo(x - w * 0.6, y - w * 0.55, x + w * 0.6, y - w * 0.55, x + w, y - w * 0.28);
+    ctx.stroke();
+    // nuki (straight lower crossbar)
+    ctx.beginPath();
+    ctx.moveTo(x - w * 0.72, y - w * 0.06);
+    ctx.lineTo(x + w * 0.72, y - w * 0.06);
+    ctx.stroke();
+    // two columns
+    ctx.beginPath();
+    ctx.moveTo(x - w * 0.5, y - w * 0.06); ctx.lineTo(x - w * 0.5, y + w * 0.52);
+    ctx.moveTo(x + w * 0.5, y - w * 0.06); ctx.lineTo(x + w * 0.5, y + w * 0.52);
+    ctx.stroke();
+    ctx.restore();
+  };
+  drawTorii(CX, Y.gate + 8, 16);
+  drawTorii(CX, Y.gallery + 8, 14);
+
+  // ── Sakura corner stamps ───────────────────────────────────────────────────
+  ctx.globalAlpha = 0.14;
+  [[54, H - 52, 20], [W - 60, H - 54, 17], [58, 90, 15], [W - 58, 92, 18]]
+    .forEach(([x, y, r]) => drawSakuraStamp(ctx, x, y, r, "#d98798"));
+  ctx.globalAlpha = 1;
+
+  // ── Node definitions ───────────────────────────────────────────────────────
+  const nodes = [
+    { x: CX,  y: Y.bridge,     label: "Bridge",      sub: "start here",     color: "#a0836a", r: 6  },
+    { x: CX,  y: Y.pavilion,   label: "Map",         sub: "central pavilion",color: "#9670a9", r: 8  },
+    { x: XL1, y: Y.wings1,     label: "Mission",     sub: "Sashit Vijay",   color: "#c76576", r: 10, side: "L" },
+    { x: XR1, y: Y.wings1,     label: "Tech Stack",  sub: "Languages",      color: "#d0a45f", r: 10, side: "R" },
+    { x: XL2, y: Y.wings2,     label: "Education",   sub: "ASU CS, 4.0",    color: "#7f93a7", r: 10, side: "L" },
+    { x: XR2, y: Y.wings2,     label: "Projects",    sub: "MyLLM +",        color: "#6f9b82", r: 10, side: "R" },
+    { x: CX,  y: Y.experience, label: "Experience",  sub: "Engineering",    color: "#b46b51", r: 11 },
+    { x: CX,  y: Y.zen,        label: "Contact",     sub: "Zen Garden",     color: "#d6889a", r: 10 },
   ];
 
-  ctx.fillStyle = "rgba(158, 94, 51, 0.22)";
-  roundRect(ctx, 455, 262, 1010, 54, 8);
-  ctx.fill();
-  roundRect(ctx, 919, 316, 82, 430, 8);
-  ctx.fill();
-  ctx.strokeStyle = "rgba(171, 102, 55, 0.45)";
-  ctx.lineWidth = 6;
-  ctx.beginPath();
-  ctx.moveTo(960, 316);
-  ctx.lineTo(960, 746);
-  ctx.moveTo(455, 289);
-  ctx.lineTo(1465, 289);
-  ctx.stroke();
+  // ── Draw nodes ─────────────────────────────────────────────────────────────
+  nodes.forEach(({ x, y, label, sub, color, r, side }) => {
+    // Soft glow halo
+    const halo = ctx.createRadialGradient(x, y, r * 0.5, x, y, r + 8);
+    halo.addColorStop(0, color + "44");
+    halo.addColorStop(1, color + "00");
+    ctx.beginPath(); ctx.arc(x, y, r + 8, 0, Math.PI * 2);
+    ctx.fillStyle = halo; ctx.fill();
 
-  ctx.globalAlpha = 0.16;
-  [
-    [210, 250, 16],
-    [350, 310, 13],
-    [1510, 292, 15],
-    [1660, 370, 12],
-    [410, 792, 13],
-    [1485, 785, 14],
-  ].forEach(([x, y, size]) => drawSakuraStamp(ctx, x, y, size, "#d98798"));
-  ctx.globalAlpha = 1;
+    // White fill ring
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = "#fef7e8"; ctx.fill();
+    ctx.strokeStyle = color; ctx.lineWidth = 2.5; ctx.stroke();
 
-  rooms.forEach((room) => {
-    const x = room.x;
-    const y = room.y;
-    ctx.fillStyle = "rgba(255, 248, 225, 0.88)";
-    roundRect(ctx, x, y, room.w, room.h, 24);
-    ctx.fill();
-    ctx.strokeStyle = room.color;
-    ctx.lineWidth = 12;
-    roundRect(ctx, x + 7, y + 7, room.w - 14, room.h - 14, 20);
-    ctx.stroke();
-    drawMapIcon(ctx, room.icon, room.color, x + room.w * 0.18, y + room.h * 0.52, Math.min(room.w, room.h) * 0.18);
-    ctx.fillStyle = "#2f211a";
-    ctx.font = `800 ${room.w < 230 ? 38 : 44}px Inter, Arial, sans-serif`;
-    ctx.fillText(room.label, x + room.w * 0.58, y + room.h / 2 - 10);
-    ctx.fillStyle = "#76513c";
-    ctx.font = `700 ${room.w < 230 ? 22 : 28}px Inter, Arial, sans-serif`;
-    ctx.fillText(room.sub, x + room.w * 0.58, y + room.h / 2 + 34);
+    // Inner dot
+    ctx.beginPath(); ctx.arc(x, y, r * 0.42, 0, Math.PI * 2);
+    ctx.fillStyle = color; ctx.fill();
+
+    // Labels
+    const isL = side === "L", isR = side === "R", isC = !side;
+    ctx.textAlign = isL ? "right" : isR ? "left" : "center";
+    const lx = isL ? x - r - 9 : isR ? x + r + 9 : x;
+    const ly = isC ? y - r - 10 : y - 4;
+    ctx.fillStyle = "#2a160a";
+    ctx.font = "700 16px 'IBM Plex Sans JP', 'Segoe UI', Arial, sans-serif";
+    ctx.fillText(label, lx, ly);
+    ctx.fillStyle = "#8a5e38";
+    ctx.font = "400 11px 'IBM Plex Sans JP', 'Segoe UI', Arial, sans-serif";
+    ctx.fillText(sub, lx, ly + 15);
   });
 
-  ctx.fillStyle = "#a14d55";
-  ctx.font = "800 26px Inter, Arial, sans-serif";
-  ctx.fillText("Press F nearby to inspect each section.", cw / 2, ch - 96);
+  // ── Footer ─────────────────────────────────────────────────────────────────
+  ctx.fillStyle = "#a07848";
+  ctx.font = "400 11px 'IBM Plex Sans JP', 'Segoe UI', Arial, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("walk north along the path  ·  press F to inspect each section", CX, H - 16);
 
-  const texture = new THREE.CanvasTexture(textureCanvas);
+  const texture = new THREE.CanvasTexture(c);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = 4;
   return texture;
@@ -2894,117 +2936,53 @@ function updateMapFocusCamera(delta) {
   camera.lookAt(focus.lookAt);
 }
 
-function updateLighting(delta) {
-  state.dayTime = (state.dayTime + delta * 0.00065) % 1;
-  const t = state.dayTime;
-  const angle = t * Math.PI * 2;
-  const sunHeight = Math.sin(angle) * 18;
-  const dayTop = new THREE.Color("#7bb7ff");
-  const dayHorizon = new THREE.Color("#ffe0ad");
-  const dayBottom = new THREE.Color("#f4b58e");
-  const sunsetTop = new THREE.Color("#9c7bc1");
-  const sunsetHorizon = new THREE.Color("#ffad78");
-  const sunsetBottom = new THREE.Color("#816098");
-  const nightTop = new THREE.Color("#27365f");
-  const nightHorizon = new THREE.Color("#5b5684");
-  const nightBottom = new THREE.Color("#26304f");
+function applyTheme(isDark) {
+  document.documentElement.dataset.theme = isDark ? "dark" : "light";
+  if (timeLabel) timeLabel.textContent = isDark ? "Dark" : "Light";
 
-  const top = new THREE.Color();
-  const horizon = new THREE.Color();
-  const bottom = new THREE.Color();
-  const daylight = THREE.MathUtils.smoothstep(sunHeight, -2, 12);
-  const evening = 1 - THREE.MathUtils.smoothstep(Math.abs(sunHeight), 0, 9);
+  // ── Scene background + fog ─────────────────────────────────────────────
+  // Match exact bg tokens from the main portfolio stylesheet
+  const bgColor = isDark ? "#140b12" : "#fff6ea";
+  scene.background.set(bgColor);
+  scene.fog.color.set(bgColor);
+  scene.fog.near = isDark ? 10 : 18;
+  scene.fog.far  = isDark ? 34 : 58;
 
-  if (sunHeight > 6) {
-    top.copy(dayTop);
-    horizon.copy(dayHorizon);
-    bottom.copy(dayBottom);
-    timeLabel.textContent = t < 0.25 ? "Morning Light" : "Bright Day";
-  } else if (sunHeight > -3) {
-    const blend = Math.max(sunHeight + 3, 0) / 9;
-    top.copy(sunsetTop).lerp(dayTop, blend);
-    horizon.copy(sunsetHorizon).lerp(dayHorizon, blend);
-    bottom.copy(sunsetBottom).lerp(dayBottom, blend);
-    timeLabel.textContent = t < 0.25 ? "Sakura Dawn" : "Sunset";
+  // ── Sky dome ───────────────────────────────────────────────────────────
+  if (isDark) {
+    skyUniforms.topColor.value.set("#0c0818");
+    skyUniforms.horizonColor.value.set("#1a0d1a");
+    skyUniforms.bottomColor.value.set("#0a0810");
   } else {
-    const blend = Math.max(sunHeight + 18, 0) / 15;
-    top.copy(nightTop).lerp(sunsetTop, blend);
-    horizon.copy(nightHorizon).lerp(sunsetHorizon, blend);
-    bottom.copy(nightBottom).lerp(sunsetBottom, blend);
-    timeLabel.textContent = "Lantern Night";
+    skyUniforms.topColor.value.set("#c8ddf8");
+    skyUniforms.horizonColor.value.set("#fff6ea");
+    skyUniforms.bottomColor.value.set("#f8ead8");
   }
 
-  skyUniforms.topColor.value.copy(top);
-  skyUniforms.horizonColor.value.copy(horizon);
-  skyUniforms.bottomColor.value.copy(bottom);
-  scene.background.copy(horizon);
-  scene.fog.color.copy(horizon);
+  // ── Ambient + sun lighting ─────────────────────────────────────────────
+  // Dark:  site's deep plum backdrop (#140b12), warm pink ambient fills the
+  //        room (matches the pink blob glow on index.html dark mode).
+  // Light: site's warm cream backdrop (#fff6ea), bright warm daylight.
+  hemiLight.color.set(isDark ? "#f3a7bc" : "#fff6ea");
+  hemiLight.groundColor.set(isDark ? "#271822" : "#d8b882");
+  hemiLight.intensity          = isDark ? 1.8 : 2.8;
+  sun.color.set(isDark ? "#f3a7bc" : "#ffe8a0");
+  sun.intensity                = isDark ? 0.45 : 1.6;
+  moonLight.intensity          = isDark ? 0.22 : 0.0;
+  renderer.toneMappingExposure = isDark ? 1.1 : 1.35;
 
-  waterUniforms.horizonColor.value
-    .copy(new THREE.Color("#8ed5f4"))
-    .lerp(horizon, 0.16)
-    .lerp(top, 0.08);
-  waterUniforms.fogColor.value.copy(horizon);
-  waterUniforms.fogNear.value = scene.fog.near;
-  waterUniforms.fogFar.value = scene.fog.far;
-  const sunIntensityFactor = THREE.MathUtils.clamp(daylight + evening * 0.5, 0.0, 1.0);
-  waterUniforms.sunColor.value
-    .copy(new THREE.Color("#fff0c8"))
-    .lerp(new THREE.Color("#b9c8ff"), 1 - sunIntensityFactor);
-  waterUniforms.sunDir.value
-    .copy(sun.position)
-    .normalize();
-  const shallow = new THREE.Color("#54bde9");
-  const shallowNight = new THREE.Color("#236ba8");
-  const deep = new THREE.Color("#1b6eaf");
-  const deepNight = new THREE.Color("#103d72");
-  waterUniforms.shallowColor.value
-    .copy(shallow)
-    .lerp(shallowNight, 1 - sunIntensityFactor * 0.75);
-  waterUniforms.deepColor.value
-    .copy(deep)
-    .lerp(deepNight, 1 - sunIntensityFactor * 0.65);
-
-  const sunX = -Math.cos(angle) * 54;
-  const sunY = sunHeight + 18;
-  sun.position.set(-Math.cos(angle) * 22, Math.max(4, sunHeight + 12), -28);
-  sunSprite.position.set(sunX, sunY, -78);
-  sunSprite.material.opacity = THREE.MathUtils.clamp(daylight + evening * 0.7, 0, 1);
-
-  moonSprite.position.set(-sunX * 0.9, Math.max(8, -sunHeight + 13), -78);
-  moonSprite.material.opacity = THREE.MathUtils.clamp(1 - daylight + evening * 0.2, 0, 0.82);
-
-  sun.intensity = THREE.MathUtils.clamp(0.75 + daylight * 2.25 + evening * 0.55, 0.55, 3.0);
-  moonLight.position.set(-sun.position.x, Math.max(8, -sunHeight + 12), 30);
-  moonLight.intensity = THREE.MathUtils.clamp((1 - daylight) * 1.25 + evening * 0.35, 0.18, 1.35);
-  hemiLight.intensity = THREE.MathUtils.clamp(1.0 + daylight * 1.25 + evening * 0.48, 0.95, 2.35);
-  renderer.toneMappingExposure = THREE.MathUtils.clamp(1.12 + daylight * 0.22 + evening * 0.12, 1.06, 1.38);
-  scene.fog.near = 36;
-  scene.fog.far = 108;
-
+  // ── Lanterns glow bright at night, subtle during the day ──────────────
   animated.forEach((item) => {
     if (item.type !== "lantern") return;
-    const nightBoost = THREE.MathUtils.clamp(1.35 - daylight + evening * 0.9, 0.45, 1.85);
-    item.mesh.material.opacity = 1;
-    if (item.light) item.light.userData.targetIntensity = 1.35 * nightBoost;
+    if (item.light) item.light.userData.targetIntensity = isDark ? 2.4 : 0.5;
   });
 }
 
-function updateAnimated(delta, now) {
-  doors.forEach((door) => {
-    door.progress = damp(door.progress, door.target, 9, delta);
-    door.panels.forEach((panel) => {
-      panel.group.position.x = THREE.MathUtils.lerp(panel.closedX, panel.openX, door.progress);
-      panel.group.position.z = THREE.MathUtils.lerp(panel.closedZ, panel.openZ, door.progress);
-    });
-    door.colliders.forEach((collider) => {
-      collider.active = door.target < 0.5 && door.progress < 0.18;
-    });
-    if (door.solidCollider) {
-      door.solidCollider.active = door.target < 0.5 || door.progress < 0.78;
-    }
-  });
+function updateLighting(delta) {
+  // No-op: theming is handled by applyTheme(); lantern flicker is in updateAnimated().
+}
 
+function updateAnimated(delta, now) {
   animated.forEach((item) => {
     if (item.type === "water") {
       item.mesh.material.uniforms.time.value = now * 0.00145;
@@ -3055,14 +3033,6 @@ function updateSpotLabel() {
   if (state.mapFocus) {
     spotLabel.textContent = "House Map";
     showInteractionHint("F or Esc to return");
-    return;
-  }
-
-  const nearbyDoor = getNearbyDoor();
-  if (nearbyDoor) {
-    state.activeInteractable = null;
-    spotLabel.textContent = nearbyDoor.label;
-    showInteractionHint(`F to ${nearbyDoor.open ? "close" : "open"}`);
     return;
   }
 
@@ -3128,26 +3098,8 @@ function getAimedInteractable(event = null) {
   return interactables.find((item) => item.id === hit.object.userData.interactableId) || null;
 }
 
-function getNearbyDoor() {
-  let closest = null;
-  let closestDistance = Infinity;
-  doors.forEach((door) => {
-    const distance = Math.hypot(camera.position.x - door.center.x, camera.position.z - door.center.y);
-    if (distance < 2.8 && distance < closestDistance && state.floorY < 0.8) {
-      closest = door;
-      closestDistance = distance;
-    }
-  });
-  return closest;
-}
-
-function toggleFrontDoor() {
-  const door = getNearbyDoor();
-  if (!door) return false;
-  door.open = !door.open;
-  door.target = door.open ? 1 : 0;
-  return true;
-}
+function getNearbyDoor() { return null; }
+function toggleFrontDoor() { return false; }
 
 function openNearbyPortfolio() {
   const item = getNearbyInteractable() || getAimedInteractable();
@@ -3304,6 +3256,8 @@ function createPortfolioCard(card) {
   return node;
 }
 
+let animationFrameId = null;
+
 function animate(now) {
   const delta = Math.min((now - state.last) / 1000, 0.05);
   state.last = now;
@@ -3313,8 +3267,20 @@ function animate(now) {
   updateAnimated(delta, now);
   updateSpotLabel();
   renderer.render(scene, camera);
-  requestAnimationFrame(animate);
+  animationFrameId = requestAnimationFrame(animate);
 }
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    if (animationFrameId !== null) {
+      cancelAnimationFrame(animationFrameId);
+      animationFrameId = null;
+    }
+  } else {
+    state.last = performance.now();
+    animationFrameId = requestAnimationFrame(animate);
+  }
+});
 
 function teleportTo(name) {
   const spot = spots[name];
@@ -3421,9 +3387,7 @@ document.addEventListener("keydown", (event) => {
   }
   state.keys.add(event.code);
   if (event.code === "KeyF" && !event.repeat) {
-    if (!toggleFrontDoor()) {
-      openNearbyPortfolio();
-    }
+    openNearbyPortfolio();
   }
   if (event.code === "Space") {
     intro.classList.add("is-hidden");
