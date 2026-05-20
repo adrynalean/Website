@@ -99,13 +99,13 @@ const materials = {
   roof: blockMaterial(palette.roof, palette.roofHighlight),
   roofDark: blockMaterial(palette.roofDark, "#9b4526"),
   blossomPanel: blockMaterial(palette.blossomPanel, "#ffd4da"),
-  paper: blockMaterial(palette.paper, "#fff0ce"),
-  paperDim: blockMaterial(palette.paperDim, "#fff0ce"),
-  floor: blockMaterial("#d8b982", "#f1d6a7"),
-  floorAlt: plankMaterial("#e7c894", "#fff0c7", 10),
-  woodLight: blockMaterial("#d8b98a", "#f2d9ac"),
-  tatami: blockMaterial("#d8c98d", "#eee0a8"),
-  rug: blockMaterial("#ead0ae", "#fff0c9"),
+  paper: blockMaterial("#ede4d8", "#f5ece4"),
+  paperDim: blockMaterial("#e0d6c8", "#ede4d8"),
+  floor: blockMaterial("#b8905e", "#d4a872"),
+  floorAlt: plankMaterial("#c49a68", "#dab47a", 10),
+  woodLight: blockMaterial("#c8a07a", "#deb892"),
+  tatami: blockMaterial("#c8b87a", "#ddd096"),
+  rug: blockMaterial("#d8c098", "#ecdab0"),
   stone: blockMaterial(palette.stone, "#969085"),
   grass: createGrassMaterial(),
   shore: blockMaterial(palette.shore, "#826650"),
@@ -120,14 +120,14 @@ const materials = {
   flower: blockMaterial("#ef9fb9", "#ffd0dc"),
   ceramic: blockMaterial("#e4d7bf", "#fff1cf"),
   paperWarm: blockMaterial("#ffe2bc", "#fff3ce"),
-  ceiling: new THREE.MeshBasicMaterial({ color: "#f4dfbd" }),
+  ceiling: new THREE.MeshBasicMaterial({ color: "#e8e0d4" }),
   lily: new THREE.MeshBasicMaterial({ color: "#6f965c", side: THREE.DoubleSide }),
   lotus: new THREE.MeshBasicMaterial({ color: "#ff96bd", side: THREE.DoubleSide }),
   lanternGlow: new THREE.MeshBasicMaterial({ color: palette.lantern }),
   lanternWarm: new THREE.MeshBasicMaterial({ color: "#ffdba6" }),
   water: createWaterMaterial(),
   tatamiWeave: tatamiMaterial(1, 1),
-  charcoal: blockMaterial("#352822", "#48362d"),
+  charcoal: blockMaterial("#1a1412", "#261e18"),
   jade: blockMaterial("#5c7a5e", "#86a78a"),
   blackLacquer: blockMaterial("#5f4a38", "#8a7057"),
   gold: blockMaterial(palette.gold, "#fff5da"),
@@ -2176,7 +2176,7 @@ function addLantern(x, z, y, size) {
   const shade = block(size * 0.6, size * 0.6, size * 0.6, materials.lanternGlow, x, y + size * 0.22, z);
   shade.userData.baseIntensity = 1;
   const shouldCastLight = size >= 0.42 || Math.abs(x) > 3.9 || Math.abs(z) < 11;
-  const light = shouldCastLight ? new THREE.PointLight("#ffb36b", 1.6, 8, 2) : null;
+  const light = shouldCastLight ? new THREE.PointLight("#ffc880", 1.1, 5, 2.5) : null;
   if (light) {
     light.position.set(sx(x), y + size * 0.24, sz(z));
     scene.add(light);
@@ -2960,21 +2960,21 @@ function applyTheme(isDark) {
   }
 
   // ── Ambient + sun lighting ─────────────────────────────────────────────
-  // Dark:  site's deep plum backdrop (#140b12), warm pink ambient fills the
-  //        room (matches the pink blob glow on index.html dark mode).
-  // Light: site's warm cream backdrop (#fff6ea), bright warm daylight.
-  hemiLight.color.set(isDark ? "#f3a7bc" : "#fff6ea");
-  hemiLight.groundColor.set(isDark ? "#271822" : "#d8b882");
-  hemiLight.intensity          = isDark ? 1.8 : 2.8;
-  sun.color.set(isDark ? "#f3a7bc" : "#ffe8a0");
-  sun.intensity                = isDark ? 0.45 : 1.6;
-  moonLight.intensity          = isDark ? 0.22 : 0.0;
-  renderer.toneMappingExposure = isDark ? 1.1 : 1.35;
+  // Dark:  lanterns are the sole light source — warm amber hemi fill,
+  //        sun off so no directional blobs on walls.
+  // Light: clean bright daylight through shoji screens.
+  hemiLight.color.set(isDark ? "#fff0d8" : "#ffffff");
+  hemiLight.groundColor.set(isDark ? "#0c0808" : "#d4b870");
+  hemiLight.intensity          = isDark ? 0.55 : 2.6;
+  sun.color.set(isDark ? "#ffc880" : "#ffe8a0");
+  sun.intensity                = isDark ? 0.0 : 1.5;
+  moonLight.intensity          = isDark ? 0.1 : 0.0;
+  renderer.toneMappingExposure = isDark ? 1.25 : 1.3;
 
-  // ── Lanterns glow bright at night, subtle during the day ──────────────
+  // ── Lanterns: primary light at night, off during the day ──────────────
   animated.forEach((item) => {
     if (item.type !== "lantern") return;
-    if (item.light) item.light.userData.targetIntensity = isDark ? 2.4 : 0.5;
+    if (item.light) item.light.userData.targetIntensity = isDark ? 1.8 : 0.0;
   });
 }
 
