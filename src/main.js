@@ -2992,7 +2992,7 @@ function updateLighting(delta) {
       // Interior lanterns: stay dimly lit all day, brighter at night
       nightBoost = THREE.MathUtils.clamp(1.35 - daylight * 0.6 + evening * 0.9, 0.45, 1.85);
     }
-    item.mesh.visible = nightBoost > 0.04;
+    item.mesh.visible = true; // shade is always physically present
     item.mesh.material.opacity = 1;
     if (item.light) {
       item.light.visible = nightBoost > 0.04;
