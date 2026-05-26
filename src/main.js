@@ -729,7 +729,7 @@ function addBridge() {
     block(0.22, 0.45, 19.4, materials.bridgeDark, x, 0.38, 16.35);
     for (let z = 7.4; z <= 25.3; z += 3.6) {
       block(0.34, 1.15, 0.34, materials.bridgeDark, x, 0.72, z);
-      addLantern(x, z, 1.5, 0.36);
+      addLantern(x, z, 1.5, 0.36, true);
     }
   });
   addBoundaryFence(0, 26.0, 4.8, "x");
@@ -963,8 +963,8 @@ function addInteriorDetails() {
   addBonsai(4.35, 1.68, 4.85);
   addBonsai(-4.35, 1.68, 4.85);
 
-  addFloorLantern(-4.35, 5.45, 1.2);
-  addFloorLantern(4.35, 5.45, 1.2);
+  addFloorLantern(-4.35, 5.45, 1.2, 0.72, true);
+  addFloorLantern(4.35, 5.45, 1.2, 0.72, true);
   addBonsai(-3.3, 0.72, -10.45);
   addIkebana(3.3, 0.72, -10.45);
 
@@ -1233,7 +1233,7 @@ function makePortfolioTexture(title, subtitle, accent, width = 4.6, height = 1.9
   roundRect(ctx, margin * 1.65, margin * 1.65, cw - margin * 3.3, ch - margin * 3.3, 14);
   ctx.stroke();
 
-  drawPortfolioCrest(ctx, title, accent, cw * 0.18, ch * 0.5, ch * 0.24);
+  drawPortfolioCrest(ctx, title, accent, cw * 0.18, ch * 0.5, ch * 0.145);
 
   ctx.fillStyle = "#2f211a";
   ctx.font = `700 ${Math.round(ch * 0.18)}px Georgia`;
@@ -1716,7 +1716,7 @@ function addBonsai(x, y, z) {
   block(0.12, 0.1, 0.12, materials.jade, x - 0.04, y + 0.7, z + 0.06);
 }
 
-function addFloorLantern(x, z, height = 1.25, baseY = 0.72) {
+function addFloorLantern(x, z, height = 1.25, baseY = 0.72, exterior = false) {
   block(0.32, 0.08, 0.32, materials.blackLacquer, x, baseY + 0.04, z);
   block(0.26, 0.04, 0.26, materials.bridgeDark, x, baseY + 0.1, z);
   for (const ox of [-1, 1]) {
@@ -1731,7 +1731,7 @@ function addFloorLantern(x, z, height = 1.25, baseY = 0.72) {
   light.position.set(sx(x), baseY + height * 0.55, sz(z));
   scene.add(light);
   shade.userData.baseIntensity = 1;
-  animated.push({ type: "lantern", mesh: shade, light });
+  animated.push({ type: "lantern", mesh: shade, light, exterior });
 }
 
 function addBambooStalk(x, z, height = 2.0, count = 3) {
@@ -1869,10 +1869,10 @@ function addExteriorDetails() {
   block(37.5, 0.24, 36.8, materials.shore, 0, -0.18, -9.6);
   block(36.0, 0.36, 35.3, materials.grass, 0, -0.02, -9.6);
 
-  addLantern(-4.6, 7.1, 2.1, 0.52);
-  addLantern(4.6, 7.1, 2.1, 0.52);
-  addLantern(-6.9, 5.4, 2.0, 0.42);
-  addLantern(6.9, 5.4, 2.0, 0.42);
+  addLantern(-4.6, 7.1, 2.1, 0.52, true);
+  addLantern(4.6, 7.1, 2.1, 0.52, true);
+  addLantern(-6.9, 5.4, 2.0, 0.42, true);
+  addLantern(6.9, 5.4, 2.0, 0.42, true);
 
   addGardenBed(-5.8, 7.4, 3.8, 0.62);
   addGardenBed(5.8, 7.4, 3.8, 0.62);
@@ -2130,17 +2130,16 @@ function addToriiGate(x, z, rotationY) {
   addCollider(x + 1.95, z, 0.7, 0.7);
 }
 
-function addLantern(x, z, y, size) {
+function addLantern(x, z, y, size, exterior = false) {
   block(size * 0.18, size * 1.1, size * 0.18, materials.bridgeDark, x, y - size * 0.3, z);
   const shade = block(size * 0.6, size * 0.6, size * 0.6, materials.lanternGlow, x, y + size * 0.22, z);
   shade.userData.baseIntensity = 1;
-  const shouldCastLight = size >= 0.42 || Math.abs(x) > 3.9 || Math.abs(z) < 11;
-  const light = shouldCastLight ? new THREE.PointLight("#ffb36b", 1.6, 8, 2) : null;
-  if (light) {
-    light.position.set(sx(x), y + size * 0.24, sz(z));
-    scene.add(light);
-  }
-  animated.push({ type: "lantern", mesh: shade, light });
+  // All lanterns get a point light; use shorter range for smaller bridge lanterns
+  const lightDist = size >= 0.42 ? 8 : 5;
+  const light = new THREE.PointLight("#ffb36b", 1.4, lightDist, 2);
+  light.position.set(sx(x), y + size * 0.24, sz(z));
+  scene.add(light);
+  animated.push({ type: "lantern", mesh: shade, light, exterior });
 }
 
 function addSakuraTree(x, z, scale = 1) {
@@ -2985,9 +2984,20 @@ function updateLighting(delta) {
 
   animated.forEach((item) => {
     if (item.type !== "lantern") return;
-    const nightBoost = THREE.MathUtils.clamp(1.35 - daylight + evening * 0.9, 0.45, 1.85);
+    let nightBoost;
+    if (item.exterior) {
+      // Exterior lamps (bridge, entrance): fully off in daylight, on at dusk/night
+      nightBoost = THREE.MathUtils.clamp(1.5 - daylight * 1.5 + evening * 1.3, 0.0, 2.0);
+    } else {
+      // Interior lanterns: stay dimly lit all day, brighter at night
+      nightBoost = THREE.MathUtils.clamp(1.35 - daylight * 0.6 + evening * 0.9, 0.45, 1.85);
+    }
+    item.mesh.visible = nightBoost > 0.04;
     item.mesh.material.opacity = 1;
-    if (item.light) item.light.userData.targetIntensity = 1.35 * nightBoost;
+    if (item.light) {
+      item.light.visible = nightBoost > 0.04;
+      item.light.userData.targetIntensity = 1.35 * nightBoost;
+    }
   });
 }
 
