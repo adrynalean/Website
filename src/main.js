@@ -42,7 +42,7 @@ const keyboardTurnSpeed = 1.7;
 const lookEase = 18;
 const moveEase = 9.5;
 const stopEase = 12;
-const WORLD_SCALE = 0.65;
+const WORLD_SCALE = 0.39;
 
 function sx(value) {
   return value * WORLD_SCALE;
