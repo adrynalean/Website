@@ -1091,7 +1091,7 @@ function addTableMap() {
   block(0.08, 0.055, 1.3, materials.bridgeDark, 1.27, 1.13, 0, group);
 
   const panel = new THREE.Mesh(
-    new THREE.PlaneGeometry(sx(2.2), 1.12),
+    new THREE.PlaneGeometry(sx(2.1), sz(1.1)),
     new THREE.MeshBasicMaterial({
       map: makeHouseMapTexture(),
       transparent: true,
@@ -1192,7 +1192,8 @@ function facingToRotation(facing) {
 
 function makePortfolioTexture(title, subtitle, accent, width = 4.6, height = 1.9) {
   const textureCanvas = document.createElement("canvas");
-  const aspect = Math.max(1.2, width / height);
+  // Use actual 3D panel aspect (width is scaled by WORLD_SCALE, height is not)
+  const aspect = Math.max(1.0, (width * WORLD_SCALE) / height);
   textureCanvas.width = 864;
   textureCanvas.height = Math.round(textureCanvas.width / aspect);
   const ctx = textureCanvas.getContext("2d");
