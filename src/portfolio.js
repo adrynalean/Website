@@ -27,17 +27,25 @@ const roles = [
 ];
 let roleIndex = 0;
 
+// Shared abort token — replaced each cycle so any in-flight call stops itself
+let typeAbortToken = { cancelled: false };
+
 const typeRole = async (word) => {
-  if (!roleWord) {
-    return;
-  }
+  if (!roleWord) return;
+
+  // Cancel the previous call and claim a fresh token for this one
+  typeAbortToken.cancelled = true;
+  const token = { cancelled: false };
+  typeAbortToken = token;
 
   while (roleWord.textContent.length) {
+    if (token.cancelled) return;
     roleWord.textContent = roleWord.textContent.slice(0, -1);
     await new Promise((resolve) => window.setTimeout(resolve, 35));
   }
 
   for (const letter of word) {
+    if (token.cancelled) return;
     roleWord.textContent += letter;
     await new Promise((resolve) => window.setTimeout(resolve, 52));
   }
