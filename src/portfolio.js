@@ -241,6 +241,32 @@ const drawHeroBlob = () => {
 
 drawHeroBlob();
 
+const portalGate = document.querySelector("#portalGate");
+const loadingOverlay = document.querySelector("#loadingOverlay");
+const loadingBar = document.querySelector("#loadingBar");
+
+if (portalGate && loadingOverlay && loadingBar) {
+  portalGate.addEventListener("click", (e) => {
+    e.preventDefault();
+    const dest = portalGate.getAttribute("href");
+
+    loadingOverlay.classList.add("is-active");
+    loadingOverlay.removeAttribute("aria-hidden");
+
+    // Trigger bar fill on next frame so transition fires
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        loadingBar.style.width = "100%";
+      });
+    });
+
+    // Navigate once the bar finishes (2.4s fill + 0.2s buffer)
+    window.setTimeout(() => {
+      window.location.href = dest;
+    }, 2650);
+  });
+}
+
 if (!reduceMotion) {
   document.querySelectorAll(".project-copy").forEach((card) => {
     let tx = 0, ty = 0, cx = 0, cy = 0, lift = 0, targetLift = 0;
