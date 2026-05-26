@@ -42,7 +42,7 @@ const keyboardTurnSpeed = 1.7;
 const lookEase = 18;
 const moveEase = 9.5;
 const stopEase = 12;
-const WORLD_SCALE = 0.39;
+const WORLD_SCALE = 0.65;
 
 function sx(value) {
   return value * WORLD_SCALE;
@@ -766,8 +766,8 @@ function addHouse() {
 }
 
 function addHouseWalls() {
-  const wallY = 2.95;
-  const h = 4.6;
+  const wallY = 2.35;
+  const h = 3.8;
   const zFront = 6.8;
   const zBack = -26.05;
   const xLeft = -17.1;
@@ -798,21 +798,21 @@ function addHouseWalls() {
 }
 
 function addBackDoorFrame(x, z) {
-  block(0.24, 3.1, 0.18, materials.bridgeDark, x - 1.25, 2.27, z);
-  block(0.24, 3.1, 0.18, materials.bridgeDark, x + 1.25, 2.27, z);
-  block(2.75, 0.2, 0.2, materials.bridgeDark, x, 3.86, z);
-  block(2.35, 1.55, 0.16, materials.paperDim, x, 4.6, z);
+  block(0.24, 2.6, 0.18, materials.bridgeDark, x - 1.25, 1.87, z);
+  block(0.24, 2.6, 0.18, materials.bridgeDark, x + 1.25, 1.87, z);
+  block(2.75, 0.2, 0.2, materials.bridgeDark, x, 3.26, z);
+  block(2.35, 1.05, 0.16, materials.paperDim, x, 3.86, z);
   block(2.25, 0.12, 0.56, materials.woodLight, x, 0.82, z + 0.1);
 }
 
 function addFrontDoor() {
   const z = 6.86;
-  block(0.28, 2.3, 0.18, materials.bridgeDark, -1.62, 1.86, z + 0.08);
-  block(0.28, 2.3, 0.18, materials.bridgeDark, 1.62, 1.86, z + 0.08);
-  block(3.55, 0.2, 0.2, materials.bridgeDark, 0, 2.98, z + 0.08);
-  block(3.2, 0.12, 0.18, materials.gold, 0, 2.78, z + 0.12);
-  block(3.25, 2.25, 0.16, materials.paperDim, 0, 4.16, z + 0.1);
-  block(3.45, 0.18, 0.22, materials.bridgeDark, 0, 5.28, z + 0.1);
+  block(0.28, 2.3, 0.18, materials.bridgeDark, -1.62, 1.66, z + 0.08);
+  block(0.28, 2.3, 0.18, materials.bridgeDark, 1.62, 1.66, z + 0.08);
+  block(3.55, 0.2, 0.2, materials.bridgeDark, 0, 2.78, z + 0.08);
+  block(3.2, 0.12, 0.18, materials.gold, 0, 2.58, z + 0.12);
+  block(3.25, 1.65, 0.16, materials.paperDim, 0, 3.50, z + 0.1);
+  block(3.45, 0.18, 0.22, materials.bridgeDark, 0, 4.35, z + 0.1);
   block(3.0, 0.12, 0.42, materials.woodLight, 0, 0.82, z - 0.04);
   frontDoor.center.set(0, z);
 
@@ -915,15 +915,15 @@ function partitionWithDoor(x, z, length, axis, gapCenter, gapSize, doorLabel = "
     const centerOffset = (a + b) / 2;
     const sx = axis === "x" ? x + centerOffset : x;
     const sz = axis === "z" ? z + centerOffset : z;
-    wallSegment(sx, sz, segmentLength, 3.4, axis, 2.35);
+    wallSegment(sx, sz, segmentLength, 2.8, axis, 2.05);
     addCollider(sx, sz, axis === "x" ? segmentLength : 0.42, axis === "z" ? segmentLength : 0.42);
   });
 
   const headerX = axis === "x" ? x + gapCenter : x;
   const headerZ = axis === "z" ? z + gapCenter : z;
-  block(axis === "x" ? gapSize : 0.34, 1.35, axis === "z" ? gapSize : 0.34, materials.paperDim, headerX, 4.45, headerZ);
-  block(axis === "x" ? gapSize : 0.42, 0.18, axis === "z" ? gapSize : 0.42, materials.bridgeDark, headerX, 3.55, headerZ);
-  block(axis === "x" ? gapSize : 0.42, 0.14, axis === "z" ? gapSize : 0.42, materials.bridgeDark, headerX, 5.15, headerZ);
+  block(axis === "x" ? gapSize : 0.34, 0.85, axis === "z" ? gapSize : 0.34, materials.paperDim, headerX, 3.75, headerZ);
+  block(axis === "x" ? gapSize : 0.42, 0.18, axis === "z" ? gapSize : 0.42, materials.bridgeDark, headerX, 3.25, headerZ);
+  block(axis === "x" ? gapSize : 0.42, 0.14, axis === "z" ? gapSize : 0.42, materials.bridgeDark, headerX, 4.15, headerZ);
   if (doorLabel) {
     addSlidingDoor(doorLabel, headerX, headerZ, axis, gapSize, initiallyOpen);
   }
@@ -933,19 +933,19 @@ function addInteriorDetails() {
   addCeilingBeams();
 
   [
-    [0, 4.85, 4.9, 0.42],
-    [0, -4.3, 4.85, 0.38],
-    [0, -17.65, 4.75, 0.34],
-    [-11.6, -3.5, 4.72, 0.34],
-    [11.6, -3.5, 4.72, 0.34],
+    [0, 4.85, 3.4, 0.42],
+    [0, -4.3, 3.35, 0.38],
+    [0, -17.65, 3.25, 0.34],
+    [-11.6, -3.5, 3.22, 0.34],
+    [11.6, -3.5, 3.22, 0.34],
   ].forEach(([x, z, y, size]) => addLantern(x, z, y, size));
 
-  addInteriorLight(0, 2.2, 4.4, 1.55, 18);
-  addInteriorLight(0, -4.3, 4.2, 1.35, 18);
-  addInteriorLight(-11.55, -4.4, 4.15, 1.1, 15);
-  addInteriorLight(11.55, -4.4, 4.15, 1.1, 15);
-  addInteriorLight(0, -19.5, 4.3, 1.25, 18);
-  addInteriorLight(0, -11.3, 4.25, 1.0, 16);
+  addInteriorLight(0, 2.2, 2.9, 1.55, 18);
+  addInteriorLight(0, -4.3, 2.7, 1.35, 18);
+  addInteriorLight(-11.55, -4.4, 2.65, 1.1, 15);
+  addInteriorLight(11.55, -4.4, 2.65, 1.1, 15);
+  addInteriorLight(0, -19.5, 2.8, 1.25, 18);
+  addInteriorLight(0, -11.3, 2.75, 1.0, 16);
 
   // --- Main Hall ---
   addTatamiArea(0, -2.05, 5, 5);
@@ -1524,12 +1524,12 @@ function addInteriorLight(x, z, y, intensity, distance) {
 }
 
 function addCeilingBeams() {
-  block(32.4, 0.12, 31.5, materials.ceiling, 0, 5.58, -9.6);
+  block(32.4, 0.12, 31.5, materials.ceiling, 0, 4.08, -9.6);
   [-13.5, -6.75, 6.75, 13.5].forEach((x) => {
-    block(0.28, 0.32, 31.5, materials.bridgeDark, x, 5.42, -9.6);
+    block(0.28, 0.32, 31.5, materials.bridgeDark, x, 3.92, -9.6);
   });
   [5.3, -2.4, -9.9, -17.4, -24.5].forEach((z) => {
-    block(33.0, 0.28, 0.28, materials.bridgeDark, 0, 5.24, z);
+    block(33.0, 0.28, 0.28, materials.bridgeDark, 0, 3.74, z);
   });
 }
 
@@ -1846,13 +1846,13 @@ function addPaperLantern(x, y, z) {
 }
 
 function addRoofs() {
-  addLayeredRoof(0, 6.15, -9.6, 39.0, 37.5, 0.42, 3);
-  addLayeredRoof(0, 7.7, -9.6, 25.5, 23.25, 0.46, 2);
+  addLayeredRoof(0, 4.35, -9.6, 39.0, 37.5, 0.42, 3);
+  addLayeredRoof(0, 5.9, -9.6, 25.5, 23.25, 0.46, 2);
 
-  block(1.0, 0.62, 28.5, materials.roofDark, -12.75, 7.93, -9.6);
-  block(1.0, 0.62, 28.5, materials.roofDark, 12.75, 7.93, -9.6);
-  block(25.1, 0.56, 0.9, materials.roofDark, 0, 8.01, -21.1);
-  block(25.1, 0.56, 0.9, materials.roofDark, 0, 8.01, 1.85);
+  block(1.0, 0.62, 28.5, materials.roofDark, -12.75, 6.13, -9.6);
+  block(1.0, 0.62, 28.5, materials.roofDark, 12.75, 6.13, -9.6);
+  block(25.1, 0.56, 0.9, materials.roofDark, 0, 6.21, -21.1);
+  block(25.1, 0.56, 0.9, materials.roofDark, 0, 6.21, 1.85);
 }
 
 function addLayeredRoof(x, y, z, w, d, stepY, layers) {
