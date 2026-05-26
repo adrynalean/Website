@@ -814,7 +814,7 @@ function addFrontDoor() {
   block(3.25, 1.65, 0.16, materials.paperDim, 0, 3.50, z + 0.1);
   block(3.45, 0.18, 0.22, materials.bridgeDark, 0, 4.35, z + 0.1);
   block(3.0, 0.12, 0.42, materials.woodLight, 0, 0.82, z - 0.04);
-  frontDoor.center.set(0, z);
+  frontDoor.center.set(sx(0), sz(z));
 
   [
     { side: -1, closedX: -0.58, openX: -1.78 },
@@ -855,7 +855,7 @@ function createDoorController(label, initiallyOpen = false) {
 
 function addSlidingDoor(label, x, z, axis, width, initiallyOpen = false) {
   const door = createDoorController(label, initiallyOpen);
-  door.center.set(x, z);
+  door.center.set(sx(x), sz(z));
   const isHorizontal = axis === "x";
   const panelWidth = width * 0.52;
   const openOffset = width * 0.45;
