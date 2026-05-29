@@ -40,7 +40,8 @@
 
       <div class="corner-panel">
         <span id="spotLabel">Bridge</span>
-        <small>W/S move &middot; A/D turn &middot; Q/E strafe &middot; F interact &middot; Space jump &middot; drag to look</small>
+        <small class="hint-desktop">W/S move &middot; A/D turn &middot; Q/E strafe &middot; F interact &middot; drag to look</small>
+        <small class="hint-mobile">Left stick to move &middot; swipe right to look &middot; tap F to interact</small>
       </div>
 
       <button class="time-pill" id="timeToggle" type="button" aria-label="Toggle time of day">
@@ -51,6 +52,21 @@
       <div class="reticle" aria-hidden="true"></div>
       <div class="interaction-hint" id="interactionHint" aria-live="polite"></div>
     </main>
+
+    <!-- Touch controls — shown only on coarse-pointer (touch) devices -->
+    <div class="touch-hud" id="touchHud" aria-hidden="true">
+      <!-- Left: virtual joystick -->
+      <div class="joy-zone" id="joyZone">
+        <div class="joy-base" id="joyBase">
+          <div class="joy-dot" id="joyDot"></div>
+        </div>
+      </div>
+      <!-- Right: interact button -->
+      <button class="touch-btn touch-interact" id="touchInteract" type="button" aria-label="Interact (F)">
+        <span>F</span>
+        <small>interact</small>
+      </button>
+    </div>
 
     <aside class="portfolio-panel" id="portfolioPanel" aria-hidden="true" aria-labelledby="portfolioTitle">
       <button class="panel-close" id="portfolioClose" type="button" aria-label="Close portfolio panel">Close</button>

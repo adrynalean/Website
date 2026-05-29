@@ -479,7 +479,7 @@ button:active { transform: translateY(1px); }
   background: var(--panel);
 }
 
-/* ── Mobile ──────────────────────────────────────────────────────────────── */
+/* ── Mobile layout ───────────────────────────────────────────────────────── */
 @media (max-width: 720px) {
   .quick-nav {
     top: 10px;
@@ -517,5 +517,110 @@ button:active { transform: translateY(1px); }
 
   .portfolio-panel.is-open {
     transform: translate3d(0, 0, 0);
+  }
+}
+
+/* ── Touch HUD (joystick + interact button) ──────────────────────────────── */
+.touch-hud {
+  display: none; /* shown via JS when touch device detected */
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.touch-hud.is-active { display: block; }
+
+/* Joystick */
+.joy-zone {
+  position: absolute;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  left:   calc(24px + env(safe-area-inset-left,   0px));
+  width: 126px;
+  height: 126px;
+  pointer-events: auto;
+  touch-action: none;
+  display: grid;
+  place-items: center;
+}
+
+.joy-base {
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 244, 232, 0.18);
+  background: rgba(10, 6, 9, 0.42);
+  backdrop-filter: blur(10px);
+  position: relative;
+}
+
+.joy-dot {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(243, 167, 188, 0.75);
+  border: 1.5px solid rgba(255, 244, 232, 0.55);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* Interact (F) button */
+.touch-btn {
+  position: absolute;
+  pointer-events: auto;
+  touch-action: manipulation;
+  display: grid;
+  place-items: center;
+  gap: 1px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--panel);
+  backdrop-filter: blur(18px);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 140ms ease, transform 100ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.touch-btn span {
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.touch-btn small {
+  font-size: 0.52rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.touch-btn:active { transform: scale(0.91); background: color-mix(in srgb, var(--accent) 18%, var(--panel)); }
+
+.touch-interact {
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  right:  calc(24px + env(safe-area-inset-right,  0px));
+  width: 72px;
+  height: 72px;
+}
+
+/* Corner panel hint: swap visible hint text by device */
+.hint-mobile { display: none; }
+
+@media (pointer: coarse) {
+  .hint-desktop { display: none; }
+  .hint-mobile  { display: block; }
+
+  /* On touch: move corner panel above joystick so they don't overlap */
+  .corner-panel {
+    right: auto;
+    left: 12px;
+    bottom: calc(160px + env(safe-area-inset-bottom, 0px));
   }
 }

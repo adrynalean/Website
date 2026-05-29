@@ -12,13 +12,20 @@ const portfolioEyebrow = document.querySelector("#portfolioEyebrow");
 const portfolioBody = document.querySelector("#portfolioBody");
 const portfolioClose = document.querySelector("#portfolioClose");
 const interactionHint = document.querySelector("#interactionHint");
+const touchHud       = document.querySelector("#touchHud");
+const joyZone        = document.querySelector("#joyZone");
+const joyDot         = document.querySelector("#joyDot");
+const touchInteract  = document.querySelector("#touchInteract");
+
+// Detect touch/coarse-pointer devices once at startup
+const isMobile = navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
 
 const renderer = new THREE.WebGLRenderer({
   canvas,
   antialias: true,
   powerPreference: "high-performance",
 });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1 : 1.35));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -411,6 +418,9 @@ const state = {
   jumpOffset: 0,
   verticalVelocity: 0,
   grounded: true,
+  // Touch / joystick input (-1…1 per axis)
+  joyX: 0,
+  joyZ: 0,
 };
 
 const timePresets = [
@@ -2790,6 +2800,9 @@ function movePlayer(delta) {
   if (state.keys.has("KeyS") || state.keys.has("ArrowDown")) input.z += 1;
   if (state.keys.has("KeyQ")) input.x -= 1;
   if (state.keys.has("KeyE")) input.x += 1;
+  // Virtual joystick axes (clamped -1…1, additive with keyboard)
+  input.x = THREE.MathUtils.clamp(input.x + state.joyX, -1, 1);
+  input.z = THREE.MathUtils.clamp(input.z + state.joyZ, -1, 1);
 
   const turnInput =
     (state.keys.has("KeyA") || state.keys.has("ArrowLeft") ? 1 : 0) -
@@ -3065,7 +3078,7 @@ function updateAnimated(delta, now) {
 function updateSpotLabel() {
   if (state.mapFocus) {
     spotLabel.textContent = "House Map";
-    showInteractionHint("F or Esc to return");
+    showInteractionHint(isMobile ? "Tap F or nav to return" : "F or Esc to return");
     return;
   }
 
@@ -3073,7 +3086,9 @@ function updateSpotLabel() {
   if (nearbyDoor) {
     state.activeInteractable = null;
     spotLabel.textContent = nearbyDoor.label;
-    showInteractionHint(`F to ${nearbyDoor.open ? "close" : "open"}`);
+    showInteractionHint(isMobile
+      ? `Tap F to ${nearbyDoor.open ? "close" : "open"}`
+      : `F to ${nearbyDoor.open ? "close" : "open"}`);
     return;
   }
 
@@ -3081,7 +3096,9 @@ function updateSpotLabel() {
   if (nearbyPortfolio) {
     state.activeInteractable = nearbyPortfolio;
     spotLabel.textContent = nearbyPortfolio.label;
-    showInteractionHint(nearbyPortfolio.id === "map" ? "F to inspect map" : "Click or F to view");
+    showInteractionHint(isMobile
+      ? (nearbyPortfolio.id === "map" ? "Tap F to inspect map" : "Tap F to view")
+      : (nearbyPortfolio.id === "map" ? "F to inspect map" : "Click or F to view"));
     return;
   }
 
@@ -3351,12 +3368,11 @@ function teleportTo(name) {
 }
 
 function requestLookControl() {
+  if (isMobile) return; // touch look is driven by touch events, no pointer lock needed
   try {
     const request = canvas.requestPointerLock?.();
     if (request && typeof request.catch === "function") {
-      request.catch(() => {
-        state.pointerLocked = false;
-      });
+      request.catch(() => { state.pointerLocked = false; });
     }
   } catch {
     state.pointerLocked = false;
@@ -3478,5 +3494,125 @@ window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1 : 1.35));
 });
+
+// ── Mobile / touch controls ────────────────────────────────────────────────
+if (isMobile && touchHud) {
+  touchHud.classList.add("is-active");
+  touchHud.removeAttribute("aria-hidden");
+
+  const JOY_RADIUS = 44;          // max dot travel from base center (px)
+  const TOUCH_SENSITIVITY = 0.0028; // look sensitivity for finger drag
+
+  // Track which touch IDs own the joystick vs the look zone
+  let joyTouchId  = null;
+  let lookTouchId = null;
+  let lookLastX   = 0;
+  let lookLastY   = 0;
+
+  // Joystick base rect — re-queried on each touchstart in case of resize
+  function getJoyRect() { return joyZone?.getBoundingClientRect(); }
+
+  function setJoy(dx, dz) {
+    state.joyX = dx;
+    state.joyZ = dz;
+    if (!joyDot) return;
+    const ox = dx * JOY_RADIUS;
+    const oy = dz * JOY_RADIUS;
+    joyDot.style.transform = `translate(calc(-50% + ${ox.toFixed(1)}px), calc(-50% + ${oy.toFixed(1)}px))`;
+  }
+
+  function clearJoy() {
+    joyTouchId = null;
+    setJoy(0, 0);
+  }
+
+  function clearLook() {
+    lookTouchId = null;
+    state.dragLook = false;
+  }
+
+  // UI elements that should NOT start a look gesture
+  const UI_SELECTOR = ".hud, .portfolio-panel, .touch-hud, .quick-nav, .corner-panel, .time-pill, .back-home";
+
+  canvas.addEventListener("touchstart", (e) => { e.preventDefault(); }, { passive: false });
+
+  document.addEventListener("touchstart", (e) => {
+    for (const touch of e.changedTouches) {
+      const el = document.elementFromPoint(touch.clientX, touch.clientY);
+      // If the touch landed on a UI element, let it handle itself
+      if (el?.closest(UI_SELECTOR)) continue;
+
+      const joyRect = getJoyRect();
+      const inJoyZone = joyRect &&
+        touch.clientX >= joyRect.left && touch.clientX <= joyRect.right &&
+        touch.clientY >= joyRect.top  && touch.clientY <= joyRect.bottom;
+
+      if (inJoyZone && joyTouchId === null) {
+        joyTouchId = touch.identifier;
+        // Centre the joystick base under the finger for feel
+        setJoy(0, 0);
+      } else if (!inJoyZone && lookTouchId === null) {
+        lookTouchId = touch.identifier;
+        lookLastX   = touch.clientX;
+        lookLastY   = touch.clientY;
+        state.dragLook = true;
+        // Dismiss the intro on first canvas touch
+        intro?.classList.add("is-hidden");
+      }
+    }
+  }, { passive: true });
+
+  document.addEventListener("touchmove", (e) => {
+    for (const touch of e.changedTouches) {
+      if (touch.identifier === joyTouchId) {
+        const joyRect = getJoyRect();
+        if (!joyRect) continue;
+        const cx = joyRect.left + joyRect.width  * 0.5;
+        const cy = joyRect.top  + joyRect.height * 0.5;
+        const rawDx = touch.clientX - cx;
+        const rawDy = touch.clientY - cy;
+        const dist  = Math.hypot(rawDx, rawDy);
+        const scale = dist > 1 ? Math.min(1, JOY_RADIUS / dist) : 0;
+        // dx → strafe (X axis), dy → forward/back (Z axis)
+        setJoy(rawDx * scale / JOY_RADIUS, rawDy * scale / JOY_RADIUS);
+      }
+
+      if (touch.identifier === lookTouchId) {
+        if (state.mapFocus || isPortfolioOpen()) continue;
+        const dx = touch.clientX - lookLastX;
+        const dy = touch.clientY - lookLastY;
+        lookLastX = touch.clientX;
+        lookLastY = touch.clientY;
+        state.targetYaw   -= dx * TOUCH_SENSITIVITY;
+        state.targetPitch -= dy * TOUCH_SENSITIVITY;
+        state.targetPitch  = Math.max(-0.9, Math.min(0.72, state.targetPitch));
+        state.lookSway     = THREE.MathUtils.clamp(dx * -0.00014, -0.014, 0.014);
+      }
+    }
+  }, { passive: true });
+
+  document.addEventListener("touchend", (e) => {
+    for (const touch of e.changedTouches) {
+      if (touch.identifier === joyTouchId)  clearJoy();
+      if (touch.identifier === lookTouchId) clearLook();
+    }
+  }, { passive: true });
+
+  document.addEventListener("touchcancel", (e) => {
+    for (const touch of e.changedTouches) {
+      if (touch.identifier === joyTouchId)  clearJoy();
+      if (touch.identifier === lookTouchId) clearLook();
+    }
+  }, { passive: true });
+
+  // Interact button (F equivalent)
+  touchInteract?.addEventListener("touchstart", (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (state.mapFocus) { exitMapFocus(); return; }
+    if (isPortfolioOpen()) { closePortfolioPanel(); return; }
+    if (!toggleFrontDoor()) openNearbyPortfolio();
+  }, { passive: false });
+}
