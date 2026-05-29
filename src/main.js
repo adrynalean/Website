@@ -2807,7 +2807,13 @@ function movePlayer(delta) {
   if (state.keys.has("KeyQ")) input.x -= 1;
   if (state.keys.has("KeyE")) input.x += 1;
   // Virtual joystick axes (clamped -1…1, additive with keyboard)
-  input.x = THREE.MathUtils.clamp(input.x + state.joyX, -1, 1);
+  // On mobile: joyX turns the camera (like A/D), joyZ moves forward/back (like W/S)
+  // On desktop: joyX strafes (fallback, unlikely to be used)
+  if (isMobile) {
+    state.targetYaw -= state.joyX * keyboardTurnSpeed * 1.4 * delta;
+  } else {
+    input.x = THREE.MathUtils.clamp(input.x + state.joyX, -1, 1);
+  }
   input.z = THREE.MathUtils.clamp(input.z + state.joyZ, -1, 1);
 
   const turnInput =
