@@ -3403,10 +3403,13 @@ function roundRect(ctx, x, y, width, height, radius) {
   ctx.closePath();
 }
 
-enterButton.addEventListener("click", () => {
+enterButton?.addEventListener("click", () => {
   intro.classList.add("is-hidden");
   requestLookControl();
 });
+
+// Auto-dismiss the intro — no button needed, world speaks for itself
+window.setTimeout(() => intro?.classList.add("is-hidden"), 1400);
 
 canvas.addEventListener("click", (event) => {
   if (state.mapFocus) return;
