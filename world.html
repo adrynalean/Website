@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./src/styles.css?v=3" />
+    <link rel="stylesheet" href="./src/styles.css?v=4" />
   </head>
   <body>
     <canvas id="scene" aria-label="Lakeside sakura house walkthrough portfolio"></canvas>
@@ -40,8 +40,7 @@
 
       <div class="corner-panel">
         <span id="spotLabel">Bridge</span>
-        <small class="hint-desktop">W/S move &middot; A/D turn &middot; Q/E strafe &middot; F interact &middot; drag to look</small>
-        <small class="hint-mobile">Left stick to move &middot; swipe right to look &middot; tap F to interact</small>
+        <small>W/S move &middot; A/D turn &middot; Q/E strafe &middot; F interact &middot; drag to look</small>
       </div>
 
       <button class="time-pill" id="timeToggle" type="button" aria-label="Toggle time of day">
@@ -53,19 +52,51 @@
       <div class="interaction-hint" id="interactionHint" aria-live="polite"></div>
     </main>
 
-    <!-- Touch controls — shown only on coarse-pointer (touch) devices -->
-    <div class="touch-hud" id="touchHud" aria-hidden="true">
+    <!-- Mobile HUD — only shown on touch devices (isMobile flag in JS) -->
+    <div class="mob-hud" id="mobHud" aria-hidden="true">
+
+      <!-- Top bar: current location + time toggle + nav button -->
+      <div class="mob-bar">
+        <span class="mob-spot" id="mobSpot">Bridge Approach</span>
+        <div class="mob-bar-actions">
+          <button class="mob-icon-btn" id="mobTimeBtn" type="button" aria-label="Change time of day">
+            <span id="mobTimeLabel">Dawn</span>
+          </button>
+          <button class="mob-icon-btn" id="mobNavBtn" type="button" aria-label="Open navigation">
+            &#9776;
+          </button>
+        </div>
+      </div>
+
+      <!-- Nav overlay: teleport grid, shown when ☰ tapped -->
+      <div class="mob-nav-overlay" id="mobNavOverlay" aria-hidden="true">
+        <div class="mob-nav-grid">
+          <button class="mob-nav-spot" data-spot="Bridge"    type="button"><strong>Start</strong><span>Bridge</span></button>
+          <button class="mob-nav-spot" data-spot="Gate"      type="button"><strong>Entry</strong><span>Gate</span></button>
+          <button class="mob-nav-spot" data-spot="Map"       type="button"><strong>Map</strong><span>Foyer</span></button>
+          <button class="mob-nav-spot" data-spot="Hall"      type="button"><strong>Mission</strong><span>Main Hall</span></button>
+          <button class="mob-nav-spot" data-spot="Tech"      type="button"><strong>Stack</strong><span>Tool Wall</span></button>
+          <button class="mob-nav-spot" data-spot="West Room" type="button"><strong>Education</strong><span>West Room</span></button>
+          <button class="mob-nav-spot" data-spot="East Room" type="button"><strong>Projects</strong><span>East Room</span></button>
+          <button class="mob-nav-spot" data-spot="Rear Room" type="button"><strong>Experience</strong><span>Rear Room</span></button>
+          <button class="mob-nav-spot" data-spot="Garden"    type="button"><strong>Contact</strong><span>Garden</span></button>
+        </div>
+        <button class="mob-nav-close" id="mobNavClose" type="button">&#10005; Close</button>
+      </div>
+
       <!-- Left: virtual joystick -->
       <div class="joy-zone" id="joyZone">
-        <div class="joy-base" id="joyBase">
+        <div class="joy-base">
           <div class="joy-dot" id="joyDot"></div>
         </div>
       </div>
+
       <!-- Right: interact button -->
       <button class="touch-btn touch-interact" id="touchInteract" type="button" aria-label="Interact (F)">
         <span>F</span>
         <small>interact</small>
       </button>
+
     </div>
 
     <aside class="portfolio-panel" id="portfolioPanel" aria-hidden="true" aria-labelledby="portfolioTitle">
@@ -77,6 +108,6 @@
 
     <a class="back-home" href="./index.html" aria-label="Back to portfolio">&#8592; Portfolio</a>
 
-    <script type="module" src="./src/main.js?v=7"></script>
+    <script type="module" src="./src/main.js?v=8"></script>
   </body>
 </html>

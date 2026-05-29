@@ -12,7 +12,13 @@ const portfolioEyebrow = document.querySelector("#portfolioEyebrow");
 const portfolioBody = document.querySelector("#portfolioBody");
 const portfolioClose = document.querySelector("#portfolioClose");
 const interactionHint = document.querySelector("#interactionHint");
-const touchHud       = document.querySelector("#touchHud");
+const mobHud         = document.querySelector("#mobHud");
+const mobSpot        = document.querySelector("#mobSpot");
+const mobTimeLabel   = document.querySelector("#mobTimeLabel");
+const mobTimeBtn     = document.querySelector("#mobTimeBtn");
+const mobNavBtn      = document.querySelector("#mobNavBtn");
+const mobNavOverlay  = document.querySelector("#mobNavOverlay");
+const mobNavClose    = document.querySelector("#mobNavClose");
 const joyZone        = document.querySelector("#joyZone");
 const joyDot         = document.querySelector("#joyDot");
 const touchInteract  = document.querySelector("#touchInteract");
@@ -3498,9 +3504,9 @@ window.addEventListener("resize", () => {
 });
 
 // ── Mobile / touch controls ────────────────────────────────────────────────
-if (isMobile && touchHud) {
-  touchHud.classList.add("is-active");
-  touchHud.removeAttribute("aria-hidden");
+if (isMobile && mobHud) {
+  mobHud.classList.add("is-active");
+  mobHud.removeAttribute("aria-hidden");
 
   const JOY_RADIUS = 44;          // max dot travel from base center (px)
   const TOUCH_SENSITIVITY = 0.0028; // look sensitivity for finger drag
@@ -3533,17 +3539,15 @@ if (isMobile && touchHud) {
     state.dragLook = false;
   }
 
-  // UI elements that should NOT start a look gesture
-  const UI_SELECTOR = ".hud, .portfolio-panel, .touch-hud, .quick-nav, .corner-panel, .time-pill, .back-home";
+  // UI elements that should NOT start a look gesture.
+  // NOTE: .joy-zone is intentionally excluded — it is checked separately first.
+  const UI_SELECTOR = ".hud, .portfolio-panel, .mob-bar, .mob-nav-overlay, .touch-btn";
 
   canvas.addEventListener("touchstart", (e) => { e.preventDefault(); }, { passive: false });
 
   document.addEventListener("touchstart", (e) => {
     for (const touch of e.changedTouches) {
-      const el = document.elementFromPoint(touch.clientX, touch.clientY);
-      // If the touch landed on a UI element, let it handle itself
-      if (el?.closest(UI_SELECTOR)) continue;
-
+      // ── Joy zone check FIRST (before UI filter) so the stick always registers ──
       const joyRect = getJoyRect();
       const inJoyZone = joyRect &&
         touch.clientX >= joyRect.left && touch.clientX <= joyRect.right &&
@@ -3551,9 +3555,15 @@ if (isMobile && touchHud) {
 
       if (inJoyZone && joyTouchId === null) {
         joyTouchId = touch.identifier;
-        // Centre the joystick base under the finger for feel
         setJoy(0, 0);
-      } else if (!inJoyZone && lookTouchId === null) {
+        continue; // claimed — don't fall through to look or UI check
+      }
+
+      // If the touch landed on a UI element, let it handle itself
+      const el = document.elementFromPoint(touch.clientX, touch.clientY);
+      if (el?.closest(UI_SELECTOR)) continue;
+
+      if (lookTouchId === null) {
         lookTouchId = touch.identifier;
         lookLastX   = touch.clientX;
         lookLastY   = touch.clientY;
@@ -3607,7 +3617,43 @@ if (isMobile && touchHud) {
     }
   }, { passive: true });
 
-  // Interact button (F equivalent)
+  // ── Mob-bar: time toggle ──────────────────────────────────────────────────
+  mobTimeBtn?.addEventListener("click", () => { timeToggle?.click(); });
+
+  // ── Mob-bar: nav overlay open / close ────────────────────────────────────
+  mobNavBtn?.addEventListener("click", () => {
+    mobNavOverlay?.classList.add("is-open");
+    mobNavOverlay?.removeAttribute("aria-hidden");
+  });
+  mobNavClose?.addEventListener("click", () => {
+    mobNavOverlay?.classList.remove("is-open");
+    mobNavOverlay?.setAttribute("aria-hidden", "true");
+  });
+
+  // Spot buttons inside the nav overlay → close overlay after teleport.
+  // Teleport itself is handled by the global [data-spot] click listener above.
+  mobNavOverlay?.querySelectorAll("[data-spot]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      mobNavOverlay.classList.remove("is-open");
+      mobNavOverlay.setAttribute("aria-hidden", "true");
+    });
+  });
+
+  // ── Sync spotLabel → mobSpot (mirrors the desktop label automatically) ───
+  if (mobSpot && spotLabel) {
+    mobSpot.textContent = spotLabel.textContent;
+    new MutationObserver(() => { mobSpot.textContent = spotLabel.textContent; })
+      .observe(spotLabel, { childList: true, characterData: true, subtree: true });
+  }
+
+  // ── Sync timeLabel → mobTimeLabel ────────────────────────────────────────
+  if (mobTimeLabel && timeLabel) {
+    mobTimeLabel.textContent = timeLabel.textContent;
+    new MutationObserver(() => { mobTimeLabel.textContent = timeLabel.textContent; })
+      .observe(timeLabel, { childList: true, characterData: true, subtree: true });
+  }
+
+  // ── Interact button (F equivalent) ───────────────────────────────────────
   touchInteract?.addEventListener("touchstart", (e) => {
     e.stopPropagation();
     e.preventDefault();
