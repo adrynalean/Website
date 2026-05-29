@@ -1207,66 +1207,130 @@ function facingToRotation(facing) {
 }
 
 function makePortfolioTexture(title, subtitle, accent, width = 4.6, height = 1.9) {
+  // Parse accent hex → rgba helper
+  const aR = parseInt(accent.slice(1, 3), 16);
+  const aG = parseInt(accent.slice(3, 5), 16);
+  const aB = parseInt(accent.slice(5, 7), 16);
+  const acR = (a) => `rgba(${aR},${aG},${aB},${a})`;
+
   const textureCanvas = document.createElement("canvas");
-  // Use actual 3D panel aspect (width is scaled by WORLD_SCALE, height is not)
   const aspect = Math.max(1.0, (width * WORLD_SCALE) / height);
-  textureCanvas.width = 864;
+  textureCanvas.width = 960;
   textureCanvas.height = Math.round(textureCanvas.width / aspect);
   const ctx = textureCanvas.getContext("2d");
   const cw = textureCanvas.width;
   const ch = textureCanvas.height;
 
-  const paper = ctx.createLinearGradient(0, 0, cw, ch);
-  paper.addColorStop(0, "#f8e8c3");
-  paper.addColorStop(0.42, "#fff4d8");
-  paper.addColorStop(1, "#d6ad78");
-  ctx.fillStyle = paper;
+  // ── Background ───────────────────────────────────────────────────────────
+  const bgGrad = ctx.createLinearGradient(0, 0, cw * 0.6, ch);
+  bgGrad.addColorStop(0, "#130b10");
+  bgGrad.addColorStop(1, "#1c0e17");
+  ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, cw, ch);
 
-  ctx.globalAlpha = 0.11;
-  ctx.strokeStyle = "#7d573a";
-  ctx.lineWidth = 1.3;
-  for (let x = 18; x < cw; x += 42) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x + Math.sin(x) * 5, ch);
-    ctx.stroke();
-  }
-  for (let i = 0; i < 360; i += 1) {
-    ctx.fillStyle = i % 3 ? "#8b6547" : accent;
-    ctx.fillRect(random(0, cw), random(0, ch), random(1, 3), random(1, 3));
+  // Warm accent glow (upper-left focal point)
+  const glow = ctx.createRadialGradient(cw * 0.22, ch * 0.32, 0, cw * 0.22, ch * 0.32, cw * 0.62);
+  glow.addColorStop(0, acR(0.10));
+  glow.addColorStop(1, acR(0));
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, cw, ch);
+
+  // Subtle noise grain
+  ctx.globalAlpha = 0.02;
+  for (let i = 0; i < 440; i++) {
+    ctx.fillStyle = i % 5 ? "#ffffff" : accent;
+    ctx.fillRect(random(0, cw), random(0, ch), random(1, 2.5), random(1, 2));
   }
   ctx.globalAlpha = 1;
 
-  const margin = Math.round(ch * 0.09);
-  ctx.strokeStyle = "#4b2d20";
-  ctx.lineWidth = Math.max(12, ch * 0.045);
-  roundRect(ctx, margin, margin, cw - margin * 2, ch - margin * 2, 18);
+  // Outer border
+  ctx.strokeStyle = "rgba(255,255,255,0.09)";
+  ctx.lineWidth = 1.5;
+  roundRect(ctx, 1, 1, cw - 2, ch - 2, 12);
   ctx.stroke();
 
-  ctx.strokeStyle = accent;
-  ctx.lineWidth = Math.max(5, ch * 0.018);
-  roundRect(ctx, margin * 1.65, margin * 1.65, cw - margin * 3.3, ch - margin * 3.3, 14);
+  // Left accent edge stripe
+  ctx.fillStyle = acR(0.62);
+  ctx.fillRect(0, 0, Math.max(3, Math.round(cw * 0.006)), ch);
+
+  // ── Window / title bar ───────────────────────────────────────────────────
+  const barH = Math.round(ch * 0.19);
+  ctx.fillStyle = "rgba(0,0,0,0.28)";
+  ctx.fillRect(0, 0, cw, barH);
+  ctx.strokeStyle = "rgba(255,255,255,0.055)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, barH);
+  ctx.lineTo(cw, barH);
   ctx.stroke();
 
-  drawPortfolioCrest(ctx, title, accent, cw * 0.18, ch * 0.5, ch * 0.145);
+  // Traffic-light dots
+  const dotY = barH * 0.5;
+  const dotR = Math.max(5, barH * 0.175);
+  [["#ff5f57", 0], ["#febc2e", 1], ["#28c840", 2]].forEach(([col, i]) => {
+    ctx.beginPath();
+    ctx.arc(barH * 0.55 + i * dotR * 2.6, dotY, dotR, 0, Math.PI * 2);
+    ctx.fillStyle = col;
+    ctx.globalAlpha = 0.82;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  });
 
-  ctx.fillStyle = "#2f211a";
-  ctx.font = `700 ${Math.round(ch * 0.18)}px Georgia`;
-  ctx.textAlign = "left";
+  // Filename label (centered in bar)
+  const fileNames = {
+    mission: "mission.ts", education: "education.ts", projects: "projects.ts",
+    "tech stack": "stack.ts", experience: "experience.ts", contact: "contact.ts",
+  };
+  const fname = fileNames[title.toLowerCase()] ?? (title.toLowerCase().replace(/\s+/g, "_") + ".ts");
+  ctx.fillStyle = "rgba(253,244,240,0.34)";
+  ctx.font = `500 ${Math.round(barH * 0.36)}px "Courier New", monospace`;
+  ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(title, cw * 0.34, ch * 0.43);
+  ctx.fillText(fname, cw * 0.5, dotY);
 
-  ctx.fillStyle = "#6d4937";
-  ctx.font = `700 ${Math.round(ch * 0.072)}px Inter, Arial, sans-serif`;
-  ctx.fillText(subtitle, cw * 0.345, ch * 0.58);
-
+  // Accent dot — top-right corner of bar
+  ctx.beginPath();
+  ctx.arc(cw - barH * 0.52, dotY, dotR * 0.82, 0, Math.PI * 2);
   ctx.fillStyle = accent;
-  ctx.fillRect(cw * 0.345, ch * 0.69, cw * 0.28, Math.max(5, ch * 0.018));
+  ctx.globalAlpha = 0.72;
+  ctx.fill();
+  ctx.globalAlpha = 1;
 
-  ctx.globalAlpha = 0.42;
-  drawSakuraStamp(ctx, cw * 0.87, ch * 0.28, ch * 0.08, accent);
-  drawSakuraStamp(ctx, cw * 0.82, ch * 0.7, ch * 0.055, "#d98a9b");
+  // ── Content ───────────────────────────────────────────────────────────────
+  const pad = Math.round(cw * 0.056);
+  const contentTop = barH + Math.round(ch * 0.067);
+  const commentSize = Math.round(ch * 0.066);
+  const titleSize = Math.round(ch * 0.188);
+
+  // // comment line  (monospace, muted)
+  ctx.fillStyle = "rgba(253,244,240,0.27)";
+  ctx.font = `400 ${commentSize}px "Courier New", monospace`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+  ctx.fillText(`// ${subtitle}`, pad, contentTop);
+
+  // Main title (large serif)
+  const titleY = contentTop + commentSize * 1.55;
+  ctx.fillStyle = "#fdf4f0";
+  ctx.font = `600 ${titleSize}px Georgia, "Times New Roman", serif`;
+  ctx.fillText(title, pad, titleY);
+
+  // Accent rule
+  const ruleY = Math.round(titleY + titleSize * 1.18);
+  ctx.fillStyle = acR(0.82);
+  ctx.fillRect(pad, ruleY, Math.round(cw * 0.21), Math.max(2, Math.round(ch * 0.013)));
+
+  // Icon (dark version of crest)
+  const iconSize = Math.round(ch * 0.093);
+  const iconCX = pad + iconSize;
+  const iconCY = ruleY + Math.round(ch * 0.09) + iconSize;
+  if (iconCY + iconSize + 4 < ch) {
+    drawPortfolioCrest(ctx, title, accent, iconCX, iconCY, iconSize);
+  }
+
+  // Sakura motif — bottom-right, very faint
+  ctx.globalAlpha = 0.09;
+  drawSakuraStamp(ctx, cw - pad * 1.15, ch * 0.83, iconSize * 0.98, accent);
   ctx.globalAlpha = 1;
 
   const texture = new THREE.CanvasTexture(textureCanvas);
@@ -1284,103 +1348,124 @@ function makeHouseMapTexture() {
   const ch = 976;
   ctx.scale(textureCanvas.width / cw, textureCanvas.height / ch);
 
-  const paper = ctx.createLinearGradient(0, 0, cw, ch);
-  paper.addColorStop(0, "#f3daa3");
-  paper.addColorStop(0.42, "#fff2d1");
-  paper.addColorStop(1, "#dfb37f");
-  ctx.fillStyle = paper;
+  // ── Background ───────────────────────────────────────────────────────────
+  const bgGrad = ctx.createLinearGradient(0, 0, cw * 0.6, ch);
+  bgGrad.addColorStop(0, "#130b10");
+  bgGrad.addColorStop(1, "#1c0e17");
+  ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, cw, ch);
 
-  ctx.globalAlpha = 0.07;
-  ctx.strokeStyle = "#825f3f";
-  ctx.lineWidth = 2;
-  for (let x = 92; x < cw; x += 78) {
-    ctx.beginPath();
-    ctx.moveTo(x, 96);
-    ctx.lineTo(x, ch - 96);
-    ctx.stroke();
-  }
-  for (let y = 100; y < ch; y += 78) {
-    ctx.beginPath();
-    ctx.moveTo(96, y);
-    ctx.lineTo(cw - 96, y);
-    ctx.stroke();
+  // Pink glow — upper-left
+  const glow = ctx.createRadialGradient(cw * 0.18, ch * 0.28, 0, cw * 0.18, ch * 0.28, cw * 0.55);
+  glow.addColorStop(0, "rgba(243,167,188,0.10)");
+  glow.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, cw, ch);
+
+  // Dot grid
+  ctx.globalAlpha = 0.038;
+  for (let x = 84; x < cw; x += 76) {
+    for (let y = 84; y < ch; y += 76) {
+      ctx.beginPath();
+      ctx.arc(x, y, 2, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+    }
   }
   ctx.globalAlpha = 1;
 
-  ctx.strokeStyle = "#3d2419";
-  ctx.lineWidth = 28;
-  roundRect(ctx, 54, 54, cw - 108, ch - 108, 30);
-  ctx.stroke();
-  ctx.strokeStyle = "rgba(195, 120, 88, 0.72)";
-  ctx.lineWidth = 8;
-  roundRect(ctx, 86, 86, cw - 172, ch - 172, 24);
+  // Outer border
+  ctx.strokeStyle = "rgba(255,255,255,0.09)";
+  ctx.lineWidth = 16;
+  roundRect(ctx, 24, 24, cw - 48, ch - 48, 22);
   ctx.stroke();
 
-  ctx.fillStyle = "#2f211a";
-  ctx.font = "700 64px Georgia";
+  // Left accent stripe
+  ctx.fillStyle = "rgba(243,167,188,0.55)";
+  ctx.fillRect(24, 24, 6, ch - 48);
+
+  // ── Header ───────────────────────────────────────────────────────────────
+  ctx.fillStyle = "#fdf4f0";
+  ctx.font = "600 60px Georgia, serif";
   ctx.textAlign = "center";
-  ctx.fillText("Sashit's Portfolio House", cw / 2, 128);
-  ctx.fillStyle = "#7f4f3d";
-  ctx.font = "700 25px Inter, Arial, sans-serif";
-  ctx.fillText("walkthrough guide", cw / 2, 166);
+  ctx.textBaseline = "top";
+  ctx.fillText("Sashit's Portfolio House", cw / 2, 52);
 
+  ctx.fillStyle = "rgba(243,167,188,0.52)";
+  ctx.font = `500 24px "Courier New", monospace`;
+  ctx.fillText("// walkthrough guide", cw / 2, 124);
+
+  // ── Connector paths ───────────────────────────────────────────────────────
+  ctx.fillStyle = "rgba(255,244,232,0.05)";
+  roundRect(ctx, 455, 260, 1010, 52, 8);
+  ctx.fill();
+  roundRect(ctx, 920, 312, 78, 434, 8);
+  ctx.fill();
+
+  ctx.strokeStyle = "rgba(243,167,188,0.20)";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(960, 312);
+  ctx.lineTo(960, 746);
+  ctx.moveTo(455, 286);
+  ctx.lineTo(1465, 286);
+  ctx.stroke();
+
+  // ── Room cards ───────────────────────────────────────────────────────────
   const rooms = [
-    { x: 235, y: 520, w: 360, h: 170, label: "Education", sub: "West Room", color: "#7896a8", icon: "book" },
-    { x: 740, y: 372, w: 440, h: 170, label: "Mission", sub: "Main Hall", color: "#c76576", icon: "crest" },
-    { x: 1325, y: 520, w: 360, h: 170, label: "Projects", sub: "East Room", color: "#77a88e", icon: "grid" },
-    { x: 760, y: 690, w: 400, h: 132, label: "Experience", sub: "Rear Room", color: "#ba7353", icon: "path" },
-    { x: 1210, y: 332, w: 260, h: 116, label: "Stack", sub: "Tool Wall", color: "#d0a45f", icon: "chip" },
-    { x: 820, y: 236, w: 280, h: 88, label: "Map", sub: "Table", color: "#9670a9", icon: "pin" },
+    { x: 235, y: 520, w: 360, h: 170, label: "Education", sub: "West Room",  color: "#7f93a7", icon: "book"  },
+    { x: 740, y: 372, w: 440, h: 170, label: "Mission",   sub: "Main Hall",  color: "#c76576", icon: "crest" },
+    { x: 1325, y: 520, w: 360, h: 170, label: "Projects",  sub: "East Room",  color: "#6f9b82", icon: "grid"  },
+    { x: 760, y: 690, w: 400, h: 132, label: "Experience", sub: "Rear Room",  color: "#b46b51", icon: "path"  },
+    { x: 1210, y: 332, w: 260, h: 116, label: "Stack",     sub: "Tool Wall",  color: "#d0a45f", icon: "chip"  },
+    { x: 820, y: 236, w: 280, h:  88, label: "Map",        sub: "Table",      color: "#9670a9", icon: "pin"   },
   ];
 
-  ctx.fillStyle = "rgba(158, 94, 51, 0.22)";
-  roundRect(ctx, 455, 262, 1010, 54, 8);
-  ctx.fill();
-  roundRect(ctx, 919, 316, 82, 430, 8);
-  ctx.fill();
-  ctx.strokeStyle = "rgba(171, 102, 55, 0.45)";
-  ctx.lineWidth = 6;
-  ctx.beginPath();
-  ctx.moveTo(960, 316);
-  ctx.lineTo(960, 746);
-  ctx.moveTo(455, 289);
-  ctx.lineTo(1465, 289);
-  ctx.stroke();
-
-  ctx.globalAlpha = 0.16;
-  [
-    [210, 250, 16],
-    [350, 310, 13],
-    [1510, 292, 15],
-    [1660, 370, 12],
-    [410, 792, 13],
-    [1485, 785, 14],
-  ].forEach(([x, y, size]) => drawSakuraStamp(ctx, x, y, size, "#d98798"));
-  ctx.globalAlpha = 1;
-
-  rooms.forEach((room) => {
-    const x = room.x;
-    const y = room.y;
-    ctx.fillStyle = "rgba(255, 248, 225, 0.88)";
-    roundRect(ctx, x, y, room.w, room.h, 24);
+  rooms.forEach(({ x, y, w, h, label, sub, color, icon }) => {
+    // Card background
+    ctx.fillStyle = "rgba(255,255,255,0.045)";
+    roundRect(ctx, x, y, w, h, 18);
     ctx.fill();
-    ctx.strokeStyle = room.color;
-    ctx.lineWidth = 12;
-    roundRect(ctx, x + 7, y + 7, room.w - 14, room.h - 14, 20);
+    // Accent border
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 8;
+    roundRect(ctx, x + 4, y + 4, w - 8, h - 8, 14);
     ctx.stroke();
-    drawMapIcon(ctx, room.icon, room.color, x + room.w * 0.18, y + room.h * 0.52, Math.min(room.w, room.h) * 0.18);
-    ctx.fillStyle = "#2f211a";
-    ctx.font = `800 ${room.w < 230 ? 38 : 44}px Inter, Arial, sans-serif`;
-    ctx.fillText(room.label, x + room.w * 0.58, y + room.h / 2 - 10);
-    ctx.fillStyle = "#76513c";
-    ctx.font = `700 ${room.w < 230 ? 22 : 28}px Inter, Arial, sans-serif`;
-    ctx.fillText(room.sub, x + room.w * 0.58, y + room.h / 2 + 34);
+    // Left accent bar
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.55;
+    ctx.fillRect(x + 4, y + 18, 4, h - 36);
+    ctx.globalAlpha = 1;
+
+    // Icon
+    drawMapIcon(ctx, icon, color, x + w * 0.18, y + h * 0.52, Math.min(w, h) * 0.18);
+
+    // Label
+    ctx.fillStyle = "#fdf4f0";
+    ctx.font = `800 ${w < 230 ? 36 : 42}px Inter, Arial, sans-serif`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(label, x + w * 0.56, y + h / 2 - 10);
+
+    // Sub-label
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.80;
+    ctx.font = `500 ${w < 230 ? 19 : 24}px "Courier New", monospace`;
+    ctx.fillText(sub, x + w * 0.56, y + h / 2 + 34);
+    ctx.globalAlpha = 1;
   });
 
-  ctx.fillStyle = "#a14d55";
-  ctx.font = "800 26px Inter, Arial, sans-serif";
-  ctx.fillText("Press F nearby to inspect each section.", cw / 2, ch - 96);
+  // Sakura motifs — corner decorations, very faint
+  ctx.globalAlpha = 0.07;
+  [[210, 250, 16], [1510, 292, 15], [410, 792, 13], [1485, 785, 14]]
+    .forEach(([x, y, s]) => drawSakuraStamp(ctx, x, y, s, "#f3a7bc"));
+  ctx.globalAlpha = 1;
+
+  // Footer
+  ctx.fillStyle = "rgba(243,167,188,0.60)";
+  ctx.font = `700 26px "Courier New", monospace`;
+  ctx.textAlign = "center";
+  ctx.fillText("// Press F nearby to inspect each section.", cw / 2, ch - 62);
 
   const texture = new THREE.CanvasTexture(textureCanvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -1392,15 +1477,15 @@ function drawPortfolioCrest(ctx, title, accent, x, y, size) {
   ctx.save();
   ctx.translate(x, y);
   ctx.strokeStyle = accent;
-  ctx.fillStyle = "rgba(255, 250, 230, 0.75)";
-  ctx.lineWidth = Math.max(4, size * 0.06);
+  ctx.fillStyle = "rgba(255,255,255,0.06)";
+  ctx.lineWidth = Math.max(3, size * 0.06);
   ctx.beginPath();
   ctx.arc(0, 0, size, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
 
-  ctx.strokeStyle = "#4b2d20";
-  ctx.lineWidth = Math.max(3, size * 0.045);
+  ctx.strokeStyle = "rgba(253,244,240,0.72)";
+  ctx.lineWidth = Math.max(2.5, size * 0.045);
   const key = title.toLowerCase();
   if (key.includes("project")) {
     [-0.38, 0.38].forEach((ox) => {
@@ -1470,13 +1555,13 @@ function drawMapIcon(ctx, icon, color, x, y, size) {
   ctx.save();
   ctx.translate(x, y);
   ctx.strokeStyle = color;
-  ctx.fillStyle = "rgba(255, 249, 228, 0.9)";
+  ctx.fillStyle = "rgba(255,255,255,0.055)";
   ctx.lineWidth = Math.max(4, size * 0.11);
   ctx.beginPath();
   ctx.arc(0, 0, size, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
-  ctx.strokeStyle = "#4b2d20";
+  ctx.strokeStyle = "rgba(253,244,240,0.70)";
   ctx.lineWidth = Math.max(3, size * 0.08);
   if (icon === "book") {
     ctx.strokeRect(-size * 0.5, -size * 0.35, size, size * 0.7);
