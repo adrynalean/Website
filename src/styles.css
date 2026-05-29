@@ -747,11 +747,32 @@ button:active { transform: translateY(1px); }
   height: 76px;
 }
 
-/* Hide desktop chrome on touch devices */
+/* ── Mobile overrides ─────────────────────────────────────────────────────── */
 @media (pointer: coarse) {
+  /* Hide desktop chrome */
   .quick-nav,
   .corner-panel,
   .time-pill,
   .back-home,
   .reticle { display: none !important; }
+
+  /* Move intro to top so it doesn't clash with bottom joystick/F controls */
+  .intro {
+    bottom: auto;
+    top: calc(62px + env(safe-area-inset-top, 0px));
+    left: 16px;
+    right: 16px;
+    width: auto;
+  }
+
+  /* Shrink the headline so the whole intro fits above the control zone */
+  .intro h1 {
+    font-size: clamp(2rem, 9vw, 3rem);
+  }
+
+  .intro .summary {
+    margin: 10px 0 14px;
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
 }
