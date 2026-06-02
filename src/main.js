@@ -294,30 +294,30 @@ const portfolioSections = {
   experience: {
     title: "Experience",
     eyebrow: "Rear Workroom",
-    lead: "A mix of software engineering, research, teaching, tutoring, and operations leadership.",
+    lead: "Software engineering, AI research, and LLM evaluation across industry and academia.",
     groups: [
       {
         heading: "Recent Roles",
         cards: [
           {
-            title: "High School Physics and Mathematics Teacher",
-            meta: "Great Hearts Veritas Prep - July 2025 to Present",
-            body: "Designs engaging lessons for 100+ students while reinforcing quantitative reasoning and adapting explanations to varied learning needs.",
-          },
-          {
-            title: "Research Assistant",
-            meta: "Laboratory for Learning Evaluation of autonomous Systems Lab, ASU - Oct. 2024 to July 2025",
-            body: "Worked on a Unitree Go2 robotic dog assistant with diffusion-based navigation and LLM-powered command processing for visually impaired users.",
+            title: "LLM Test-Authoring Evaluator",
+            meta: "Deel Inc. — 2026 to Present",
+            body: "Builds reproducible LLM evaluation benchmarks for test-authoring agents using rubric-calibrated scoring, Dockerized Harbor sandboxes, RewardKit rubrics, oracle diffs, and regression-guarded scenarios. Targets 80%+ for frontier models, 25–50% for baselines.",
           },
           {
             title: "Fullstack Developer Co-op",
-            meta: "Tnect Validation API, Bytewerx LLC - Aug. 2024 to May 2025",
-            body: "Built API key management, RBAC, token-based recovery, Redis-backed rate limiting, and real-time usage analytics.",
+            meta: "Bytewerx LLC — Aug. 2024 to May 2025",
+            body: "Built a secure API management platform with Angular, ASP.NET Core, TypeScript, and Redis — scoped key generation, RBAC, rate limiting, and a real-time analytics dashboard for the Tnect Validation API.",
+          },
+          {
+            title: "Research Assistant",
+            meta: "LLEAS Lab, ASU — Oct. 2024 to Jul. 2025",
+            body: "Developed a Unitree Go2 robotic dog assistant with diffusion-based navigation and LLM-powered command processing; integrated obstacle avoidance achieving sub-200ms latency for visually impaired users.",
           },
           {
             title: "Software Engineer Intern",
-            meta: "PI Academy - May 2024 to July 2024",
-            body: "Built image-analysis tooling to classify 400+ food waste types and improved model accuracy through ensemble learning.",
+            meta: "PI Academy — May 2024 to Jul. 2024",
+            body: "Built image-analysis tooling to classify 400+ food waste categories; improved model accuracy by 9% via ensemble learning.",
           },
         ],
       },
