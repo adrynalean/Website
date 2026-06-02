@@ -1472,6 +1472,11 @@ h1 > span {
   line-height: 1.65;
 }
 
+/* ── Experience section header ───────────────────────────────────────────── */
+.exp-intro {
+  padding: clamp(4rem, 10vh, 7rem) 0 0;
+}
+
 .stack-tags {
   display: flex;
   flex-wrap: wrap;
