@@ -275,6 +275,139 @@ if (portalGate && loadingOverlay && loadingBar) {
   });
 }
 
+// ── Time-aware greeting ─────────────────────────────────────────────────────
+const heroGreet = document.querySelector("#heroGreet");
+if (heroGreet) {
+  const hour = new Date().getHours();
+  const [jp, en] =
+    hour >= 5 && hour < 11 ? ["おはよう", "good morning"]
+    : hour >= 11 && hour < 17 ? ["こんにちは", "good afternoon"]
+    : ["こんばんは", "good evening"];
+  heroGreet.innerHTML = `${jp}<em>· ${en}</em>`;
+}
+
+// ── Scroll-tracking sakura branch ───────────────────────────────────────────
+const scrollBranch = document.querySelector("#scrollBranch");
+const branchPath = document.querySelector("#branchPath");
+if (scrollBranch && branchPath) {
+  const pathLength = branchPath.getTotalLength();
+  const blooms = Array.from(scrollBranch.querySelectorAll(".branch-bloom"));
+  const bloomAt = [0.06, 0.28, 0.5, 0.72, 0.92];
+  branchPath.style.strokeDasharray = String(pathLength);
+
+  const paintBranch = () => {
+    const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    const progress = Math.min(1, window.scrollY / max);
+    branchPath.style.strokeDashoffset = String(pathLength * (1 - progress));
+    blooms.forEach((bloom, index) => {
+      bloom.classList.toggle("is-bloom", progress >= bloomAt[index]);
+    });
+  };
+
+  window.addEventListener("scroll", paintBranch, { passive: true });
+  paintBranch();
+}
+
+// ── Cursor petal trail ──────────────────────────────────────────────────────
+// Pooled particles on a dedicated canvas; the rAF loop only runs while petals
+// are alive, so an idle page costs nothing.
+const initPetalTrail = () => {
+  if (reduceMotion || !window.matchMedia("(pointer: fine)").matches) return;
+
+  const canvas = document.createElement("canvas");
+  canvas.className = "petal-trail";
+  canvas.setAttribute("aria-hidden", "true");
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext("2d");
+
+  let width = 0;
+  let height = 0;
+  const fit = () => {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+  };
+  fit();
+  window.addEventListener("resize", fit, { passive: true });
+
+  const MAX_PETALS = 22;
+  const petals = [];
+  const colors = ["#f8cdd8", "#f3a7bc", "#ffd9a4"];
+  let lastSpawn = 0;
+  let lastX = -99;
+  let lastY = -99;
+  let raf = null;
+  let lastFrame = 0;
+
+  const loop = (time) => {
+    const dt = lastFrame ? Math.min(time - lastFrame, 50) : 16;
+    lastFrame = time;
+    ctx.clearRect(0, 0, width, height);
+
+    for (let i = petals.length - 1; i >= 0; i -= 1) {
+      const p = petals[i];
+      p.life -= dt / 1300;
+      if (p.life <= 0) {
+        petals.splice(i, 1);
+        continue;
+      }
+      p.x += p.vx * dt + Math.sin(time * 0.003 + p.phase) * 0.3;
+      p.y += p.vy * dt;
+      p.rot += p.vr * dt;
+
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.globalAlpha = Math.min(0.85, p.life * 1.4);
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, p.size * 0.55, p.size, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    if (petals.length) {
+      raf = window.requestAnimationFrame(loop);
+    } else {
+      raf = null;
+      lastFrame = 0;
+      ctx.clearRect(0, 0, width, height);
+    }
+  };
+
+  window.addEventListener(
+    "pointermove",
+    (event) => {
+      const now = performance.now();
+      const moved = Math.hypot(event.clientX - lastX, event.clientY - lastY);
+      if (now - lastSpawn < 70 || moved < 14) return;
+      lastSpawn = now;
+      lastX = event.clientX;
+      lastY = event.clientY;
+
+      if (petals.length < MAX_PETALS) {
+        petals.push({
+          x: event.clientX + (Math.random() - 0.5) * 10,
+          y: event.clientY + (Math.random() - 0.5) * 10,
+          vx: (Math.random() - 0.5) * 0.04,
+          vy: 0.03 + Math.random() * 0.05,
+          rot: Math.random() * Math.PI,
+          vr: (Math.random() - 0.5) * 0.004,
+          size: 3 + Math.random() * 4,
+          life: 1,
+          phase: Math.random() * Math.PI * 2,
+          color: colors[Math.floor(Math.random() * colors.length)],
+        });
+      }
+      if (!raf) raf = window.requestAnimationFrame(loop);
+    },
+    { passive: true },
+  );
+};
+
+initPetalTrail();
+
 if (!reduceMotion) {
   document.querySelectorAll(".project-copy").forEach((card) => {
     let tx = 0, ty = 0, cx = 0, cy = 0, lift = 0, targetLift = 0;
