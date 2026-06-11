@@ -480,8 +480,8 @@ scene.add(hemiLight);
 
 const sun = new THREE.DirectionalLight("#ffc78d", 2.2);
 sun.castShadow = !isMobile;
-sun.shadow.mapSize.width = 2048;
-sun.shadow.mapSize.height = 2048;
+sun.shadow.mapSize.width = 1024;
+sun.shadow.mapSize.height = 1024;
 sun.shadow.camera.near = 1;
 sun.shadow.camera.far = 90;
 sun.shadow.camera.left = -34;
@@ -2030,7 +2030,7 @@ function addBackGarden() {
   addCollider(0, -49.75, 41.0, 0.55);
   addCollider(-20.7, -38.05, 0.55, 21.75);
   addCollider(20.7, -38.05, 0.55, 21.75);
-  addSakuraTree(0, -40.4, 2.55, 0.11);
+  addSakuraTree(0, -40.4, 2.55, 0.11, true);
 
   const petals = [];
   for (let i = 0; i < 28; i += 1) {
@@ -2333,11 +2333,16 @@ function addLantern(x, z, y, size, exterior = false) {
   block(size * 0.18, size * 1.1, size * 0.18, materials.bridgeDark, x, y - size * 0.3, z);
   const shade = block(size * 0.6, size * 0.6, size * 0.6, materials.lanternGlow, x, y + size * 0.22, z);
   shade.userData.baseIntensity = 1;
-  // All lanterns get a point light; use shorter range for smaller bridge lanterns
-  const lightDist = size >= 0.42 ? 8 : 5;
-  const light = new THREE.PointLight("#ffb36b", 1.4, lightDist, 2);
-  light.position.set(sx(x), y + size * 0.24, sz(z));
-  scene.add(light);
+  // Real PointLights are the most expensive thing in a forward renderer.
+  // Small bridge lanterns skip them on mobile — the glow sprite + emissive
+  // shade carry the look for a fraction of the cost.
+  let light = null;
+  if (!isMobile || size >= 0.42) {
+    const lightDist = size >= 0.42 ? 8 : 5;
+    light = new THREE.PointLight("#ffb36b", 1.4, lightDist, 2);
+    light.position.set(sx(x), y + size * 0.24, sz(z));
+    scene.add(light);
+  }
   const glow = addLanternGlowSprite(x, y + size * 0.22, z, size * 4.6);
   animated.push({ type: "lantern", mesh: shade, light, exterior, glow });
 }
@@ -2376,7 +2381,7 @@ function getTreeShared() {
   return treeShared;
 }
 
-function addSakuraTree(x, z, scale = 1, groundY = 0.21) {
+function addSakuraTree(x, z, scale = 1, groundY = 0.21, detailed = false) {
   const s = getTreeShared();
   const group = new THREE.Group();
   group.position.set(sx(x), 0, sz(z));
@@ -2398,7 +2403,7 @@ function addSakuraTree(x, z, scale = 1, groundY = 0.21) {
   group.add(trunk);
 
   // Branches reaching from the trunk top into the canopy
-  const branchCount = isMobile ? 2 : 3;
+  const branchCount = detailed && !isMobile ? 3 : 2;
   for (let b = 0; b < branchCount; b += 1) {
     const angle = leanDir + (b / branchCount) * Math.PI * 2 + 0.7;
     const branch = new THREE.Mesh(s.branchGeo, s.trunkMat);
@@ -2427,7 +2432,9 @@ function addSakuraTree(x, z, scale = 1, groundY = 0.21) {
     [0.0, 1.62, 0.32, 0.86, 0],
     [-0.28, 0.34, 0.95, 0.7, 2],
   ];
-  const blobLimit = isMobile ? 6 : blobs.length;
+  // Distant shoreline trees read fine with fewer blobs — only the walkable
+  // hero tree gets the full crown (draw calls are the budget here)
+  const blobLimit = isMobile ? 6 : detailed ? blobs.length : 7;
 
   for (let i = 0; i < blobLimit; i += 1) {
     const [ox, oy, oz, r, tone] = blobs[i];
@@ -3345,6 +3352,7 @@ function updateLighting(delta) {
     }
     item.mesh.visible = true; // shade is always physically present
     item.mesh.material.opacity = 1;
+    item.glowBoost = nightBoost;
     if (item.light) {
       item.light.visible = nightBoost > 0.04;
       item.light.userData.targetIntensity = 1.35 * nightBoost;
@@ -3404,7 +3412,7 @@ function updateAnimated(delta, now) {
       const flicker = 0.88 + Math.sin(now * 0.006 + item.mesh.position.x) * 0.12;
       if (item.light) item.light.intensity = (item.light.userData.targetIntensity ?? 1.1) * flicker;
       if (item.glow) {
-        const strength = (item.light?.userData.targetIntensity ?? 0) * flicker;
+        const strength = (item.glowBoost ?? 0) * 1.35 * flicker;
         item.glow.material.opacity = THREE.MathUtils.clamp(strength * 0.17, 0, 0.5);
       }
     }
