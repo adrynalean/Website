@@ -115,7 +115,7 @@ const drawHeroBlob = () => {
   let lastTime = 0;
 
   // Pre-initialise each petal with independent properties so none share phase
-  const PETAL_COUNT = 38;
+  const PETAL_COUNT = 30;
   const petals = Array.from({ length: PETAL_COUNT }, (_, i) => ({
     x: (i * 0.23 + 0.04) % 1,                        // 0-1 fraction of width
     y: (i * 0.17 + 0.03) % 1,                        // spread across full height on load
@@ -150,17 +150,17 @@ const drawHeroBlob = () => {
     const gradient = context.createRadialGradient(centerX, centerY, radius * 0.1, centerX, centerY, radius * 1.25);
 
     if (dark) {
-      gradient.addColorStop(0, "rgba(243, 167, 188, 0.54)");
-      gradient.addColorStop(0.5, "rgba(142, 87, 104, 0.34)");
+      gradient.addColorStop(0, "rgba(243, 167, 188, 0.30)");
+      gradient.addColorStop(0.5, "rgba(142, 87, 104, 0.18)");
       gradient.addColorStop(1, "rgba(10, 12, 15, 0)");
     } else {
-      gradient.addColorStop(0, "rgba(200, 95, 127, 0.38)");
-      gradient.addColorStop(0.55, "rgba(183, 121, 47, 0.18)");
+      gradient.addColorStop(0, "rgba(200, 95, 127, 0.22)");
+      gradient.addColorStop(0.55, "rgba(183, 121, 47, 0.10)");
       gradient.addColorStop(1, "rgba(243, 241, 235, 0)");
     }
 
     context.beginPath();
-    const points = 124;
+    const points = 84;
     for (let i = 0; i <= points; i += 1) {
       const angle = (Math.PI * 2 * i) / points;
       const jag =
@@ -175,10 +175,10 @@ const drawHeroBlob = () => {
     context.fillStyle = gradient;
     context.fill();
 
-    context.globalAlpha = dark ? 0.3 : 0.22;
-    for (let ring = 0; ring < 8; ring += 1) {
+    context.globalAlpha = dark ? 0.16 : 0.12;
+    for (let ring = 0; ring < 4; ring += 1) {
       context.beginPath();
-      const ringRadius = radius * (0.35 + ring * 0.08);
+      const ringRadius = radius * (0.42 + ring * 0.14);
       for (let i = 0; i <= points; i += 1) {
         const angle = (Math.PI * 2 * i) / points;
         const wave = Math.sin(angle * 4 + time * 0.001 + ring) * 18;
