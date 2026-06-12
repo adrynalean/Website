@@ -1606,54 +1606,73 @@ body::after {
   box-shadow: 0 6px 18px color-mix(in srgb, var(--sakura) 24%, transparent);
 }
 
-/* Scroll-tracking sakura branch — grows down the right edge as you read */
-.scroll-branch {
-  position: fixed;
-  top: 50%;
-  right: 1.1rem;
-  z-index: 40;
-  width: 34px;
-  height: min(62vh, 560px);
-  transform: translateY(-50%);
-  pointer-events: none;
+/* Interactive profile.ts — the ships array drives the headline */
+.ship-link {
+  all: unset;
+  cursor: pointer;
+  color: var(--accent);
+  border-bottom: 1px dashed color-mix(in srgb, var(--accent) 55%, transparent);
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 }
 
-.scroll-branch path {
-  stroke: color-mix(in srgb, var(--wood-soft) 75%, var(--accent));
-  stroke-width: 2;
-  fill: none;
-  stroke-linecap: round;
+.ship-link:hover,
+.ship-link:focus-visible {
+  color: var(--accent-2);
+  border-bottom-color: var(--accent-2);
+  border-bottom-style: solid;
 }
 
-.scroll-branch .branch-bloom {
+/* Terminal mockups type themselves into view */
+.terminal-lines.js-type span {
   opacity: 0;
-  transform: scale(0);
-  transform-origin: center;
-  transform-box: fill-box;
-  transition: transform 600ms var(--ease-spring), opacity 300ms var(--ease-out);
+  transform: translateY(4px);
+  transition: opacity 280ms var(--ease-out), transform 280ms var(--ease-out);
+  transition-delay: calc(var(--line-i, 0) * 170ms);
 }
 
-.scroll-branch .branch-bloom.is-bloom {
+.terminal-lines.js-type.is-typed span {
   opacity: 1;
-  transform: scale(1);
+  transform: none;
 }
 
-.scroll-branch .bloom-petal {
-  fill: var(--sakura);
+/* SoccerSense pitch wakes up on hover — paused unless hovered */
+@keyframes playerDrift {
+  from { transform: translate(0, 0); }
+  to   { transform: translate(9px, -7px); }
 }
 
-.scroll-branch .bloom-core {
-  fill: var(--lantern);
+@keyframes ballRoll {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(-14px, 8px) scale(1.25); }
 }
 
-@media (max-width: 1100px) {
-  .scroll-branch {
-    display: none;
-  }
+.soccer-screen .player-dot {
+  animation: playerDrift 2.3s ease-in-out infinite alternate;
+  animation-play-state: paused;
+}
+
+.soccer-screen .player-dot:nth-of-type(odd) {
+  animation-duration: 1.8s;
+  animation-direction: alternate-reverse;
+}
+
+.soccer-screen .player-dot--ball {
+  animation-name: ballRoll;
+  animation-duration: 2.6s;
+}
+
+.soccer-screen:hover .player-dot {
+  animation-play-state: running;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .scroll-branch .branch-bloom {
+  .soccer-screen .player-dot {
+    animation: none;
+  }
+
+  .terminal-lines.js-type span {
+    opacity: 1;
+    transform: none;
     transition: none;
   }
 }

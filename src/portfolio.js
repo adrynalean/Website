@@ -51,12 +51,27 @@ const typeRole = async (word) => {
   }
 };
 
-if (roleWord && !reduceMotion) {
-  window.setInterval(() => {
+let roleCycleId = null;
+let roleResumeId = null;
+
+const startRoleCycle = () => {
+  if (roleCycleId || !roleWord || reduceMotion) return;
+  roleCycleId = window.setInterval(() => {
     roleIndex = (roleIndex + 1) % roles.length;
     typeRole(roles[roleIndex]);
   }, 2800);
-}
+};
+
+const pauseRoleCycle = (resumeAfterMs) => {
+  if (roleCycleId) {
+    window.clearInterval(roleCycleId);
+    roleCycleId = null;
+  }
+  window.clearTimeout(roleResumeId);
+  roleResumeId = window.setTimeout(startRoleCycle, resumeAfterMs);
+};
+
+startRoleCycle();
 
 const navObserver = new IntersectionObserver(
   (entries) => {
@@ -286,26 +301,45 @@ if (heroGreet) {
   heroGreet.innerHTML = `${jp}<em>· ${en}</em>`;
 }
 
-// ── Scroll-tracking sakura branch ───────────────────────────────────────────
-const scrollBranch = document.querySelector("#scrollBranch");
-const branchPath = document.querySelector("#branchPath");
-if (scrollBranch && branchPath) {
-  const pathLength = branchPath.getTotalLength();
-  const blooms = Array.from(scrollBranch.querySelectorAll(".branch-bloom"));
-  const bloomAt = [0.06, 0.28, 0.5, 0.72, 0.92];
-  branchPath.style.strokeDasharray = String(pathLength);
+// ── profile.ts drives the headline ──────────────────────────────────────────
+// Clicking a value in the ships array retypes the role word — the code card
+// is functional, not decoration.
+document.querySelectorAll(".ship-link").forEach((button) => {
+  button.addEventListener("click", () => {
+    const role = button.dataset.role;
+    const index = roles.indexOf(role);
+    if (index === -1 || !roleWord) return;
+    roleIndex = index;
+    if (reduceMotion) {
+      roleWord.textContent = role;
+    } else {
+      pauseRoleCycle(7000); // hold the chosen focus before auto-cycling resumes
+      typeRole(role);
+    }
+  });
+});
 
-  const paintBranch = () => {
-    const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-    const progress = Math.min(1, window.scrollY / max);
-    branchPath.style.strokeDashoffset = String(pathLength * (1 - progress));
-    blooms.forEach((bloom, index) => {
-      bloom.classList.toggle("is-bloom", progress >= bloomAt[index]);
+// ── Terminals type themselves into view ─────────────────────────────────────
+if (!reduceMotion) {
+  const terminals = document.querySelectorAll(".terminal-lines");
+  terminals.forEach((terminal) => {
+    terminal.classList.add("js-type");
+    Array.from(terminal.children).forEach((line, index) => {
+      line.style.setProperty("--line-i", String(index));
     });
-  };
+  });
 
-  window.addEventListener("scroll", paintBranch, { passive: true });
-  paintBranch();
+  const terminalObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-typed");
+        terminalObserver.unobserve(entry.target);
+      });
+    },
+    { threshold: 0.35 },
+  );
+  terminals.forEach((terminal) => terminalObserver.observe(terminal));
 }
 
 // ── Cursor petal trail ──────────────────────────────────────────────────────
