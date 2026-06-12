@@ -1195,6 +1195,16 @@ function addPortfolioDisplay({
   block(0.16, height + 0.36, 0.2, materials.bridgeDark, width / 2 + 0.18, centerY, 0.02, group);
   block(width + 0.2, 0.08, 0.12, materials.gold, 0, centerY - height / 2 + 0.18, 0.08, group);
 
+  // Shrine notice-board roof — layered cap so boards read as built things,
+  // not posters stuck to the wall
+  const roofBase = centerY + height / 2 + 0.16;
+  block(width + 1.3, 0.13, 0.62, materials.roofDark, 0, roofBase + 0.2, 0.05, group);
+  block(width + 0.86, 0.12, 0.5, materials.roof, 0, roofBase + 0.32, 0.05, group);
+  block(width + 0.42, 0.1, 0.38, materials.roofDark, 0, roofBase + 0.43, 0.05, group);
+  // Support brackets under the eaves
+  block(0.14, 0.22, 0.3, materials.bridgeDark, -width / 2 - 0.3, roofBase + 0.04, 0.06, group);
+  block(0.14, 0.22, 0.3, materials.bridgeDark, width / 2 + 0.3, roofBase + 0.04, 0.06, group);
+
   if (!garden) {
     block(width + 1.0, 0.12, 0.28, materials.woodLight, 0, baseY, 0, group);
   } else {
@@ -1241,13 +1251,65 @@ function facingToRotation(facing) {
   }[facing] ?? 0;
 }
 
-function makePortfolioTexture(title, subtitle, accent, width = 4.6, height = 1.9) {
-  // Parse accent hex → rgba helper
-  const aR = parseInt(accent.slice(1, 3), 16);
-  const aG = parseInt(accent.slice(3, 5), 16);
-  const aB = parseInt(accent.slice(5, 7), 16);
-  const acR = (a) => `rgba(${aR},${aG},${aB},${a})`;
+const roomKanji = {
+  mission: "志",
+  education: "学",
+  projects: "作",
+  "tech stack": "道",
+  experience: "歴",
+  contact: "縁",
+};
 
+function paintWashi(ctx, cw, ch) {
+  // Warm washi paper with fibers and speckle
+  const paper = ctx.createLinearGradient(0, 0, cw * 0.4, ch);
+  paper.addColorStop(0, "#f8eed9");
+  paper.addColorStop(0.55, "#f3e4c6");
+  paper.addColorStop(1, "#e9d3a9");
+  ctx.fillStyle = paper;
+  ctx.fillRect(0, 0, cw, ch);
+
+  // Horizontal paper fibers
+  for (let i = 0; i < 60; i += 1) {
+    ctx.globalAlpha = 0.03 + Math.random() * 0.05;
+    ctx.fillStyle = Math.random() > 0.45 ? "#c9ab7c" : "#fffaf0";
+    const y = Math.random() * ch;
+    ctx.fillRect(Math.random() * cw * 0.5, y, random(cw * 0.1, cw * 0.55), 1 + Math.random());
+  }
+
+  // Speckle
+  ctx.globalAlpha = 0.06;
+  ctx.fillStyle = "#8a6a45";
+  for (let i = 0; i < 260; i += 1) {
+    ctx.fillRect(Math.random() * cw, Math.random() * ch, 1.3, 1.3);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawHanko(ctx, x, y, size, kanji) {
+  // Vermillion seal — same mark the homepage carries
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(-0.05);
+  const grad = ctx.createLinearGradient(-size / 2, -size / 2, size / 2, size / 2);
+  grad.addColorStop(0, "#c43a2e");
+  grad.addColorStop(1, "#a12a22");
+  ctx.fillStyle = grad;
+  roundRect(ctx, -size / 2, -size / 2, size, size, size * 0.12);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(96, 18, 10, 0.55)";
+  ctx.lineWidth = Math.max(1.5, size * 0.045);
+  roundRect(ctx, -size * 0.41, -size * 0.41, size * 0.82, size * 0.82, size * 0.08);
+  ctx.stroke();
+  ctx.fillStyle = "#fff3ea";
+  ctx.font = `600 ${Math.round(size * 0.6)}px "Yu Mincho", "Hiragino Mincho ProN", "MS Mincho", serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(kanji, 0, size * 0.03);
+  ctx.restore();
+}
+
+function makePortfolioTexture(title, subtitle, accent, width = 4.6, height = 1.9) {
   const textureCanvas = document.createElement("canvas");
   const aspect = Math.max(1.0, (width * WORLD_SCALE) / height);
   textureCanvas.width = 960;
@@ -1256,116 +1318,67 @@ function makePortfolioTexture(title, subtitle, accent, width = 4.6, height = 1.9
   const cw = textureCanvas.width;
   const ch = textureCanvas.height;
 
-  // ── Background ───────────────────────────────────────────────────────────
-  const bgGrad = ctx.createLinearGradient(0, 0, cw * 0.6, ch);
-  bgGrad.addColorStop(0, "#130b10");
-  bgGrad.addColorStop(1, "#1c0e17");
-  ctx.fillStyle = bgGrad;
-  ctx.fillRect(0, 0, cw, ch);
+  paintWashi(ctx, cw, ch);
 
-  // Warm accent glow (upper-left focal point)
-  const glow = ctx.createRadialGradient(cw * 0.22, ch * 0.32, 0, cw * 0.22, ch * 0.32, cw * 0.62);
-  glow.addColorStop(0, acR(0.10));
-  glow.addColorStop(1, acR(0));
-  ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, cw, ch);
-
-  // Subtle noise grain
-  ctx.globalAlpha = 0.02;
-  for (let i = 0; i < 440; i++) {
-    ctx.fillStyle = i % 5 ? "#ffffff" : accent;
-    ctx.fillRect(random(0, cw), random(0, ch), random(1, 2.5), random(1, 2));
-  }
+  // Mounted-scroll border: wood outer line + accent hairline inset
+  const m = Math.round(ch * 0.055);
+  ctx.strokeStyle = "#6e4a2f";
+  ctx.lineWidth = Math.max(4, ch * 0.018);
+  roundRect(ctx, m, m, cw - m * 2, ch - m * 2, 10);
+  ctx.stroke();
+  ctx.strokeStyle = accent;
+  ctx.globalAlpha = 0.55;
+  ctx.lineWidth = Math.max(2, ch * 0.007);
+  roundRect(ctx, m * 1.8, m * 1.8, cw - m * 3.6, ch - m * 3.6, 7);
+  ctx.stroke();
   ctx.globalAlpha = 1;
 
-  // Outer border
-  ctx.strokeStyle = "rgba(255,255,255,0.09)";
-  ctx.lineWidth = 1.5;
-  roundRect(ctx, 1, 1, cw - 2, ch - 2, 12);
-  ctx.stroke();
-
-  // Left accent edge stripe
-  ctx.fillStyle = acR(0.62);
-  ctx.fillRect(0, 0, Math.max(3, Math.round(cw * 0.006)), ch);
-
-  // ── Window / title bar ───────────────────────────────────────────────────
-  const barH = Math.round(ch * 0.19);
-  ctx.fillStyle = "rgba(0,0,0,0.28)";
-  ctx.fillRect(0, 0, cw, barH);
-  ctx.strokeStyle = "rgba(255,255,255,0.055)";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(0, barH);
-  ctx.lineTo(cw, barH);
-  ctx.stroke();
-
-  // Traffic-light dots
-  const dotY = barH * 0.5;
-  const dotR = Math.max(5, barH * 0.175);
-  [["#ff5f57", 0], ["#febc2e", 1], ["#28c840", 2]].forEach(([col, i]) => {
-    ctx.beginPath();
-    ctx.arc(barH * 0.55 + i * dotR * 2.6, dotY, dotR, 0, Math.PI * 2);
-    ctx.fillStyle = col;
-    ctx.globalAlpha = 0.82;
-    ctx.fill();
-    ctx.globalAlpha = 1;
-  });
-
-  // Filename label (centered in bar)
-  const fileNames = {
-    mission: "mission.ts", education: "education.ts", projects: "projects.ts",
-    "tech stack": "stack.ts", experience: "experience.ts", contact: "contact.ts",
-  };
-  const fname = fileNames[title.toLowerCase()] ?? (title.toLowerCase().replace(/\s+/g, "_") + ".ts");
-  ctx.fillStyle = "rgba(253,244,240,0.34)";
-  ctx.font = `500 ${Math.round(barH * 0.36)}px "Courier New", monospace`;
+  // Large kanji watermark on the right — ink wash
+  const kanji = roomKanji[title.toLowerCase()] ?? "桜";
+  ctx.fillStyle = accent;
+  ctx.globalAlpha = 0.16;
+  ctx.font = `600 ${Math.round(ch * 0.62)}px "Yu Mincho", "Hiragino Mincho ProN", "MS Mincho", serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(fname, cw * 0.5, dotY);
-
-  // Accent dot — top-right corner of bar
-  ctx.beginPath();
-  ctx.arc(cw - barH * 0.52, dotY, dotR * 0.82, 0, Math.PI * 2);
-  ctx.fillStyle = accent;
-  ctx.globalAlpha = 0.72;
-  ctx.fill();
+  ctx.fillText(kanji, cw * 0.82, ch * 0.5);
   ctx.globalAlpha = 1;
 
-  // ── Content ───────────────────────────────────────────────────────────────
-  const pad = Math.round(cw * 0.056);
-  const contentTop = barH + Math.round(ch * 0.067);
-  const commentSize = Math.round(ch * 0.066);
-  const titleSize = Math.round(ch * 0.188);
+  // ── Content (left-aligned column) ─────────────────────────────────────────
+  const pad = Math.round(cw * 0.07);
+  const eyebrowSize = Math.round(ch * 0.062);
+  const titleSize = Math.round(ch * 0.2);
 
-  // // comment line  (monospace, muted)
-  ctx.fillStyle = "rgba(253,244,240,0.27)";
-  ctx.font = `400 ${commentSize}px "Courier New", monospace`;
+  // Mono eyebrow — the developer thread, in ink
+  ctx.fillStyle = "rgba(106, 78, 52, 0.75)";
+  ctx.font = `500 ${eyebrowSize}px "Courier New", monospace`;
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
-  ctx.fillText(`// ${subtitle}`, pad, contentTop);
+  ctx.fillText(`// ${subtitle}`, pad, ch * 0.18);
 
-  // Main title (large serif)
-  const titleY = contentTop + commentSize * 1.55;
-  ctx.fillStyle = "#fdf4f0";
+  // Title — deep ink serif
+  ctx.fillStyle = "#3a2b20";
   ctx.font = `600 ${titleSize}px Georgia, "Times New Roman", serif`;
-  ctx.fillText(title, pad, titleY);
+  ctx.fillText(title, pad, ch * 0.18 + eyebrowSize * 1.7);
 
-  // Accent rule
-  const ruleY = Math.round(titleY + titleSize * 1.18);
-  ctx.fillStyle = acR(0.82);
-  ctx.fillRect(pad, ruleY, Math.round(cw * 0.21), Math.max(2, Math.round(ch * 0.013)));
+  // Accent rule under title
+  const ruleY = ch * 0.18 + eyebrowSize * 1.7 + titleSize * 1.22;
+  ctx.fillStyle = accent;
+  ctx.fillRect(pad, ruleY, Math.round(cw * 0.18), Math.max(3, Math.round(ch * 0.014)));
 
-  // Icon (dark version of crest)
-  const iconSize = Math.round(ch * 0.093);
-  const iconCX = pad + iconSize;
-  const iconCY = ruleY + Math.round(ch * 0.09) + iconSize;
-  if (iconCY + iconSize + 4 < ch) {
-    drawPortfolioCrest(ctx, title, accent, iconCX, iconCY, iconSize);
+  // Crest icon in ink, sitting under the rule
+  const iconSize = Math.round(ch * 0.085);
+  const iconCY = ruleY + Math.round(ch * 0.1) + iconSize;
+  if (iconCY + iconSize < ch - m * 2) {
+    drawPortfolioCrest(ctx, title, accent, pad + iconSize, iconCY, iconSize);
   }
 
-  // Sakura motif — bottom-right, very faint
-  ctx.globalAlpha = 0.09;
-  drawSakuraStamp(ctx, cw - pad * 1.15, ch * 0.83, iconSize * 0.98, accent);
+  // Hanko seal — bottom right, inside the border
+  drawHanko(ctx, cw - pad * 1.1, ch - m * 2 - ch * 0.085, ch * 0.15, kanji);
+
+  // Scattered petals, very faint
+  ctx.globalAlpha = 0.12;
+  drawSakuraStamp(ctx, cw * 0.62, ch * 0.24, ch * 0.045, "#d98a9b");
+  drawSakuraStamp(ctx, cw * 0.56, ch * 0.78, ch * 0.035, "#c5748c");
   ctx.globalAlpha = 1;
 
   const texture = new THREE.CanvasTexture(textureCanvas);
@@ -1383,124 +1396,120 @@ function makeHouseMapTexture() {
   const ch = 976;
   ctx.scale(textureCanvas.width / cw, textureCanvas.height / ch);
 
-  // ── Background ───────────────────────────────────────────────────────────
-  const bgGrad = ctx.createLinearGradient(0, 0, cw * 0.6, ch);
-  bgGrad.addColorStop(0, "#130b10");
-  bgGrad.addColorStop(1, "#1c0e17");
-  ctx.fillStyle = bgGrad;
-  ctx.fillRect(0, 0, cw, ch);
+  paintWashi(ctx, cw, ch);
 
-  // Pink glow — upper-left
-  const glow = ctx.createRadialGradient(cw * 0.18, ch * 0.28, 0, cw * 0.18, ch * 0.28, cw * 0.55);
-  glow.addColorStop(0, "rgba(243,167,188,0.10)");
-  glow.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, cw, ch);
-
-  // Dot grid
-  ctx.globalAlpha = 0.038;
-  for (let x = 84; x < cw; x += 76) {
-    for (let y = 84; y < ch; y += 76) {
-      ctx.beginPath();
-      ctx.arc(x, y, 2, 0, Math.PI * 2);
-      ctx.fillStyle = "#ffffff";
-      ctx.fill();
-    }
-  }
+  // Mounted border: wood + inner sakura hairline
+  ctx.strokeStyle = "#6e4a2f";
+  ctx.lineWidth = 18;
+  roundRect(ctx, 30, 30, cw - 60, ch - 60, 24);
+  ctx.stroke();
+  ctx.strokeStyle = "#c5748c";
+  ctx.globalAlpha = 0.5;
+  ctx.lineWidth = 5;
+  roundRect(ctx, 58, 58, cw - 116, ch - 116, 18);
+  ctx.stroke();
   ctx.globalAlpha = 1;
 
-  // Outer border
-  ctx.strokeStyle = "rgba(255,255,255,0.09)";
-  ctx.lineWidth = 16;
-  roundRect(ctx, 24, 24, cw - 48, ch - 48, 22);
-  ctx.stroke();
-
-  // Left accent stripe
-  ctx.fillStyle = "rgba(243,167,188,0.55)";
-  ctx.fillRect(24, 24, 6, ch - 48);
-
-  // ── Header ───────────────────────────────────────────────────────────────
-  ctx.fillStyle = "#fdf4f0";
-  ctx.font = "600 60px Georgia, serif";
+  // ── Header — ink serif + mono eyebrow ─────────────────────────────────────
+  ctx.fillStyle = "#3a2b20";
+  ctx.font = "600 62px Georgia, serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
-  ctx.fillText("Sashit's Portfolio House", cw / 2, 52);
+  ctx.fillText("Sashit's Portfolio House", cw / 2, 76);
 
-  ctx.fillStyle = "rgba(243,167,188,0.52)";
+  ctx.fillStyle = "rgba(106, 78, 52, 0.72)";
   ctx.font = `500 24px "Courier New", monospace`;
-  ctx.fillText("// walkthrough guide", cw / 2, 124);
+  ctx.fillText("// walkthrough guide", cw / 2, 150);
 
-  // ── Connector paths ───────────────────────────────────────────────────────
-  ctx.fillStyle = "rgba(255,244,232,0.05)";
+  // ── Corridor paths — soft ink wash ────────────────────────────────────────
+  ctx.fillStyle = "rgba(110, 74, 47, 0.10)";
   roundRect(ctx, 455, 260, 1010, 52, 8);
   ctx.fill();
   roundRect(ctx, 920, 312, 78, 434, 8);
   ctx.fill();
 
-  ctx.strokeStyle = "rgba(243,167,188,0.20)";
-  ctx.lineWidth = 4;
+  ctx.strokeStyle = "rgba(110, 74, 47, 0.30)";
+  ctx.lineWidth = 3;
+  ctx.setLineDash([14, 10]);
   ctx.beginPath();
   ctx.moveTo(960, 312);
   ctx.lineTo(960, 746);
   ctx.moveTo(455, 286);
   ctx.lineTo(1465, 286);
   ctx.stroke();
+  ctx.setLineDash([]);
 
-  // ── Room cards ───────────────────────────────────────────────────────────
+  // ── Room cards — paper plaques with ink labels ────────────────────────────
   const rooms = [
-    { x: 235, y: 520, w: 360, h: 170, label: "Education", sub: "West Room",  color: "#7f93a7", icon: "book"  },
-    { x: 740, y: 372, w: 440, h: 170, label: "Mission",   sub: "Main Hall",  color: "#c76576", icon: "crest" },
-    { x: 1325, y: 520, w: 360, h: 170, label: "Projects",  sub: "East Room",  color: "#6f9b82", icon: "grid"  },
-    { x: 760, y: 690, w: 400, h: 132, label: "Experience", sub: "Rear Room",  color: "#b46b51", icon: "path"  },
-    { x: 1210, y: 332, w: 260, h: 116, label: "Stack",     sub: "Tool Wall",  color: "#d0a45f", icon: "chip"  },
-    { x: 820, y: 236, w: 280, h:  88, label: "Map",        sub: "Table",      color: "#9670a9", icon: "pin"   },
+    { x: 235, y: 520, w: 360, h: 170, label: "Education", sub: "West Room",  color: "#7f93a7", icon: "book",  kanji: "学" },
+    { x: 740, y: 372, w: 440, h: 170, label: "Mission",   sub: "Main Hall",  color: "#c76576", icon: "crest", kanji: "志" },
+    { x: 1325, y: 520, w: 360, h: 170, label: "Projects",  sub: "East Room",  color: "#6f9b82", icon: "grid",  kanji: "作" },
+    { x: 760, y: 690, w: 400, h: 132, label: "Experience", sub: "Rear Room",  color: "#b46b51", icon: "path",  kanji: "歴" },
+    { x: 1210, y: 332, w: 260, h: 116, label: "Stack",     sub: "Tool Wall",  color: "#d0a45f", icon: "chip",  kanji: "道" },
+    { x: 820, y: 236, w: 280, h:  88, label: "Map",        sub: "Table",      color: "#9670a9", icon: "pin",   kanji: "図" },
   ];
 
-  rooms.forEach(({ x, y, w, h, label, sub, color, icon }) => {
-    // Card background
-    ctx.fillStyle = "rgba(255,255,255,0.045)";
-    roundRect(ctx, x, y, w, h, 18);
+  rooms.forEach(({ x, y, w, h, label, sub, color, icon, kanji }) => {
+    const small = w < 300;
+
+    // Plaque: lighter paper with soft shadow edge
+    ctx.fillStyle = "rgba(255, 250, 236, 0.92)";
+    roundRect(ctx, x, y, w, h, 14);
     ctx.fill();
-    // Accent border
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 8;
-    roundRect(ctx, x + 4, y + 4, w - 8, h - 8, 14);
+    ctx.strokeStyle = "#6e4a2f";
+    ctx.globalAlpha = 0.65;
+    ctx.lineWidth = 3.5;
+    roundRect(ctx, x, y, w, h, 14);
     ctx.stroke();
-    // Left accent bar
-    ctx.fillStyle = color;
-    ctx.globalAlpha = 0.55;
-    ctx.fillRect(x + 4, y + 18, 4, h - 36);
     ctx.globalAlpha = 1;
 
-    // Icon
-    drawMapIcon(ctx, icon, color, x + w * 0.18, y + h * 0.52, Math.min(w, h) * 0.18);
+    // Accent tab on the left edge
+    ctx.fillStyle = color;
+    roundRect(ctx, x, y + h * 0.16, 7, h * 0.68, 3);
+    ctx.fill();
 
-    // Label
-    ctx.fillStyle = "#fdf4f0";
-    ctx.font = `800 ${w < 230 ? 36 : 42}px Inter, Arial, sans-serif`;
+    // Faint room kanji on the right of the plaque
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.20;
+    ctx.font = `600 ${Math.round(h * 0.72)}px "Yu Mincho", "Hiragino Mincho ProN", "MS Mincho", serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(kanji, x + w - h * 0.42, y + h * 0.52);
+    ctx.globalAlpha = 1;
+
+    // Icon — sized to leave room for the text column
+    const iconR = Math.min(w, h) * (small ? 0.2 : 0.16);
+    drawMapIcon(ctx, icon, color, x + h * 0.38, y + h * 0.5, iconR);
+
+    // Label — ink serif, constrained to the card (maxWidth guards overflow)
+    const labelX = x + h * 0.38 + iconR + (small ? 14 : 18);
+    const labelMax = x + w - labelX - h * 0.42;
+    ctx.fillStyle = "#3a2b20";
+    ctx.font = `700 ${small ? 30 : 36}px Georgia, serif`;
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
-    ctx.fillText(label, x + w * 0.56, y + h / 2 - 10);
+    ctx.fillText(label, labelX, y + h / 2 - (small ? 8 : 12), labelMax);
 
-    // Sub-label
-    ctx.fillStyle = color;
-    ctx.globalAlpha = 0.80;
-    ctx.font = `500 ${w < 230 ? 19 : 24}px "Courier New", monospace`;
-    ctx.fillText(sub, x + w * 0.56, y + h / 2 + 34);
-    ctx.globalAlpha = 1;
+    // Sub-label — mono, muted ink
+    ctx.fillStyle = "rgba(106, 78, 52, 0.85)";
+    ctx.font = `500 ${small ? 18 : 21}px "Courier New", monospace`;
+    ctx.fillText(sub, labelX, y + h / 2 + (small ? 18 : 25), labelMax);
   });
 
-  // Sakura motifs — corner decorations, very faint
-  ctx.globalAlpha = 0.07;
-  [[210, 250, 16], [1510, 292, 15], [410, 792, 13], [1485, 785, 14]]
-    .forEach(([x, y, s]) => drawSakuraStamp(ctx, x, y, s, "#f3a7bc"));
+  // Scattered petals
+  ctx.globalAlpha = 0.16;
+  [[210, 250, 16], [1510, 292, 15], [410, 792, 13], [1485, 785, 14], [1700, 620, 12]]
+    .forEach(([x, y, s]) => drawSakuraStamp(ctx, x, y, s, "#d98a9b"));
   ctx.globalAlpha = 1;
 
-  // Footer
-  ctx.fillStyle = "rgba(243,167,188,0.60)";
+  // Hanko — bottom right corner
+  drawHanko(ctx, cw - 150, ch - 140, 86, "桜");
+
+  // Footer hint — ink mono
+  ctx.fillStyle = "rgba(140, 74, 60, 0.85)";
   ctx.font = `700 26px "Courier New", monospace`;
   ctx.textAlign = "center";
-  ctx.fillText("// Press F nearby to inspect each section.", cw / 2, ch - 62);
+  ctx.fillText("// Press F nearby to inspect each section.", cw / 2, ch - 84);
 
   const texture = new THREE.CanvasTexture(textureCanvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -1512,14 +1521,14 @@ function drawPortfolioCrest(ctx, title, accent, x, y, size) {
   ctx.save();
   ctx.translate(x, y);
   ctx.strokeStyle = accent;
-  ctx.fillStyle = "rgba(255,255,255,0.06)";
+  ctx.fillStyle = "rgba(255, 250, 235, 0.85)";
   ctx.lineWidth = Math.max(3, size * 0.06);
   ctx.beginPath();
   ctx.arc(0, 0, size, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
 
-  ctx.strokeStyle = "rgba(253,244,240,0.72)";
+  ctx.strokeStyle = "#4a352a";
   ctx.lineWidth = Math.max(2.5, size * 0.045);
   const key = title.toLowerCase();
   if (key.includes("project")) {
@@ -1590,13 +1599,13 @@ function drawMapIcon(ctx, icon, color, x, y, size) {
   ctx.save();
   ctx.translate(x, y);
   ctx.strokeStyle = color;
-  ctx.fillStyle = "rgba(255,255,255,0.055)";
+  ctx.fillStyle = "rgba(255, 250, 235, 0.9)";
   ctx.lineWidth = Math.max(4, size * 0.11);
   ctx.beginPath();
   ctx.arc(0, 0, size, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
-  ctx.strokeStyle = "rgba(253,244,240,0.70)";
+  ctx.strokeStyle = "#4a352a";
   ctx.lineWidth = Math.max(3, size * 0.08);
   if (icon === "book") {
     ctx.strokeRect(-size * 0.5, -size * 0.35, size, size * 0.7);
