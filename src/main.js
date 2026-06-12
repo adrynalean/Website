@@ -136,7 +136,7 @@ const materials = {
   flower: blockMaterial("#ef9fb9", "#ffd0dc"),
   ceramic: blockMaterial("#e4d7bf", "#fff1cf"),
   paperWarm: blockMaterial("#ffe2bc", "#fff3ce"),
-  ceiling: new THREE.MeshBasicMaterial({ color: "#f4dfbd" }),
+  ceiling: new THREE.MeshBasicMaterial({ color: "#dec19b" }),
   lily: new THREE.MeshBasicMaterial({ color: "#6f965c", side: THREE.DoubleSide }),
   lotus: new THREE.MeshBasicMaterial({ color: "#ff96bd", side: THREE.DoubleSide }),
   lanternGlow: new THREE.MeshBasicMaterial({ color: palette.lantern }),
@@ -960,6 +960,16 @@ function addRoomPartitions() {
   partitionWithDoor(5.4, -9.6, 31.65, "z", 8.0, 2.4, "East Room Door", false);
   partitionWithDoor(0, -13.45, 32.4, "x", 0, 2.7, "Rear Room Door", false);
   addSlidingDoor("Garden Door", 0, -26.05, "x", 2.8, true);
+
+  // Bay dividers: short wall stubs off the outer walls so each display
+  // board gets its own alcove instead of sharing one long corridor wall
+  addBayDivider(-14.85, -1.7, 4.5);
+  addBayDivider(14.85, -0.95, 4.5);
+}
+
+function addBayDivider(x, z, length) {
+  wallSegment(x, z, length, 2.8, "x", 2.05);
+  addCollider(x, z, length, 0.42);
 }
 
 function partitionWithDoor(x, z, length, axis, gapCenter, gapSize, doorLabel = "", initiallyOpen = true) {
@@ -1023,8 +1033,9 @@ function addInteriorDetails() {
 
   addCabinetWall(-4.8, 2.75, 0.55, 3.9, "z");
   addCabinetWall(4.8, 2.75, 0.55, 3.9, "z");
-  addBonsai(4.35, 1.68, 4.85);
-  addBonsai(-4.35, 1.68, 4.85);
+  // Bonsai sit centred on the cabinet tops, clear of the entrance lanterns
+  addBonsai(4.8, 1.68, 1.6);
+  addBonsai(-4.8, 1.68, 1.6);
 
   addFloorLantern(-4.35, 5.45, 1.2, 0.72, true);
   addFloorLantern(4.35, 5.45, 1.2, 0.72, true);
@@ -1033,17 +1044,18 @@ function addInteriorDetails() {
 
   // --- Room A (West) ---
   addTatamiArea(-11.25, -4.3, 5, 5);
-  addPlanter(-15.75, -4.6, 1.0, 4.0, "z");
+  // Planter fills the bare wall stretch between the board and rear partition
+  addPlanter(-15.75, -10.7, 1.0, 3.6, "z");
   addLowTable(-11.25, -4.3, 2.4, 1.3);
   addBonsai(-11.25, 1.07, -4.3);
-  addFloorLantern(-15.4, -11.2, 1.15);
+  addFloorLantern(-15.4, -12.4, 1.15);
 
   // --- Room B (East) ---
   addTatamiArea(11.25, -4.3, 5, 5);
-  addPlanter(15.75, -4.6, 1.0, 4.0, "z");
+  addPlanter(15.75, -10.7, 1.0, 3.6, "z");
   addLowTable(11.25, -4.3, 2.4, 1.3);
   addIkebana(11.25, 1.07, -4.3);
-  addFloorLantern(15.4, -11.2, 1.15);
+  addFloorLantern(15.4, -12.4, 1.15);
 
   // --- Corridor between Main Hall and Rear Room ---
   addFloorLantern(-4.1, -12.2, 1.05);
@@ -1703,11 +1715,14 @@ function addCabinetWall(x, z, w, d, axis) {
   block(axis === "z" ? w : d, 1.0, axis === "z" ? d : w, materials.woodLight, x, 1.18, z);
   addCollider(x, z, axis === "z" ? w + 0.12 : d + 0.12, axis === "z" ? d + 0.12 : w + 0.12);
   const drawerCount = 5;
-  for (let i = 0; i < drawerCount; i += 1) {
-    const offset = (i - (drawerCount - 1) / 2) * (d / drawerCount);
-    const px = axis === "z" ? x - 0.29 : x + offset;
-    const pz = axis === "z" ? z + offset : z - 0.29;
-    block(axis === "z" ? 0.08 : 0.46, 0.08, axis === "z" ? 0.46 : 0.08, materials.gold, px, 1.32, pz);
+  // Handles on both faces — cabinets are viewed from either side
+  for (const side of [-1, 1]) {
+    for (let i = 0; i < drawerCount; i += 1) {
+      const offset = (i - (drawerCount - 1) / 2) * (d / drawerCount);
+      const px = axis === "z" ? x + side * 0.29 : x + offset;
+      const pz = axis === "z" ? z + offset : z + side * 0.29;
+      block(axis === "z" ? 0.08 : 0.46, 0.08, axis === "z" ? 0.46 : 0.08, materials.gold, px, 1.32, pz);
+    }
   }
 }
 
@@ -2025,8 +2040,9 @@ function addExteriorDetails() {
 
   addGardenBed(-5.8, 7.4, 3.8, 0.62);
   addGardenBed(5.8, 7.4, 3.8, 0.62);
-  addGardenBed(-8.4, 2.2, 0.62, 5.0);
-  addGardenBed(8.4, 2.2, 0.62, 5.0);
+  // Outer beds continue the row along the front wall — outside the house
+  addGardenBed(-11.4, 7.4, 4.4, 0.62);
+  addGardenBed(11.4, 7.4, 4.4, 0.62);
   addBackGarden();
 }
 
