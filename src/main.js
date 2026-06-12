@@ -1,5 +1,8 @@
 import * as THREE from "https://unpkg.com/three@0.164.1/build/three.module.js";
 
+// Build diagnostics — lets us spot a startup crash from any console
+window.addEventListener("error", (e) => { window.__worldErr = `${e.message} @ ${e.filename}:${e.lineno}`; });
+
 const canvas = document.querySelector("#scene");
 const enterButton = document.querySelector("#enterButton");
 const intro = document.querySelector("#intro");
@@ -160,6 +163,15 @@ const playable = [];
 const animated = [];
 const treeShared = {};
 let lanternGlowTexture = null;
+// Room kanji must be initialized before buildWorld() runs (TDZ otherwise)
+const roomKanji = {
+  mission: "志",
+  education: "学",
+  projects: "作",
+  "tech stack": "道",
+  experience: "歴",
+  contact: "縁",
+};
 const boxGeometryCache = new Map();
 const doors = [];
 const interactables = [];
@@ -1250,15 +1262,6 @@ function facingToRotation(facing) {
     "-x": -Math.PI / 2,
   }[facing] ?? 0;
 }
-
-const roomKanji = {
-  mission: "志",
-  education: "学",
-  projects: "作",
-  "tech stack": "道",
-  experience: "歴",
-  contact: "縁",
-};
 
 function paintWashi(ctx, cw, ch) {
   // Warm washi paper with fibers and speckle
@@ -4034,3 +4037,6 @@ if (isMobile && mobHud) {
     if (!toggleFrontDoor()) openNearbyPortfolio();
   }, { passive: false });
 }
+
+// Module evaluated to the end without throwing
+window.__worldReady = true;
