@@ -481,14 +481,22 @@ const state = {
 const AIM_ROUND_SECONDS = 30;
 // Firing line faces -z; targets spawn on the GALLERY plane. Declared early so
 // addAimDojo() (run during buildWorld) doesn't hit a temporal dead zone.
+// Enclosed dojo room, set far behind the garden so nothing else is in view.
+// Fully walled, so the house/boards literally cannot be seen from inside.
 const DOJO = {
-  fireX: 0,
-  fireZ: -40.0,      // deep in the garden, past the Contact board, facing -z
-  galleryZ: -48.0,   // backdrop sits just in front of the rear fence (-49.75)
-  spanX: 8.2,        // half-width of the target field (logical units)
+  cx: 0,             // room centre X
+  cz: -68.0,         // room centre Z
+  halfX: 11.0,       // interior half-width
+  halfZ: 12.0,       // interior half-depth
+  ceilingY: 7.0,
+  fireZ: -59.0,      // firing line (player stands), faces -z
+  galleryZ: -76.5,   // target backdrop
+  spanX: 8.2,        // half-width of the target field
   yLow: 1.5,
   yHigh: 4.4,
 };
+// Where the player returns to when leaving the dojo
+const DOJO_EXIT = { x: 0, z: -46.0, yaw: 0 };
 const range = {
   phase: "off",
   podium: null,          // { center: Vec2 } proximity trigger, set in addAimDojo
@@ -2113,86 +2121,108 @@ function addBackGarden() {
   addCollider(-20.7, -38.05, 0.55, 21.75);
   addCollider(20.7, -38.05, 0.55, 21.75);
 
-  // Trees moved to the corners — the centre is now the aim dojo
-  addSakuraTree(-16.5, -46.5, 2.2, 0.11, true);
-  addSakuraTree(16.5, -46.5, 2.2, 0.11, true);
+  // Center tree restored — the dojo is now its own separate room out back
+  addSakuraTree(0, -44.0, 2.4, 0.11, true);
 
-  // Stone path leading from the garden door, past the contact board, to the dojo
-  for (let z = -30; z >= -38.5; z -= 1.5) {
-    block(2.2, 0.06, 1.0, materials.stone, 0, 0.05, z);
-  }
-
-  const petals = [];
-  for (let i = 0; i < 22; i += 1) {
-    petals.push({
-      w: random(0.08, 0.18),
-      h: 0.012,
-      d: random(0.05, 0.13),
-      x: random(-18, 18),
-      y: 0.11,
-      z: random(-48, -44),
-      ry: random(0, Math.PI),
-    });
-  }
-  addInstancedBoxes(petals, materials.sakura);
+  // Entrance gate at the rear hedge — walk here, press F to enter the dojo
+  addDojoGate();
 
   addAimDojo();
 }
 
-function addAimDojo() {
-  // Raked-gravel firing platform
-  block(11.5, 0.12, 5.2, materials.stone, DOJO.fireX, 0.06, DOJO.fireZ + 0.6);
-  block(11.0, 0.04, 4.7, materials.shore, DOJO.fireX, 0.13, DOJO.fireZ + 0.6);
+// A small vermillion torii set into the rear hedge marks the dojo entrance.
+function addDojoGate() {
+  const gx = 0;
+  const gz = -49.0;
+  [-1.6, 1.6].forEach((x) => block(0.32, 3.0, 0.32, materials.vermillion, gx + x, 1.5, gz));
+  block(4.2, 0.34, 0.4, materials.vermillion, gx, 3.05, gz);
+  block(4.7, 0.26, 0.5, materials.vermillion, gx, 3.32, gz);
+  block(0.9, 0.5, 0.18, materials.paperWarm, gx, 2.5, gz - 0.02); // little signboard
+  // Glowing marker stone you press F at
+  const mGlow = block(0.4, 0.1, 0.4, materials.lanternGlow, gx, 0.55, gz + 0.9);
+  mGlow.userData.baseIntensity = 1;
+  const mLight = new THREE.PointLight("#ffd9a4", 0.9, 4.0, 2);
+  mLight.position.set(sx(gx), 0.8, sz(gz + 0.9));
+  scene.add(mLight);
+  animated.push({ type: "lantern", mesh: mGlow, light: mLight, exterior: false, glow: addLanternGlowSprite(gx, 0.6, gz + 0.9, 1.3) });
+  range.gate = { center: new THREE.Vector2(sx(gx), sz(gz + 0.9)) };
+}
 
-  // Target gallery backdrop — dark shoji wall so glowing targets read clearly
-  block(20.0, 6.6, 0.3, materials.charcoal, 0, 3.0, DOJO.galleryZ - 0.5);
-  block(20.6, 0.4, 0.5, materials.bridgeDark, 0, 6.2, DOJO.galleryZ - 0.5);
-  block(20.6, 0.4, 0.5, materials.bridgeDark, 0, 0.2, DOJO.galleryZ - 0.5);
-  for (let x = -9; x <= 9; x += 3) {
-    block(0.28, 6.2, 0.34, materials.bridgeDark, x, 3.1, DOJO.galleryZ - 0.46);
+// The enclosed aim-trainer room. Fully walled + ceilinged so that, once
+// inside, nothing of the house or garden is visible — the world "disappears".
+function addAimDojo() {
+  range.room = new THREE.Group();
+  scene.add(range.room);
+  const add = (w, h, d, mat, x, y, z) => {
+    const mesh = block(w, h, d, mat, x, y, z, range.room);
+    return mesh;
+  };
+
+  const { cx, cz, halfX, halfZ, ceilingY, galleryZ } = DOJO;
+
+  // Floor (warm wood) + ceiling (dark, so glow targets pop)
+  add(halfX * 2 + 1, 0.2, halfZ * 2 + 1, materials.floorAlt, cx, 0.0, cz);
+  add(halfX * 2 + 1, 0.2, halfZ * 2 + 1, materials.charcoal, cx, ceilingY, cz);
+
+  // Four enclosing walls (charcoal interior reads like a night dojo)
+  add(halfX * 2 + 1, ceilingY, 0.4, materials.charcoal, cx, ceilingY / 2, cz + halfZ); // behind player
+  add(halfX * 2 + 1, ceilingY, 0.4, materials.charcoal, cx, ceilingY / 2, cz - halfZ); // gallery side
+  add(0.4, ceilingY, halfZ * 2 + 1, materials.charcoal, cx - halfX, ceilingY / 2, cz);
+  add(0.4, ceilingY, halfZ * 2 + 1, materials.charcoal, cx + halfX, ceilingY / 2, cz);
+
+  // Wainscot trim so the walls aren't flat
+  [cz + halfZ, cz - halfZ].forEach((z) => add(halfX * 2 + 1, 0.5, 0.5, materials.bridgeDark, cx, 1.2, z));
+  [cx - halfX, cx + halfX].forEach((x) => add(0.5, 0.5, halfZ * 2 + 1, materials.bridgeDark, x, 1.2, cz));
+
+  // Gallery face — lighter panel framing the target field
+  add(halfX * 2 - 1, ceilingY - 1.2, 0.16, materials.blackLacquer, cx, ceilingY / 2, galleryZ - 0.3);
+  for (let x = -9; x <= 9; x += 4.5) {
+    add(0.3, ceilingY - 1.4, 0.3, materials.vermillion, cx + x, ceilingY / 2, galleryZ - 0.18);
   }
 
-  // Twin torii-red posts framing the range (wide of the target field, at the
-  // firing line so they never occlude a target)
-  [-10.8, 10.8].forEach((x) => {
-    block(0.55, 5.6, 0.55, materials.vermillion, x, 2.8, DOJO.fireZ - 0.5);
-    block(0.7, 0.4, 0.7, materials.toriiBlack, x, 5.2, DOJO.fireZ - 0.5);
+  // Tatami firing strip the player stands on
+  add(6.0, 0.06, 2.2, materials.tatamiWeave, cx, 0.13, DOJO.fireZ + 0.4);
+
+  // Soft, even room lighting (kept simple — two point lights)
+  [[-6, DOJO.fireZ - 2], [6, DOJO.fireZ - 2]].forEach(([x, z]) => {
+    const l = new THREE.PointLight("#ffe6c4", 1.1, 26, 2);
+    l.position.set(sx(cx + x), 5.4, sz(z));
+    range.room.add(l);
   });
-  block(22.6, 0.55, 0.6, materials.vermillion, 0, 5.35, DOJO.fireZ - 0.5);
-  block(23.6, 0.4, 0.7, materials.vermillion, 0, 5.7, DOJO.fireZ - 0.5);
-
-  // Trigger podium with a glowing top — press F here to enter the dojo
-  const podX = 2.6;
-  const podZ = DOJO.fireZ + 1.6;
-  block(0.7, 1.0, 0.7, materials.blackLacquer, podX, 0.5, podZ);
-  block(0.85, 0.12, 0.85, materials.bridgeDark, podX, 1.05, podZ);
-  const podGlow = block(0.5, 0.12, 0.5, materials.lanternGlow, podX, 1.16, podZ);
-  podGlow.userData.baseIntensity = 1;
-  const podLight = new THREE.PointLight("#ffd9a4", 1.0, 4.5, 2);
-  podLight.position.set(sx(podX), 1.3, sz(podZ));
-  scene.add(podLight);
-  animated.push({ type: "lantern", mesh: podGlow, light: podLight, exterior: false, glow: addLanternGlowSprite(podX, 1.16, podZ, 1.5) });
-
-  // Proximity trigger registered like a door (reuses getNearbyDoor distance)
-  range.podium = { center: new THREE.Vector2(sx(podX), sz(podZ)) };
+  const fill = new THREE.PointLight("#cfe0ff", 0.5, 30, 2);
+  fill.position.set(sx(cx), 6.0, sz(galleryZ + 4));
+  range.room.add(fill);
 
   range.group = new THREE.Group();
-  scene.add(range.group);
+  range.room.add(range.group);
+
+  // Hidden until the player enters — keeps it out of sight and out of the
+  // render cost while walking the house.
+  range.room.visible = false;
 }
 
 // ── Dojo lifecycle ───────────────────────────────────────────────────────────
 function enterDojo() {
   if (range.phase !== "off") return;
-  // Stand the player on the firing line, facing the gallery (-z)
   state.mapFocus = null;
   closePortfolioPanel();
   state.keys.clear();
   state.velocity.set(0, 0, 0);
-  camera.position.set(sx(DOJO.fireX), EYE_HEIGHT, sz(DOJO.fireZ));
+
+  // Reveal the enclosed room; hide the rest of the world + all HUD chrome so
+  // the trainer feels like its own focused space.
+  range.room.visible = true;
+  setWorldHidden(true);
+  document.body.classList.add("dojo-mode");
+
+  // Stand the player on the firing line, facing the gallery (-z)
+  camera.position.set(sx(DOJO.cx), EYE_HEIGHT, sz(DOJO.fireZ));
   state.floorY = 0;
   state.jumpOffset = 0;
   state.yaw = state.targetYaw = 0;
   state.pitch = state.targetPitch = 0;
+  updateCamera(0.016);
+
   document.exitPointerLock?.();
   range.phase = "menu";
   syncDojoMenu();
@@ -2201,16 +2231,38 @@ function enterDojo() {
   clearInteractionHint();
 }
 
+// Leave the dojo from ANY phase and restore the world.
 function exitDojo() {
   clearTargets();
   range.phase = "off";
   range.tracking = false;
+  range.room.visible = false;
+  setWorldHidden(false);
+  document.body.classList.remove("dojo-mode");
   dojoMenu?.classList.remove("is-open");
   dojoMenu?.setAttribute("aria-hidden", "true");
   dojoHud?.classList.remove("is-active");
   dojoResults?.classList.remove("is-open");
   dojoResults?.setAttribute("aria-hidden", "true");
   document.exitPointerLock?.();
+
+  // Drop the player back at the dojo gate in the garden
+  camera.position.set(sx(DOJO_EXIT.x), EYE_HEIGHT, sz(DOJO_EXIT.z));
+  state.floorY = 0;
+  state.jumpOffset = 0;
+  state.yaw = state.targetYaw = DOJO_EXIT.yaw;
+  state.pitch = state.targetPitch = 0;
+  updateCamera(0.016);
+}
+
+// Hide/show the whole world except the dojo room. Lazily collects the
+// top-level scene children once, excluding the room, sky, sun/moon, stars.
+function setWorldHidden(hidden) {
+  if (!setWorldHidden.list) {
+    const keep = new Set([range.room, skyDome, sunSprite, moonSprite, starField]);
+    setWorldHidden.list = scene.children.filter((child) => !keep.has(child));
+  }
+  setWorldHidden.list.forEach((child) => { child.visible = !hidden; });
 }
 
 function startRound() {
@@ -2435,6 +2487,12 @@ function commitSensitivity() {
 
 dojoMenu?.querySelector("#dojoCm360")?.addEventListener("change", commitSensitivity);
 dojoMenu?.querySelector("#dojoDpi")?.addEventListener("change", commitSensitivity);
+
+// Always-available leave (tappable on mobile; on desktop Esc also works)
+document.querySelector("#dojoLeave")?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  exitDojo();
+});
 
 dojoResults?.addEventListener("click", (event) => {
   const el = event.target.closest("[data-act]");
@@ -4041,9 +4099,9 @@ function getAimedInteractable(event = null) {
 }
 
 function isNearPodium() {
-  if (!range.podium || state.floorY >= 0.8) return false;
-  const d = Math.hypot(camera.position.x - range.podium.center.x, camera.position.z - range.podium.center.y);
-  return d < 3.0;
+  if (!range.gate || state.floorY >= 0.8) return false;
+  const d = Math.hypot(camera.position.x - range.gate.center.x, camera.position.z - range.gate.center.y);
+  return d < 3.2;
 }
 
 function getNearbyDoor() {
@@ -4591,3 +4649,16 @@ if (isMobile && mobHud) {
 
 // Module evaluated to the end without throwing
 window.__worldReady = true;
+
+// Localhost-only debug hooks for driving the dojo from the console/tests
+if (location.hostname === "127.0.0.1" || location.hostname === "localhost") {
+  window.__dojo = {
+    enter: enterDojo,
+    exit: exitDojo,
+    start: startRound,
+    step: (delta) => updateRange(delta, performance.now()),
+    shoot: shootDojo,
+    get range() { return range; },
+    get camera() { return camera; },
+  };
+}

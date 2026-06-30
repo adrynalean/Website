@@ -776,6 +776,13 @@ button:active { transform: translateY(1px); }
 }
 
 /* ── Aim Dojo ─────────────────────────────────────────────────────────────── */
+/* When training, hide the whole portfolio HUD so the dojo stands alone */
+body.dojo-mode .hud,
+body.dojo-mode .back-home,
+body.dojo-mode .mob-hud {
+  display: none !important;
+}
+
 .dojo-menu,
 .dojo-results {
   position: fixed;
@@ -1017,6 +1024,25 @@ button:active { transform: translateY(1px); }
   color: var(--text-muted);
   font-size: 0.86rem;
   font-weight: 600;
+}
+
+.dojo-hud-leave {
+  margin-left: 4px;
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.dojo-hud-leave:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 26%, transparent);
 }
 
 .dojo-reticle {
