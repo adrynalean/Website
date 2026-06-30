@@ -30,6 +30,7 @@ const dojoMenu       = document.querySelector("#dojoMenu");
 const dojoHud        = document.querySelector("#dojoHud");
 const dojoResults    = document.querySelector("#dojoResults");
 const dojoCountdown  = document.querySelector("#dojoCountdown");
+const dojoCursor     = document.querySelector("#dojoCursor");
 
 // Detect touch/coarse-pointer devices once at startup
 const isMobile = navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
@@ -499,11 +500,12 @@ const DOJO = {
 const DOJO_EXIT = { x: 0, z: -46.0, yaw: 0 };
 const range = {
   phase: "off",
-  podium: null,          // { center: Vec2 } proximity trigger, set in addAimDojo
+  gate: null,            // { center: Vec2 } proximity trigger, set in addDojoGate
   mode: "gridshot",      // gridshot | flick | tracking
   difficulty: "medium",  // easy | medium | hard
   targets: [],           // active target meshes
   group: null,           // THREE.Group holding targets
+  room: null,            // THREE.Group, the enclosed room
   // Round metrics
   shots: 0,
   hits: 0,
@@ -513,24 +515,34 @@ const range = {
   roundMs: 0,
   countdownMs: 0,
   tracking: false,       // mouse held during tracking mode
-  // Sensitivity (Aimlabs-style cm/360 + DPI), persisted
-  cm360: 30,
-  dpi: 800,
+  // Fixed-frame virtual cursor (screen pixels). Camera never rotates in a
+  // round — the player moves this crosshair to aim, like a desktop aim trainer.
+  cursor: { x: 0, y: 0 },
+  sens: 1.0,             // cursor speed multiplier (1.0 ≈ native pointer)
 };
 
-// Load saved sensitivity
+// Load saved sensitivity (migrates silently from the old cm/360 schema)
 try {
   const saved = JSON.parse(localStorage.getItem("sakura-aim-sens") || "null");
-  if (saved && saved.cm360 > 0 && saved.dpi > 0) {
-    range.cm360 = saved.cm360;
-    range.dpi = saved.dpi;
-  }
+  if (saved && saved.sens > 0) range.sens = saved.sens;
 } catch { /* ignore */ }
 
-// cm/360 → radians per mouse count (the cross-game "Aimlabs standard").
-// counts for a 360 = cm360 * dpi / 2.54  →  radians/count = 2π / that.
-function aimSensitivity() {
-  return (Math.PI * 2 * 2.54) / (range.cm360 * range.dpi);
+// Virtual cursor → normalized device coords for raycasting
+function cursorNDC() {
+  pointer.x = (range.cursor.x / window.innerWidth) * 2 - 1;
+  pointer.y = -(range.cursor.y / window.innerHeight) * 2 + 1;
+  return pointer;
+}
+
+function centerCursor() {
+  range.cursor.x = window.innerWidth / 2;
+  range.cursor.y = window.innerHeight / 2;
+  paintCursor();
+}
+
+function paintCursor() {
+  if (!dojoCursor) return;
+  dojoCursor.style.transform = `translate(${range.cursor.x}px, ${range.cursor.y}px) translate(-50%, -50%)`;
 }
 
 const timePresets = [
@@ -2279,8 +2291,11 @@ function startRound() {
   dojoResults?.classList.remove("is-open");
   dojoResults?.setAttribute("aria-hidden", "true");
   dojoHud?.classList.add("is-active");
+  centerCursor();
   spawnTargets();
-  requestLookControl();
+  // Pointer lock captures raw movement + hides the OS cursor; our own
+  // crosshair represents the aim point. Camera stays put.
+  canvas.requestPointerLock?.();
 }
 
 function endRound() {
@@ -2299,8 +2314,7 @@ function shootDojo() {
   if (range.phase !== "live") return;
   if (range.mode === "tracking") return; // tracking scores by dwell, not clicks
   range.shots += 1;
-  pointer.set(0, 0);
-  raycaster.setFromCamera(pointer, camera);
+  raycaster.setFromCamera(cursorNDC(), camera);
   const live = range.targets.filter((t) => !t.userData.isBurst);
   const hits = raycaster.intersectObjects(live, false);
   if (hits.length) {
@@ -2383,10 +2397,9 @@ function updateRange(delta, now) {
   }
 }
 
-// True when the centre reticle is over a target (for tracking mode)
+// True when the cursor crosshair is over a target (for tracking mode)
 function reticleOnTarget() {
-  pointer.set(0, 0);
-  raycaster.setFromCamera(pointer, camera);
+  raycaster.setFromCamera(cursorNDC(), camera);
   const live = range.targets.filter((t) => !t.userData.isBurst);
   return raycaster.intersectObjects(live, false).length > 0;
 }
@@ -2400,10 +2413,10 @@ function syncDojoMenu() {
     b.classList.toggle("is-selected", b.dataset.diff === range.difficulty));
   const desc = dojoMenu.querySelector("#dojoModeDesc");
   if (desc) desc.textContent = DOJO_CONFIG[range.mode].label;
-  const cm = dojoMenu.querySelector("#dojoCm360");
-  const dpi = dojoMenu.querySelector("#dojoDpi");
-  if (cm) cm.value = String(range.cm360);
-  if (dpi) dpi.value = String(range.dpi);
+  const sens = dojoMenu.querySelector("#dojoSens");
+  if (sens) sens.value = String(range.sens);
+  const sensVal = dojoMenu.querySelector("#dojoSensVal");
+  if (sensVal) sensVal.textContent = `${range.sens.toFixed(2)}×`;
 }
 
 function updateDojoHud(reticleHit = false) {
@@ -2476,17 +2489,16 @@ dojoMenu?.addEventListener("click", (event) => {
 });
 
 function commitSensitivity() {
-  const cm = parseFloat(dojoMenu?.querySelector("#dojoCm360")?.value);
-  const dpi = parseFloat(dojoMenu?.querySelector("#dojoDpi")?.value);
-  if (cm > 0) range.cm360 = cm;
-  if (dpi > 0) range.dpi = dpi;
+  const s = parseFloat(dojoMenu?.querySelector("#dojoSens")?.value);
+  if (s > 0) range.sens = s;
+  const sensVal = dojoMenu?.querySelector("#dojoSensVal");
+  if (sensVal) sensVal.textContent = `${range.sens.toFixed(2)}×`;
   try {
-    localStorage.setItem("sakura-aim-sens", JSON.stringify({ cm360: range.cm360, dpi: range.dpi }));
+    localStorage.setItem("sakura-aim-sens", JSON.stringify({ sens: range.sens }));
   } catch { /* ignore */ }
 }
 
-dojoMenu?.querySelector("#dojoCm360")?.addEventListener("change", commitSensitivity);
-dojoMenu?.querySelector("#dojoDpi")?.addEventListener("change", commitSensitivity);
+dojoMenu?.querySelector("#dojoSens")?.addEventListener("input", commitSensitivity);
 
 // Always-available leave (tappable on mobile; on desktop Esc also works)
 document.querySelector("#dojoLeave")?.addEventListener("click", (event) => {
@@ -4384,16 +4396,13 @@ document.addEventListener("pointerlockchange", () => {
 });
 
 document.addEventListener("mousemove", (event) => {
-  // In the dojo, look uses the player's calibrated cm/360 sensitivity
+  // In the dojo the camera is FIXED — the mouse drives an on-screen crosshair.
   const inDojoAim = range.phase === "live" || range.phase === "countdown";
   if (inDojoAim) {
     if (!state.pointerLocked) return;
-    const sens = aimSensitivity();
-    state.targetYaw -= event.movementX * sens;
-    state.targetPitch -= event.movementY * sens;
-    state.targetPitch = Math.max(-0.9, Math.min(0.72, state.targetPitch));
-    state.yaw = state.targetYaw;     // 1:1, no smoothing — aim must be precise
-    state.pitch = state.targetPitch;
+    range.cursor.x = THREE.MathUtils.clamp(range.cursor.x + event.movementX * range.sens, 0, window.innerWidth);
+    range.cursor.y = THREE.MathUtils.clamp(range.cursor.y + event.movementY * range.sens, 0, window.innerHeight);
+    paintCursor();
     return;
   }
   if (range.phase !== "off") return;

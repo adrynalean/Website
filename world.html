@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./src/styles.css?v=8" />
+    <link rel="stylesheet" href="./src/styles.css?v=9" />
   </head>
   <body>
     <canvas id="scene" aria-label="Lakeside sakura house walkthrough portfolio"></canvas>
@@ -133,16 +133,9 @@
         </div>
 
         <div class="dojo-section">
-          <span class="dojo-label">Sensitivity <em>· Aimlabs cm/360 standard</em></span>
-          <div class="dojo-sens">
-            <label>cm/360
-              <input id="dojoCm360" type="number" min="1" max="200" step="0.5" inputmode="decimal" />
-            </label>
-            <label>Mouse DPI
-              <input id="dojoDpi" type="number" min="100" max="32000" step="50" inputmode="numeric" />
-            </label>
-          </div>
-          <p class="dojo-mode-desc">Lower cm/360 = faster turn. Your values are saved for next time.</p>
+          <span class="dojo-label">Cursor sensitivity <em id="dojoSensVal">1.00&times;</em></span>
+          <input id="dojoSens" class="dojo-slider" type="range" min="0.2" max="3" step="0.05" value="1" />
+          <p class="dojo-mode-desc">The view stays still — you move a crosshair to aim. Lower = slower, steadier cursor. Saved for next time.</p>
         </div>
 
         <div class="dojo-actions">
@@ -161,7 +154,7 @@
         <span class="dojo-hud-stat" id="dojoStat">100%</span>
         <button class="dojo-hud-leave" id="dojoLeave" type="button">&#10005; Leave</button>
       </div>
-      <div class="dojo-reticle" aria-hidden="true"></div>
+      <div class="dojo-cursor" id="dojoCursor" aria-hidden="true"></div>
       <div class="dojo-countdown" id="dojoCountdown"></div>
     </div>
 
@@ -179,6 +172,6 @@
       </div>
     </div>
 
-    <script type="module" src="./src/main.js?v=20"></script>
+    <script type="module" src="./src/main.js?v=21"></script>
   </body>
 </html>

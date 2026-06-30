@@ -1045,33 +1045,53 @@ body.dojo-mode .mob-hud {
   background: color-mix(in srgb, var(--accent) 26%, transparent);
 }
 
-.dojo-reticle {
+/* Free-moving crosshair — positioned via JS transform (top-left origin) */
+.dojo-cursor {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 16px;
-  height: 16px;
-  transform: translate(-50%, -50%);
+  top: 0;
+  left: 0;
+  width: 22px;
+  height: 22px;
+  will-change: transform;
 }
 
-.dojo-reticle::before,
-.dojo-reticle::after {
+.dojo-cursor::before,
+.dojo-cursor::after {
   content: "";
   position: absolute;
   top: 50%;
   left: 50%;
   background: var(--accent);
-  box-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.7);
   transform: translate(-50%, -50%);
 }
 
-.dojo-reticle::before { width: 2px; height: 16px; }
-.dojo-reticle::after  { width: 16px; height: 2px; }
+.dojo-cursor::before { width: 2px; height: 22px; }
+.dojo-cursor::after  { width: 22px; height: 2px; }
 
-.dojo-hud.is-on-target .dojo-reticle::before,
-.dojo-hud.is-on-target .dojo-reticle::after {
+/* Small centre dot for precision */
+.dojo-cursor {
+  border: 1.5px solid color-mix(in srgb, var(--accent) 60%, transparent);
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+}
+
+.dojo-hud.is-on-target .dojo-cursor {
+  border-color: var(--accent-2);
+}
+
+.dojo-hud.is-on-target .dojo-cursor::before,
+.dojo-hud.is-on-target .dojo-cursor::after {
   background: var(--accent-2);
   box-shadow: 0 0 10px var(--accent-2);
+}
+
+/* Sensitivity slider */
+.dojo-slider {
+  width: 100%;
+  margin: 4px 0 0;
+  accent-color: var(--accent);
+  cursor: pointer;
 }
 
 .dojo-countdown {
