@@ -2243,12 +2243,13 @@ function addRock(x, z, s, mat, rot = 0) {
   addCollider(x, z, s * 1.3, s * 1.3);
 }
 
-// Pale gravel slab with thin raked furrow lines
+// Pale gravel slab with thin raked furrow lines. Sits proud of the grass
+// (top 0.12 vs grass top 0.09) so the two surfaces never z-fight.
 function addRakedGravel(x, z, w, d) {
-  block(w, 0.06, d, materials.gravel, x, 0.06, z);
-  // Raked lines running along Z, evenly spaced
+  block(w, 0.18, d, materials.gravel, x, 0.03, z); // spans -0.06 … 0.12
+  // Raked lines running along Z, resting just on top of the gravel
   for (let lx = -w / 2 + 0.8; lx < w / 2; lx += 1.1) {
-    block(0.06, 0.02, d - 0.6, materials.rockDark, x + lx, 0.1, z);
+    block(0.06, 0.03, d - 0.6, materials.rockDark, x + lx, 0.145, z);
   }
 }
 
@@ -3414,14 +3415,15 @@ function createGrassMaterial() {
   ctx.fillStyle = "#77945f";
   ctx.fillRect(0, 0, 256, 256);
 
-  // Mottled patches of lighter and deeper green
-  for (let i = 0; i < 42; i += 1) {
+  // Small mottled patches — kept tight so a high repeat reads as turf,
+  // not big stretched streaks
+  for (let i = 0; i < 70; i += 1) {
     const x = Math.random() * 256;
     const y = Math.random() * 256;
-    const r = 14 + Math.random() * 38;
+    const r = 6 + Math.random() * 14;
     const grad = ctx.createRadialGradient(x, y, 1, x, y, r);
     const tone = Math.random();
-    const color = tone > 0.62 ? "rgba(167, 190, 122, 0.20)" : tone > 0.3 ? "rgba(104, 134, 80, 0.22)" : "rgba(88, 112, 66, 0.20)";
+    const color = tone > 0.62 ? "rgba(167, 190, 122, 0.16)" : tone > 0.3 ? "rgba(104, 134, 80, 0.16)" : "rgba(88, 112, 66, 0.16)";
     grad.addColorStop(0, color);
     grad.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = grad;
@@ -3431,8 +3433,8 @@ function createGrassMaterial() {
   }
 
   // Blade flecks
-  for (let i = 0; i < 520; i += 1) {
-    ctx.globalAlpha = 0.10 + Math.random() * 0.16;
+  for (let i = 0; i < 700; i += 1) {
+    ctx.globalAlpha = 0.08 + Math.random() * 0.14;
     ctx.fillStyle = Math.random() > 0.5 ? "#a7be7a" : "#5d7a48";
     ctx.fillRect(Math.random() * 256, Math.random() * 256, 1, 2 + Math.random() * 3);
   }
@@ -3442,7 +3444,7 @@ function createGrassMaterial() {
   map.colorSpace = THREE.SRGBColorSpace;
   map.wrapS = THREE.RepeatWrapping;
   map.wrapT = THREE.RepeatWrapping;
-  map.repeat.set(3, 3);
+  map.repeat.set(12, 9); // finer tiling kills the stretched-streak look
   return new THREE.MeshStandardMaterial({ color: "#86a06a", map, roughness: 0.94, metalness: 0 });
 }
 
