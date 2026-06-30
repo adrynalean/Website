@@ -1976,8 +1976,7 @@ function addFloorLantern(x, z, height = 1.25, baseY = 0.72, exterior = false) {
   animated.push({ type: "lantern", mesh: shade, light, exterior, glow });
 }
 
-function addBambooStalk(x, z, height = 2.0, count = 3) {
-  const baseY = 0.72;
+function addBambooStalk(x, z, height = 2.0, count = 3, baseY = 0.72) {
   for (let i = 0; i < count; i += 1) {
     const ox = (i - (count - 1) / 2) * 0.18;
     const oz = i % 2 ? 0.08 : -0.06;
@@ -2131,17 +2130,24 @@ function addBackGarden() {
   // Ground: earth border + moss-green lawn
   block(43.5, 0.18, 25.5, materials.shore, 0, -0.2, -38.05);
   block(41.6, 0.3, 23.6, materials.grass, 0, -0.06, -38.05);
+  // Backing ground fills the gap between the rear fence and the (hidden) dojo
+  // room so no dark void shows over the hedge
+  block(45.0, 0.18, 9.0, materials.shore, 0, -0.22, -54.5);
+  block(43.0, 0.3, 8.0, materials.grass, 0, -0.08, -54.5);
 
-  // Perimeter hedge + fence
-  block(40.5, 0.55, 0.7, materials.hedge, 0, 0.42, -49.6);
-  block(0.7, 0.55, 21.75, materials.hedge, -20.5, 0.42, -38.05);
-  block(0.7, 0.55, 21.75, materials.hedge, 20.5, 0.42, -38.05);
+  // Tall clipped hedge wall across the back, split for the torii gate opening
+  block(17.0, 1.9, 0.9, materials.hedge, -11.4, 0.9, -49.6);
+  block(17.0, 1.9, 0.9, materials.hedge, 11.4, 0.9, -49.6);
+  block(0.9, 1.9, 21.75, materials.hedge, -20.5, 0.9, -38.05);
+  block(0.9, 1.9, 21.75, materials.hedge, 20.5, 0.9, -38.05);
   addBoundaryFence(0, -49.95, 41.0, "x");
   addBoundaryFence(-20.85, -38.05, 21.75, "z");
   addBoundaryFence(20.85, -38.05, 21.75, "z");
-  addCollider(0, -49.75, 41.0, 0.55);
-  addCollider(-20.7, -38.05, 0.55, 21.75);
-  addCollider(20.7, -38.05, 0.55, 21.75);
+  addCollider(-11.4, -49.7, 17.0, 0.9);
+  addCollider(11.4, -49.7, 17.0, 0.9);
+  addCollider(0, -49.7, 6.8, 0.9);   // invisible barrier across the gate gap
+  addCollider(-20.7, -38.05, 0.9, 21.75);
+  addCollider(20.7, -38.05, 0.9, 21.75);
 
   // ── Raked-gravel sea, centred behind the Contact board ───────────────────
   addRakedGravel(0, -42.5, 22, 11);
@@ -2171,8 +2177,8 @@ function addBackGarden() {
   addSakuraTree(-17.0, -47.0, 2.0, 0.11, true);
   addSakuraTree(17.5, -33.0, 1.7, 0.11, true);
   addMapleClump(16.0, -29.5);
-  addBambooStalk(-18.5, -44.0, 2.4, 4);
-  addBambooStalk(-17.6, -42.6, 2.0, 3);
+  addBambooStalk(-18.5, -44.0, 2.4, 4, 0.1);
+  addBambooStalk(-17.6, -42.6, 2.0, 3, 0.1);
 
   // Low clipped shrubs along the back, anchoring the gravel sea
   [-14, -6, 6, 13].forEach((x) => addMossMound(x, -48.6, 0.8 + Math.abs(x) * 0.02));
