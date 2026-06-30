@@ -156,6 +156,10 @@ const materials = {
   cedarDark: blockMaterial("#d4b68a", "#f0d8b0"),
   vermillion: blockMaterial("#b53a2b", "#d04937"),
   toriiBlack: blockMaterial("#1a1410", "#2a201a"),
+  gravel: blockMaterial("#d7d0c2", "#ece6d9"),
+  rock: blockMaterial("#8f8c84", "#a9a69d"),
+  rockDark: blockMaterial("#6f6c66", "#878379"),
+  moss: blockMaterial("#5f7a4e", "#82a06a"),
 };
 
 [materials.paperDim, materials.paperWarm, materials.tatamiWeave].forEach((material) => {
@@ -2120,26 +2124,187 @@ function addExteriorDetails() {
   addBackGarden();
 }
 
+// A deliberate karesansui (dry stroll garden): a raked-gravel "sea" with a
+// rock triad as the centrepiece, stone lanterns and a water basin framing the
+// Contact board, stepping-stone paths threading house → board → dojo gate.
 function addBackGarden() {
+  // Ground: earth border + moss-green lawn
   block(43.5, 0.18, 25.5, materials.shore, 0, -0.2, -38.05);
   block(41.6, 0.3, 23.6, materials.grass, 0, -0.06, -38.05);
-  block(40.5, 0.12, 0.28, materials.hedge, 0, 0.22, -49.75);
-  block(0.28, 0.12, 21.75, materials.hedge, -20.7, 0.22, -38.05);
-  block(0.28, 0.12, 21.75, materials.hedge, 20.7, 0.22, -38.05);
-  addBoundaryFence(0, -49.75, 41.0, "x");
-  addBoundaryFence(-20.7, -38.05, 21.75, "z");
-  addBoundaryFence(20.7, -38.05, 21.75, "z");
+
+  // Perimeter hedge + fence
+  block(40.5, 0.55, 0.7, materials.hedge, 0, 0.42, -49.6);
+  block(0.7, 0.55, 21.75, materials.hedge, -20.5, 0.42, -38.05);
+  block(0.7, 0.55, 21.75, materials.hedge, 20.5, 0.42, -38.05);
+  addBoundaryFence(0, -49.95, 41.0, "x");
+  addBoundaryFence(-20.85, -38.05, 21.75, "z");
+  addBoundaryFence(20.85, -38.05, 21.75, "z");
   addCollider(0, -49.75, 41.0, 0.55);
   addCollider(-20.7, -38.05, 0.55, 21.75);
   addCollider(20.7, -38.05, 0.55, 21.75);
 
-  // Center tree restored — the dojo is now its own separate room out back
-  addSakuraTree(0, -44.0, 2.4, 0.11, true);
+  // ── Raked-gravel sea, centred behind the Contact board ───────────────────
+  addRakedGravel(0, -42.5, 22, 11);
+
+  // Rock triad (sanzon): a tall guardian, a flanking stone, a reclining stone
+  addRock(-1.4, -43.0, 1.5, materials.rock, 0.4);
+  addRock(0.9, -42.0, 1.0, materials.rockDark, 1.1);
+  addRock(2.4, -43.4, 0.7, materials.rock, 2.2);
+  addMossRing(-1.4, -43.0, 2.2);
+
+  // A second, smaller stone grouping off to the side for asymmetry
+  addRock(-9.5, -45.5, 0.95, materials.rockDark, 0.7);
+  addRock(-8.2, -46.0, 0.6, materials.rock, 1.8);
+  addMossRing(-9.0, -45.6, 1.7);
+
+  // ── Stone lanterns framing the Contact board (board sits at z -35.7) ──────
+  addStoneLantern(-5.2, -35.0, 1.0);
+  addStoneLantern(5.2, -35.0, 1.0);
+
+  // Tall yukimi lantern as a back-corner focal point
+  addStoneLantern(15.5, -46.0, 1.35);
+
+  // ── Tsukubai (water basin) tucked in the near-left corner ────────────────
+  addTsukubai(-15.0, -30.5);
+
+  // ── Framing trees + foliage, placed not scattered ────────────────────────
+  addSakuraTree(-17.0, -47.0, 2.0, 0.11, true);
+  addSakuraTree(17.5, -33.0, 1.7, 0.11, true);
+  addMapleClump(16.0, -29.5);
+  addBambooStalk(-18.5, -44.0, 2.4, 4);
+  addBambooStalk(-17.6, -42.6, 2.0, 3);
+
+  // Low clipped shrubs along the back, anchoring the gravel sea
+  [-14, -6, 6, 13].forEach((x) => addMossMound(x, -48.6, 0.8 + Math.abs(x) * 0.02));
+
+  // ── Stepping-stone paths (tobi-ishi) ─────────────────────────────────────
+  // House door → Contact board approach
+  addSteppingStones([
+    [0, -27.6], [0.4, -29.0], [-0.3, -30.4], [0.3, -31.8], [0, -33.2],
+  ]);
+  // Board → around the gravel (left) → dojo gate
+  addSteppingStones([
+    [-2.4, -34.6], [-4.6, -36.0], [-6.2, -38.0], [-6.0, -40.5],
+    [-4.8, -43.0], [-3.0, -45.4], [-1.4, -47.4], [0, -48.6],
+  ]);
+  // Short spur to the tsukubai
+  addSteppingStones([[-8.0, -33.5], [-11.0, -32.0], [-13.4, -30.9]]);
 
   // Entrance gate at the rear hedge — walk here, press F to enter the dojo
   addDojoGate();
 
   addAimDojo();
+}
+
+// ── Garden feature kit ───────────────────────────────────────────────────────
+
+// Ishidoro stone lantern (lit by the time-of-day lantern system at night)
+function addStoneLantern(x, z, s = 1) {
+  const baseY = 0.0;
+  block(0.7 * s, 0.22 * s, 0.7 * s, materials.rock, x, baseY + 0.11 * s, z);        // foot
+  block(0.26 * s, 1.0 * s, 0.26 * s, materials.rock, x, baseY + 0.6 * s, z);         // post
+  block(0.66 * s, 0.16 * s, 0.66 * s, materials.rock, x, baseY + 1.18 * s, z);       // platform
+  const fireY = baseY + 1.5 * s;
+  block(0.5 * s, 0.5 * s, 0.5 * s, materials.rockDark, x, fireY, z);                 // fire box
+  // Glowing window
+  const glow = block(0.34 * s, 0.34 * s, 0.34 * s, materials.lanternGlow, x, fireY, z);
+  glow.userData.baseIntensity = 1;
+  let light = null;
+  if (!isMobile) {
+    light = new THREE.PointLight("#ffca7a", 1.0, 6 * s, 2);
+    light.position.set(sx(x), fireY, sz(z));
+    scene.add(light);
+  }
+  animated.push({ type: "lantern", mesh: glow, light, exterior: true, glow: addLanternGlowSprite(x, fireY, z, 2.0 * s) });
+  // Roof + finial
+  block(0.78 * s, 0.18 * s, 0.78 * s, materials.rockDark, x, fireY + 0.34 * s, z);
+  block(0.5 * s, 0.16 * s, 0.5 * s, materials.rockDark, x, fireY + 0.5 * s, z);
+  block(0.16 * s, 0.22 * s, 0.16 * s, materials.rock, x, fireY + 0.66 * s, z);
+  addCollider(x, z, 0.8 * s, 0.8 * s);
+}
+
+// A placed boulder — deformed icosahedron, deterministic per position
+function addRock(x, z, s, mat, rot = 0) {
+  const geo = new THREE.IcosahedronGeometry(sx(s), 1);
+  const pos = geo.attributes.position;
+  const seed = Math.abs(Math.sin(x * 12.9 + z * 78.2) * 43758.5);
+  for (let i = 0; i < pos.count; i += 1) {
+    const w = Math.sin(i * 9.1 + seed) * 0.5 + 0.5;
+    const f = 0.78 + w * 0.32;
+    pos.setXYZ(i, pos.getX(i) * f, pos.getY(i) * f * 0.82, pos.getZ(i) * f);
+  }
+  geo.computeVertexNormals();
+  const rock = new THREE.Mesh(geo, mat);
+  rock.position.set(sx(x), s * 0.46, sz(z));
+  rock.rotation.y = rot;
+  rock.castShadow = !isMobile;
+  rock.receiveShadow = true;
+  scene.add(rock);
+  addCollider(x, z, s * 1.3, s * 1.3);
+}
+
+// Pale gravel slab with thin raked furrow lines
+function addRakedGravel(x, z, w, d) {
+  block(w, 0.06, d, materials.gravel, x, 0.06, z);
+  // Raked lines running along Z, evenly spaced
+  for (let lx = -w / 2 + 0.8; lx < w / 2; lx += 1.1) {
+    block(0.06, 0.02, d - 0.6, materials.rockDark, x + lx, 0.1, z);
+  }
+}
+
+// Flat stepping stones at the given [x,z] points
+function addSteppingStones(points) {
+  const stones = points.map(([px, pz], i) => ({
+    w: 0.7 + (i % 2) * 0.12,
+    h: 0.12,
+    d: 0.6 + ((i + 1) % 2) * 0.12,
+    x: px,
+    y: 0.12,
+    z: pz,
+    ry: (i * 1.3) % Math.PI,
+  }));
+  addInstancedBoxes(stones, materials.stone);
+}
+
+// Tsukubai: low stone basin with a bamboo spout and surrounding stones
+function addTsukubai(x, z) {
+  addRock(x - 0.9, z, 0.7, materials.rockDark, 0.5);
+  addRock(x + 0.9, z + 0.4, 0.6, materials.rock, 1.4);
+  // Basin with a calm flat water tint (no shader cost)
+  block(0.7, 0.4, 0.7, materials.rock, x, 0.32, z);
+  if (!addTsukubai.waterMat) {
+    addTsukubai.waterMat = new THREE.MeshBasicMaterial({ color: "#3f7390" });
+  }
+  block(0.46, 0.04, 0.46, addTsukubai.waterMat, x, 0.5, z);
+  // Bamboo spout
+  block(0.1, 0.7, 0.1, materials.leafBright, x - 0.45, 0.7, z - 0.35);
+  block(0.1, 0.1, 0.5, materials.leafBright, x - 0.45, 1.0, z - 0.15);
+  addMossMound(x + 1.3, z - 0.6, 0.7);
+}
+
+// Low moss dome
+function addMossMound(x, z, s = 0.8) {
+  const geo = new THREE.SphereGeometry(sx(s), 10, 6, 0, Math.PI * 2, 0, Math.PI / 2);
+  const dome = new THREE.Mesh(geo, materials.moss);
+  dome.position.set(sx(x), 0.08, sz(z));
+  dome.scale.y = 0.6;
+  dome.receiveShadow = true;
+  scene.add(dome);
+}
+
+// Ring of small mossy stones around a feature
+function addMossRing(x, z, r) {
+  for (let i = 0; i < 6; i += 1) {
+    const a = (i / 6) * Math.PI * 2 + 0.3;
+    addMossMound(x + Math.cos(a) * r, z + Math.sin(a) * r, 0.4 + (i % 2) * 0.12);
+  }
+}
+
+// A clump of red maple foliage on a short trunk (autumn accent)
+function addMapleClump(x, z) {
+  block(0.34, 2.2, 0.34, materials.trunk, x, 1.1, z);
+  [[0, 2.5, 0, 1.4], [-0.7, 2.3, 0.3, 1.0], [0.7, 2.4, -0.2, 1.05], [0.1, 2.8, 0.5, 0.85]]
+    .forEach(([ox, oy, oz, sz2], i) => block(sz2, sz2 * 0.8, sz2, i % 2 ? materials.vermillion : materials.roof, x + ox, oy, z + oz));
 }
 
 // A small vermillion torii set into the rear hedge marks the dojo entrance.
