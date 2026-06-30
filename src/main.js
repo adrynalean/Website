@@ -25,6 +25,11 @@ const mobNavClose    = document.querySelector("#mobNavClose");
 const joyZone        = document.querySelector("#joyZone");
 const joyDot         = document.querySelector("#joyDot");
 const touchInteract  = document.querySelector("#touchInteract");
+// Aim dojo overlays
+const dojoMenu       = document.querySelector("#dojoMenu");
+const dojoHud        = document.querySelector("#dojoHud");
+const dojoResults    = document.querySelector("#dojoResults");
+const dojoCountdown  = document.querySelector("#dojoCountdown");
 
 // Detect touch/coarse-pointer devices once at startup
 const isMobile = navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
@@ -470,6 +475,55 @@ const state = {
   joyX: 0,
   joyZ: 0,
 };
+
+// ── Aim dojo state ───────────────────────────────────────────────────────────
+// phase: "off" (walking) | "menu" | "countdown" | "live" | "results"
+const AIM_ROUND_SECONDS = 30;
+// Firing line faces -z; targets spawn on the GALLERY plane. Declared early so
+// addAimDojo() (run during buildWorld) doesn't hit a temporal dead zone.
+const DOJO = {
+  fireX: 0,
+  fireZ: -40.0,      // deep in the garden, past the Contact board, facing -z
+  galleryZ: -48.0,   // backdrop sits just in front of the rear fence (-49.75)
+  spanX: 8.2,        // half-width of the target field (logical units)
+  yLow: 1.5,
+  yHigh: 4.4,
+};
+const range = {
+  phase: "off",
+  podium: null,          // { center: Vec2 } proximity trigger, set in addAimDojo
+  mode: "gridshot",      // gridshot | flick | tracking
+  difficulty: "medium",  // easy | medium | hard
+  targets: [],           // active target meshes
+  group: null,           // THREE.Group holding targets
+  // Round metrics
+  shots: 0,
+  hits: 0,
+  score: 0,
+  reactionTimes: [],     // ms, for flick/gridshot
+  onTargetMs: 0,         // tracking accumulator
+  roundMs: 0,
+  countdownMs: 0,
+  tracking: false,       // mouse held during tracking mode
+  // Sensitivity (Aimlabs-style cm/360 + DPI), persisted
+  cm360: 30,
+  dpi: 800,
+};
+
+// Load saved sensitivity
+try {
+  const saved = JSON.parse(localStorage.getItem("sakura-aim-sens") || "null");
+  if (saved && saved.cm360 > 0 && saved.dpi > 0) {
+    range.cm360 = saved.cm360;
+    range.dpi = saved.dpi;
+  }
+} catch { /* ignore */ }
+
+// cm/360 → radians per mouse count (the cross-game "Aimlabs standard").
+// counts for a 360 = cm360 * dpi / 2.54  →  radians/count = 2π / that.
+function aimSensitivity() {
+  return (Math.PI * 2 * 2.54) / (range.cm360 * range.dpi);
+}
 
 const timePresets = [
   { label: "Sakura Dawn", value: 0.035 },
@@ -2058,21 +2112,444 @@ function addBackGarden() {
   addCollider(0, -49.75, 41.0, 0.55);
   addCollider(-20.7, -38.05, 0.55, 21.75);
   addCollider(20.7, -38.05, 0.55, 21.75);
-  addSakuraTree(0, -40.4, 2.55, 0.11, true);
+
+  // Trees moved to the corners — the centre is now the aim dojo
+  addSakuraTree(-16.5, -46.5, 2.2, 0.11, true);
+  addSakuraTree(16.5, -46.5, 2.2, 0.11, true);
+
+  // Stone path leading from the garden door, past the contact board, to the dojo
+  for (let z = -30; z >= -38.5; z -= 1.5) {
+    block(2.2, 0.06, 1.0, materials.stone, 0, 0.05, z);
+  }
 
   const petals = [];
-  for (let i = 0; i < 28; i += 1) {
+  for (let i = 0; i < 22; i += 1) {
     petals.push({
       w: random(0.08, 0.18),
       h: 0.012,
       d: random(0.05, 0.13),
-      x: random(-16, 16),
+      x: random(-18, 18),
       y: 0.11,
-      z: random(-47, -30),
+      z: random(-48, -44),
       ry: random(0, Math.PI),
     });
   }
   addInstancedBoxes(petals, materials.sakura);
+
+  addAimDojo();
+}
+
+function addAimDojo() {
+  // Raked-gravel firing platform
+  block(11.5, 0.12, 5.2, materials.stone, DOJO.fireX, 0.06, DOJO.fireZ + 0.6);
+  block(11.0, 0.04, 4.7, materials.shore, DOJO.fireX, 0.13, DOJO.fireZ + 0.6);
+
+  // Target gallery backdrop — dark shoji wall so glowing targets read clearly
+  block(20.0, 6.6, 0.3, materials.charcoal, 0, 3.0, DOJO.galleryZ - 0.5);
+  block(20.6, 0.4, 0.5, materials.bridgeDark, 0, 6.2, DOJO.galleryZ - 0.5);
+  block(20.6, 0.4, 0.5, materials.bridgeDark, 0, 0.2, DOJO.galleryZ - 0.5);
+  for (let x = -9; x <= 9; x += 3) {
+    block(0.28, 6.2, 0.34, materials.bridgeDark, x, 3.1, DOJO.galleryZ - 0.46);
+  }
+
+  // Twin torii-red posts framing the range (wide of the target field, at the
+  // firing line so they never occlude a target)
+  [-10.8, 10.8].forEach((x) => {
+    block(0.55, 5.6, 0.55, materials.vermillion, x, 2.8, DOJO.fireZ - 0.5);
+    block(0.7, 0.4, 0.7, materials.toriiBlack, x, 5.2, DOJO.fireZ - 0.5);
+  });
+  block(22.6, 0.55, 0.6, materials.vermillion, 0, 5.35, DOJO.fireZ - 0.5);
+  block(23.6, 0.4, 0.7, materials.vermillion, 0, 5.7, DOJO.fireZ - 0.5);
+
+  // Trigger podium with a glowing top — press F here to enter the dojo
+  const podX = 2.6;
+  const podZ = DOJO.fireZ + 1.6;
+  block(0.7, 1.0, 0.7, materials.blackLacquer, podX, 0.5, podZ);
+  block(0.85, 0.12, 0.85, materials.bridgeDark, podX, 1.05, podZ);
+  const podGlow = block(0.5, 0.12, 0.5, materials.lanternGlow, podX, 1.16, podZ);
+  podGlow.userData.baseIntensity = 1;
+  const podLight = new THREE.PointLight("#ffd9a4", 1.0, 4.5, 2);
+  podLight.position.set(sx(podX), 1.3, sz(podZ));
+  scene.add(podLight);
+  animated.push({ type: "lantern", mesh: podGlow, light: podLight, exterior: false, glow: addLanternGlowSprite(podX, 1.16, podZ, 1.5) });
+
+  // Proximity trigger registered like a door (reuses getNearbyDoor distance)
+  range.podium = { center: new THREE.Vector2(sx(podX), sz(podZ)) };
+
+  range.group = new THREE.Group();
+  scene.add(range.group);
+}
+
+// ── Dojo lifecycle ───────────────────────────────────────────────────────────
+function enterDojo() {
+  if (range.phase !== "off") return;
+  // Stand the player on the firing line, facing the gallery (-z)
+  state.mapFocus = null;
+  closePortfolioPanel();
+  state.keys.clear();
+  state.velocity.set(0, 0, 0);
+  camera.position.set(sx(DOJO.fireX), EYE_HEIGHT, sz(DOJO.fireZ));
+  state.floorY = 0;
+  state.jumpOffset = 0;
+  state.yaw = state.targetYaw = 0;
+  state.pitch = state.targetPitch = 0;
+  document.exitPointerLock?.();
+  range.phase = "menu";
+  syncDojoMenu();
+  dojoMenu?.classList.add("is-open");
+  dojoMenu?.setAttribute("aria-hidden", "false");
+  clearInteractionHint();
+}
+
+function exitDojo() {
+  clearTargets();
+  range.phase = "off";
+  range.tracking = false;
+  dojoMenu?.classList.remove("is-open");
+  dojoMenu?.setAttribute("aria-hidden", "true");
+  dojoHud?.classList.remove("is-active");
+  dojoResults?.classList.remove("is-open");
+  dojoResults?.setAttribute("aria-hidden", "true");
+  document.exitPointerLock?.();
+}
+
+function startRound() {
+  range.shots = 0;
+  range.hits = 0;
+  range.score = 0;
+  range.reactionTimes.length = 0;
+  range.onTargetMs = 0;
+  range.roundMs = AIM_ROUND_SECONDS * 1000;
+  range.countdownMs = 3000;
+  range.phase = "countdown";
+  dojoMenu?.classList.remove("is-open");
+  dojoMenu?.setAttribute("aria-hidden", "true");
+  dojoResults?.classList.remove("is-open");
+  dojoResults?.setAttribute("aria-hidden", "true");
+  dojoHud?.classList.add("is-active");
+  spawnTargets();
+  requestLookControl();
+}
+
+function endRound() {
+  range.phase = "results";
+  range.tracking = false;
+  clearTargets();
+  dojoHud?.classList.remove("is-active");
+  document.exitPointerLock?.();
+  renderDojoResults();
+  dojoResults?.classList.add("is-open");
+  dojoResults?.setAttribute("aria-hidden", "false");
+}
+
+// Fired on click while live; raycasts the reticle (screen centre) at targets
+function shootDojo() {
+  if (range.phase !== "live") return;
+  if (range.mode === "tracking") return; // tracking scores by dwell, not clicks
+  range.shots += 1;
+  pointer.set(0, 0);
+  raycaster.setFromCamera(pointer, camera);
+  const live = range.targets.filter((t) => !t.userData.isBurst);
+  const hits = raycaster.intersectObjects(live, false);
+  if (hits.length) {
+    const mesh = hits[0].object;
+    const reaction = performance.now() - mesh.userData.spawnAt;
+    range.reactionTimes.push(reaction);
+    range.hits += 1;
+    // Score rewards speed: faster pop = more points, floor of 10
+    range.score += Math.max(10, Math.round(120 - reaction / 12));
+    popBurst(mesh);
+    // Remove the popped target and respawn to keep the field full
+    mesh.geometry.dispose();
+    mesh.material.dispose();
+    range.group.remove(mesh);
+    range.targets.splice(range.targets.indexOf(mesh), 1);
+    const fresh = makeAimTarget(dojoCfg().radius);
+    placeTarget(fresh, randomTargetPos());
+    range.targets.push(fresh);
+  }
+  updateDojoHud();
+}
+
+function updateRange(delta, now) {
+  if (range.phase === "off") return;
+
+  if (range.phase === "countdown") {
+    range.countdownMs -= delta * 1000;
+    const n = Math.ceil(range.countdownMs / 1000);
+    if (dojoCountdown) dojoCountdown.textContent = n > 0 ? String(n) : "始";
+    if (range.countdownMs <= 0) {
+      range.phase = "live";
+      if (dojoCountdown) dojoCountdown.textContent = "";
+      range.targets.forEach((t) => (t.userData.spawnAt = now));
+    }
+  }
+
+  if (range.phase === "live") {
+    range.roundMs -= delta * 1000;
+    if (range.roundMs <= 0) { endRound(); return; }
+
+    const reticleHit = range.mode === "tracking" ? reticleOnTarget() : false;
+    if (range.mode === "tracking" && range.tracking && reticleHit) {
+      range.onTargetMs += delta * 1000;
+      range.score += Math.round(delta * 100);
+    }
+    updateDojoHud(reticleHit);
+  }
+
+  // Animate targets (both live and burst petals)
+  for (let i = range.targets.length - 1; i >= 0; i -= 1) {
+    const mesh = range.targets[i];
+    if (mesh.userData.isBurst) {
+      mesh.userData.life -= delta * 1.6;
+      if (mesh.userData.life <= 0) {
+        mesh.geometry.dispose();
+        mesh.material.dispose();
+        range.group.remove(mesh);
+        range.targets.splice(i, 1);
+        continue;
+      }
+      mesh.userData.vel.y -= delta * 3.2;
+      mesh.position.addScaledVector(mesh.userData.vel, delta * sx(1));
+      mesh.material.opacity = mesh.userData.life;
+      mesh.rotation.z += delta * 4;
+      continue;
+    }
+    // Pop-in scale
+    mesh.scale.setScalar(THREE.MathUtils.lerp(mesh.scale.x, 1, 1 - Math.exp(-18 * delta)));
+    // Gentle bob + glow pulse
+    const glow = 1 + Math.sin(now * 0.006 + mesh.position.x) * 0.12;
+    mesh.material.color.setScalar(glow);
+    // Tracking drift
+    const tr = mesh.userData.track;
+    if (tr && range.phase === "live") {
+      tr.phase += delta * tr.speed;
+      const lx = tr.cx + Math.sin(tr.phase * tr.fx) * tr.ax;
+      const ly = tr.cy + Math.sin(tr.phase * tr.fy + 1.3) * tr.ay;
+      mesh.position.set(sx(lx), ly, sz(mesh.userData.logical.z));
+    }
+  }
+}
+
+// True when the centre reticle is over a target (for tracking mode)
+function reticleOnTarget() {
+  pointer.set(0, 0);
+  raycaster.setFromCamera(pointer, camera);
+  const live = range.targets.filter((t) => !t.userData.isBurst);
+  return raycaster.intersectObjects(live, false).length > 0;
+}
+
+// ── Dojo DOM ─────────────────────────────────────────────────────────────────
+function syncDojoMenu() {
+  if (!dojoMenu) return;
+  dojoMenu.querySelectorAll("[data-mode]").forEach((b) =>
+    b.classList.toggle("is-selected", b.dataset.mode === range.mode));
+  dojoMenu.querySelectorAll("[data-diff]").forEach((b) =>
+    b.classList.toggle("is-selected", b.dataset.diff === range.difficulty));
+  const desc = dojoMenu.querySelector("#dojoModeDesc");
+  if (desc) desc.textContent = DOJO_CONFIG[range.mode].label;
+  const cm = dojoMenu.querySelector("#dojoCm360");
+  const dpi = dojoMenu.querySelector("#dojoDpi");
+  if (cm) cm.value = String(range.cm360);
+  if (dpi) dpi.value = String(range.dpi);
+}
+
+function updateDojoHud(reticleHit = false) {
+  if (!dojoHud) return;
+  const set = (id, val) => { const el = dojoHud.querySelector(id); if (el) el.textContent = val; };
+  set("#dojoTime", (Math.max(0, range.roundMs) / 1000).toFixed(1));
+  set("#dojoScore", String(range.score));
+  if (range.mode === "tracking") {
+    const pct = range.roundMs < AIM_ROUND_SECONDS * 1000
+      ? Math.round((range.onTargetMs / (AIM_ROUND_SECONDS * 1000 - range.roundMs)) * 100) || 0
+      : 0;
+    set("#dojoStat", `${pct}% on target`);
+    dojoHud.classList.toggle("is-on-target", reticleHit);
+  } else {
+    const acc = range.shots ? Math.round((range.hits / range.shots) * 100) : 100;
+    set("#dojoStat", `${acc}% · ${range.hits} hits`);
+  }
+}
+
+function renderDojoResults() {
+  if (!dojoResults) return;
+  const acc = range.shots ? Math.round((range.hits / range.shots) * 100) : (range.mode === "tracking" ? null : 0);
+  const avgReaction = range.reactionTimes.length
+    ? Math.round(range.reactionTimes.reduce((a, b) => a + b, 0) / range.reactionTimes.length)
+    : null;
+  const kps = (range.hits / AIM_ROUND_SECONDS).toFixed(2);
+  const trackPct = Math.round((range.onTargetMs / (AIM_ROUND_SECONDS * 1000)) * 100);
+
+  const rows = [];
+  rows.push(["Score", String(range.score)]);
+  if (range.mode === "tracking") {
+    rows.push(["Time on target", `${trackPct}%`]);
+  } else {
+    rows.push(["Accuracy", `${acc}%`]);
+    rows.push(["Hits", `${range.hits} / ${range.shots}`]);
+    rows.push(["Avg reaction", avgReaction !== null ? `${avgReaction} ms` : "—"]);
+    rows.push(["Targets / sec", kps]);
+  }
+
+  const body = dojoResults.querySelector("#dojoResultsBody");
+  if (body) {
+    body.replaceChildren();
+    rows.forEach(([k, v]) => {
+      const row = document.createElement("div");
+      row.className = "dojo-result-row";
+      const key = document.createElement("span");
+      key.textContent = k;
+      const val = document.createElement("strong");
+      val.textContent = v;
+      row.append(key, val);
+      body.append(row);
+    });
+  }
+  const title = dojoResults.querySelector("#dojoResultsTitle");
+  if (title) {
+    const m = range.mode[0].toUpperCase() + range.mode.slice(1);
+    const d = range.difficulty[0].toUpperCase() + range.difficulty.slice(1);
+    title.textContent = `${m} · ${d}`;
+  }
+}
+
+// Menu interactions (event delegation)
+dojoMenu?.addEventListener("click", (event) => {
+  const el = event.target.closest("[data-mode], [data-diff], [data-act]");
+  if (!el) return;
+  if (el.dataset.mode) { range.mode = el.dataset.mode; syncDojoMenu(); }
+  else if (el.dataset.diff) { range.difficulty = el.dataset.diff; syncDojoMenu(); }
+  else if (el.dataset.act === "start") startRound();
+  else if (el.dataset.act === "exit") exitDojo();
+});
+
+function commitSensitivity() {
+  const cm = parseFloat(dojoMenu?.querySelector("#dojoCm360")?.value);
+  const dpi = parseFloat(dojoMenu?.querySelector("#dojoDpi")?.value);
+  if (cm > 0) range.cm360 = cm;
+  if (dpi > 0) range.dpi = dpi;
+  try {
+    localStorage.setItem("sakura-aim-sens", JSON.stringify({ cm360: range.cm360, dpi: range.dpi }));
+  } catch { /* ignore */ }
+}
+
+dojoMenu?.querySelector("#dojoCm360")?.addEventListener("change", commitSensitivity);
+dojoMenu?.querySelector("#dojoDpi")?.addEventListener("change", commitSensitivity);
+
+dojoResults?.addEventListener("click", (event) => {
+  const el = event.target.closest("[data-act]");
+  if (!el) return;
+  if (el.dataset.act === "retry") startRound();
+  else if (el.dataset.act === "menu") {
+    range.phase = "menu";
+    dojoResults.classList.remove("is-open");
+    dojoResults.setAttribute("aria-hidden", "true");
+    syncDojoMenu();
+    dojoMenu?.classList.add("is-open");
+    dojoMenu?.setAttribute("aria-hidden", "false");
+  } else if (el.dataset.act === "exit") exitDojo();
+});
+
+// Per-mode × per-difficulty tuning. radius is logical world units.
+const DOJO_CONFIG = {
+  gridshot: {
+    label: "Gridshot — pop static targets fast",
+    easy:   { radius: 0.62, count: 4 },
+    medium: { radius: 0.46, count: 5 },
+    hard:   { radius: 0.32, count: 6 },
+  },
+  flick: {
+    label: "Flick — one target, snap to it",
+    easy:   { radius: 0.55, count: 1 },
+    medium: { radius: 0.40, count: 1 },
+    hard:   { radius: 0.28, count: 1 },
+  },
+  tracking: {
+    label: "Tracking — hold on the moving target",
+    easy:   { radius: 0.6, count: 1, speed: 1.6 },
+    medium: { radius: 0.46, count: 1, speed: 2.6 },
+    hard:   { radius: 0.36, count: 1, speed: 3.8 },
+  },
+};
+
+function dojoCfg() {
+  return DOJO_CONFIG[range.mode][range.difficulty];
+}
+
+// A target: glowing temple-bell orb that fits the sakura palette
+function makeAimTarget(radius) {
+  const geo = new THREE.SphereGeometry(sx(radius), 16, 12);
+  const mat = new THREE.MeshBasicMaterial({ color: "#ffd9a4" });
+  const mesh = new THREE.Mesh(geo, mat);
+  // Faint inner ring so the centre is readable
+  const ring = new THREE.Mesh(
+    new THREE.SphereGeometry(sx(radius) * 0.5, 12, 8),
+    new THREE.MeshBasicMaterial({ color: "#f3a7bc" }),
+  );
+  mesh.add(ring);
+  mesh.userData.radius = radius;
+  range.group.add(mesh);
+  return mesh;
+}
+
+function randomTargetPos() {
+  return {
+    x: random(-DOJO.spanX, DOJO.spanX),
+    y: random(DOJO.yLow, DOJO.yHigh),
+    z: DOJO.galleryZ + random(-0.4, 0.8),
+  };
+}
+
+function placeTarget(mesh, pos) {
+  mesh.position.set(sx(pos.x), pos.y, sz(pos.z));
+  mesh.userData.logical = pos;
+  mesh.userData.spawnAt = performance.now();
+  mesh.scale.setScalar(0.01); // pop-in animation handled in updateRange
+}
+
+function spawnTargets() {
+  clearTargets();
+  const cfg = dojoCfg();
+  for (let i = 0; i < cfg.count; i += 1) {
+    const mesh = makeAimTarget(cfg.radius);
+    placeTarget(mesh, randomTargetPos());
+    if (range.mode === "tracking") {
+      // Give the tracker a smooth lissajous drift
+      mesh.userData.track = {
+        cx: 0, cy: (DOJO.yLow + DOJO.yHigh) / 2,
+        ax: DOJO.spanX * 0.85, ay: (DOJO.yHigh - DOJO.yLow) * 0.42,
+        fx: random(0.3, 0.5), fy: random(0.5, 0.8),
+        phase: random(0, Math.PI * 2), speed: cfg.speed,
+      };
+    }
+    range.targets.push(mesh);
+  }
+}
+
+function clearTargets() {
+  range.targets.forEach((mesh) => {
+    mesh.geometry.dispose();
+    mesh.material.dispose();
+    range.group.remove(mesh);
+  });
+  range.targets.length = 0;
+}
+
+// Burst of petals when a target is popped
+function popBurst(mesh) {
+  const at = mesh.position.clone();
+  for (let i = 0; i < 7; i += 1) {
+    const p = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.12, 0.07),
+      new THREE.MeshBasicMaterial({ color: "#ffd2d8", transparent: true, side: THREE.DoubleSide }),
+    );
+    p.position.copy(at);
+    p.userData.vel = new THREE.Vector3(random(-1.4, 1.4), random(0.5, 2.4), random(-1.4, 1.4));
+    p.userData.life = 1;
+    range.group.add(p);
+    range.targets.push(p); // reuse update loop; flagged as petal
+    p.userData.isBurst = true;
+  }
 }
 
 function addGardenBed(x, z, w, d) {
@@ -3155,7 +3632,8 @@ function hitsCollider(x, z) {
 }
 
 function movePlayer(delta) {
-  if (state.mapFocus) {
+  // Aim dojo is stationary — freeze the player but keep mouse-look alive
+  if (state.mapFocus || range.phase !== "off") {
     state.velocity.set(0, 0, 0);
     state.moveBlend = damp(state.moveBlend, 0, 8, delta);
     return;
@@ -3470,9 +3948,21 @@ function updateAnimated(delta, now) {
 }
 
 function updateSpotLabel() {
+  if (range.phase !== "off") {
+    spotLabel.textContent = "Aim Dojo";
+    return;
+  }
+
   if (state.mapFocus) {
     spotLabel.textContent = "House Map";
     showInteractionHint(isMobile ? "Tap F or nav to return" : "F or Esc to return");
+    return;
+  }
+
+  if (isNearPodium()) {
+    state.activeInteractable = null;
+    spotLabel.textContent = "Aim Dojo";
+    showInteractionHint(isMobile ? "Tap F to train" : "F to enter Aim Dojo");
     return;
   }
 
@@ -3548,6 +4038,12 @@ function getAimedInteractable(event = null) {
   const hit = hits.find((entry) => entry.distance < 9.5);
   if (!hit) return null;
   return interactables.find((item) => item.id === hit.object.userData.interactableId) || null;
+}
+
+function isNearPodium() {
+  if (!range.podium || state.floorY >= 0.8) return false;
+  const d = Math.hypot(camera.position.x - range.podium.center.x, camera.position.z - range.podium.center.y);
+  return d < 3.0;
 }
 
 function getNearbyDoor() {
@@ -3733,6 +4229,7 @@ function animate(now) {
   updateCamera(delta);
   updateLighting(delta);
   updateAnimated(delta, now);
+  updateRange(delta, now);
   updateSpotLabel();
   renderer.render(scene, camera);
   requestAnimationFrame(animate);
@@ -3802,6 +4299,10 @@ window.setTimeout(() => intro?.classList.add("is-hidden"), 1400);
 canvas.addEventListener("click", (event) => {
   if (state.mapFocus) return;
   if (isPortfolioOpen()) return;
+  // In the dojo: clicks shoot, and re-acquire pointer lock if it was lost
+  if (range.phase === "live") { shootDojo(); return; }
+  if (range.phase === "countdown") { requestLookControl(); return; }
+  if (range.phase === "menu" || range.phase === "results") return;
   intro.classList.add("is-hidden");
   if (openClickedPortfolio(event)) return;
   requestLookControl();
@@ -3810,11 +4311,14 @@ canvas.addEventListener("click", (event) => {
 canvas.addEventListener("mousedown", () => {
   if (state.mapFocus) return;
   if (isPortfolioOpen()) return;
+  if (range.phase === "live" && range.mode === "tracking") { range.tracking = true; return; }
+  if (range.phase !== "off") return;
   state.dragLook = true;
 });
 
 document.addEventListener("mouseup", () => {
   state.dragLook = false;
+  range.tracking = false;
 });
 
 document.addEventListener("pointerlockchange", () => {
@@ -3822,6 +4326,19 @@ document.addEventListener("pointerlockchange", () => {
 });
 
 document.addEventListener("mousemove", (event) => {
+  // In the dojo, look uses the player's calibrated cm/360 sensitivity
+  const inDojoAim = range.phase === "live" || range.phase === "countdown";
+  if (inDojoAim) {
+    if (!state.pointerLocked) return;
+    const sens = aimSensitivity();
+    state.targetYaw -= event.movementX * sens;
+    state.targetPitch -= event.movementY * sens;
+    state.targetPitch = Math.max(-0.9, Math.min(0.72, state.targetPitch));
+    state.yaw = state.targetYaw;     // 1:1, no smoothing — aim must be precise
+    state.pitch = state.targetPitch;
+    return;
+  }
+  if (range.phase !== "off") return;
   if (!state.pointerLocked && !state.dragLook) return;
   state.targetYaw -= event.movementX * mouseSensitivity;
   state.targetPitch -= event.movementY * mouseSensitivity;
@@ -3843,8 +4360,19 @@ document.addEventListener("keydown", (event) => {
     }
     return;
   }
+
+  // Aim dojo: Esc is the universal back-out
+  if (range.phase !== "off") {
+    if (event.code === "Escape" && !event.repeat) {
+      if (range.phase === "live" || range.phase === "countdown") endRound();
+      else exitDojo();
+    }
+    return;
+  }
+
   state.keys.add(event.code);
   if (event.code === "KeyF" && !event.repeat) {
+    if (isNearPodium()) { enterDojo(); return; }
     if (!toggleFrontDoor()) {
       openNearbyPortfolio();
     }
@@ -4048,10 +4576,17 @@ if (isMobile && mobHud) {
   touchInteract?.addEventListener("touchstart", (e) => {
     e.stopPropagation();
     e.preventDefault();
+    if (range.phase === "live") { range.mode === "tracking" ? (range.tracking = true) : shootDojo(); return; }
+    if (range.phase !== "off") return; // menu/results use HTML buttons
     if (state.mapFocus) { exitMapFocus(); return; }
     if (isPortfolioOpen()) { closePortfolioPanel(); return; }
+    if (isNearPodium()) { enterDojo(); return; }
     if (!toggleFrontDoor()) openNearbyPortfolio();
   }, { passive: false });
+  touchInteract?.addEventListener("touchend", (e) => {
+    e.stopPropagation();
+    range.tracking = false;
+  }, { passive: true });
 }
 
 // Module evaluated to the end without throwing

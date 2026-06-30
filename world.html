@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./src/styles.css?v=6" />
+    <link rel="stylesheet" href="./src/styles.css?v=7" />
   </head>
   <body>
     <canvas id="scene" aria-label="Lakeside sakura house walkthrough portfolio"></canvas>
@@ -107,6 +107,77 @@
 
     <a class="back-home" href="./index.html" aria-label="Back to portfolio">&#8592; Portfolio</a>
 
-    <script type="module" src="./src/main.js?v=17"></script>
+    <!-- ── Aim Dojo: setup menu ─────────────────────────────────────────────── -->
+    <div class="dojo-menu" id="dojoMenu" aria-hidden="true" role="dialog" aria-label="Aim Dojo setup">
+      <div class="dojo-card">
+        <p class="dojo-eyebrow">弓 · Aim Dojo</p>
+        <h2 class="dojo-title">Tune your aim</h2>
+
+        <div class="dojo-section">
+          <span class="dojo-label">Drill</span>
+          <div class="dojo-options">
+            <button class="dojo-opt" data-mode="gridshot" type="button"><strong>Gridshot</strong><small>precision + speed</small></button>
+            <button class="dojo-opt" data-mode="flick" type="button"><strong>Flick</strong><small>snap &amp; react</small></button>
+            <button class="dojo-opt" data-mode="tracking" type="button"><strong>Tracking</strong><small>smooth follow</small></button>
+          </div>
+          <p class="dojo-mode-desc" id="dojoModeDesc"></p>
+        </div>
+
+        <div class="dojo-section">
+          <span class="dojo-label">Difficulty</span>
+          <div class="dojo-options dojo-options--three">
+            <button class="dojo-opt" data-diff="easy" type="button"><strong>Easy</strong><small>large</small></button>
+            <button class="dojo-opt" data-diff="medium" type="button"><strong>Medium</strong><small>standard</small></button>
+            <button class="dojo-opt" data-diff="hard" type="button"><strong>Hard</strong><small>small / fast</small></button>
+          </div>
+        </div>
+
+        <div class="dojo-section">
+          <span class="dojo-label">Sensitivity <em>· Aimlabs cm/360 standard</em></span>
+          <div class="dojo-sens">
+            <label>cm/360
+              <input id="dojoCm360" type="number" min="1" max="200" step="0.5" inputmode="decimal" />
+            </label>
+            <label>Mouse DPI
+              <input id="dojoDpi" type="number" min="100" max="32000" step="50" inputmode="numeric" />
+            </label>
+          </div>
+          <p class="dojo-mode-desc">Lower cm/360 = faster turn. Your values are saved for next time.</p>
+        </div>
+
+        <div class="dojo-actions">
+          <button class="dojo-start" data-act="start" type="button">Start drill</button>
+          <button class="dojo-quit" data-act="exit" type="button">Leave dojo</button>
+        </div>
+        <p class="dojo-hint">30-second round · Esc to quit · click targets to pop them</p>
+      </div>
+    </div>
+
+    <!-- ── Aim Dojo: live HUD ───────────────────────────────────────────────── -->
+    <div class="dojo-hud" id="dojoHud" aria-hidden="true">
+      <div class="dojo-hud-bar">
+        <span class="dojo-hud-time" id="dojoTime">30.0</span>
+        <span class="dojo-hud-score" id="dojoScore">0</span>
+        <span class="dojo-hud-stat" id="dojoStat">100%</span>
+      </div>
+      <div class="dojo-reticle" aria-hidden="true"></div>
+      <div class="dojo-countdown" id="dojoCountdown"></div>
+    </div>
+
+    <!-- ── Aim Dojo: results ────────────────────────────────────────────────── -->
+    <div class="dojo-results" id="dojoResults" aria-hidden="true" role="dialog" aria-label="Drill results">
+      <div class="dojo-card">
+        <p class="dojo-eyebrow">結果 · Results</p>
+        <h2 class="dojo-title" id="dojoResultsTitle">Drill</h2>
+        <div class="dojo-results-body" id="dojoResultsBody"></div>
+        <div class="dojo-actions">
+          <button class="dojo-start" data-act="retry" type="button">Run again</button>
+          <button class="dojo-quit" data-act="menu" type="button">Change drill</button>
+          <button class="dojo-quit" data-act="exit" type="button">Leave dojo</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="./src/main.js?v=19"></script>
   </body>
 </html>
